@@ -1,0 +1,19 @@
+{
+  "name": "SuperClock Square",
+  "hostname": "superclok-square",
+  "user": "nickv2026",
+  "network": {
+    "interface": "wlan0",
+    "ip": "192.168.4.22",
+    "subnet": "192.168.4.0/22",
+    "mac": "88:a2:9e:37:4a:00"
+  },
+  "display": {
+    "model": "Waveshare 5inch DSI LCD",
+    "resolution": "800x480",
+    "interface": "DSI",
+    "touch": "capacitive, 5-point",
+    "wiki": "https://www.waveshare.com/wiki/5inch_DSI_LCD"
+  },
+  "notes": "Square form-factor clock device with 800x480 touch display"
+}

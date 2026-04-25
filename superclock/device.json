@@ -1,0 +1,25 @@
+{
+  "name": "SuperClock",
+  "hostname": "superclock",
+  "user": "nickv2026",
+  "network": {
+    "interface": "wlan0",
+    "ip": "192.168.4.31",
+    "mac": "d8:3a:dd:2a:a7:e4"
+  },
+  "display": {
+    "model": "Waveshare 5inch 1080x1080 LCD",
+    "resolution": "1080x1080",
+    "shape": "round",
+    "wiki": "https://www.waveshare.com/wiki/5inch_1080x1080_LCD"
+  },
+  "sbc": {
+    "model": "Raspberry Pi 4 Model B",
+    "url": "https://www.raspberrypi.com/products/raspberry-pi-4-model-b/"
+  },
+  "hat": {
+    "model": "SunFounder Fusion HAT",
+    "url": "https://www.sunfounder.com/products/sunfounder-fusion-hat-expansion-board"
+  },
+  "notes": "Round form-factor clock with 1080x1080 circular display"
+}
