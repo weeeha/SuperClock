@@ -26,3 +26,7 @@ dist-ssr
 # Environment variables
 .env
 .env.local
+
+# User-supplied photos (kept locally, baked into build via public/)
+public/photos/*
+!public/photos/.gitkeep
