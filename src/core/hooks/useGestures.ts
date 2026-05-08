@@ -4,6 +4,7 @@ import { useNavigation } from '../navigation';
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VELOCITY = 0.3;
+const PINCH_IN_THRESHOLD = 0.85;
 
 export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | null>) {
   // Prevent context menu on long-press
@@ -13,6 +14,20 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
     const prevent = (e: Event) => e.preventDefault();
     el.addEventListener('contextmenu', prevent);
     return () => el.removeEventListener('contextmenu', prevent);
+  }, [containerRef]);
+
+  // 3-finger touch — show grid
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 3) {
+        const { mode, showGrid } = useNavigation.getState();
+        if (mode === 'app') showGrid();
+      }
+    };
+    el.addEventListener('touchstart', onTouchStart);
+    return () => el.removeEventListener('touchstart', onTouchStart);
   }, [containerRef]);
 
   useGesture(
@@ -35,12 +50,19 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         if (mx < 0) swipeToNext();
         else swipeToPrev();
       },
+      onPinchEnd: ({ offset: [scale] }) => {
+        const { mode, showGrid } = useNavigation.getState();
+        if (scale < PINCH_IN_THRESHOLD && mode === 'app') showGrid();
+      },
     },
     {
       target: containerRef,
       drag: {
         filterTaps: true,
         threshold: 10,
+      },
+      pinch: {
+        scaleBounds: { min: 0.5, max: 2 },
       },
     },
   );
