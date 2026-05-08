@@ -1,0 +1,145 @@
+SUPERCLOCK FLEET — DEVICE SPECIFICATIONS
+=========================================
+Last updated: 2026-05-07
+Target viewport: 1080×1080 circular (UI laid out for round display)
+OS: Raspberry Pi OS 13 (Trixie), aarch64, all on Pi Connect
+
+
+===============================================================
+1. SuperClockFast        (existing, primary device)
+===============================================================
+Hostname:    SuperClockFast
+mDNS IP:     192.168.4.28
+SBC:         Raspberry Pi 5, rev 1.0, 8 GB RAM
+Display:     Waveshare 5" 1080×1080 round LCD (HDMI + USB-C touch)
+HAT:         SunFounder Fusion HAT  (battery + mic + mono speaker)
+Camera:      OV5647 5MP (Pi v1 sensor, 22-pin ribbon)
+Power:       Battery via Fusion HAT (portable)
+Form:        Round, 1080×1080 — native viewport match
+
+
+===============================================================
+2. SmallSuperClock       (existing, compact round)
+===============================================================
+Hostname:    SmallSuperClock
+mDNS IP:     192.168.4.31
+SBC:         Raspberry Pi 4 Model B, rev 1.5, 4 GB RAM
+Display:     Waveshare 3.4" 800×800 round DSI, Goodix capacitive touch
+Audio:       USB mic (Amazon B0CYM618H7)
+Power:       Standard Pi PSU (wall)
+Form:        Round, 800×800 — UI scales down from 1080
+Notes:       180° rotation via wlr-randr in labwc autostart;
+             dtoverlay=vc4-kms-dsi-waveshare-panel,3_4_inch
+
+
+===============================================================
+3. superclok-square      (existing, rectangular touch)
+===============================================================
+Hostname:    superclok-square   (typo: should be superclock-square)
+mDNS IP:     192.168.4.42       (older device.json says .22 — stale)
+SBC:         Raspberry Pi 4 Model B, rev 1.5, 2 GB RAM
+Display:     Waveshare 5" 800×480 DSI (B), capacitive touch
+Audio:       USB mic (B0CYM618H7)
+Power:       Waveshare UPS HAT (battery backup)
+Form:        Rectangular, 800×480 — UI cropped/letterboxed
+Notes:       dtoverlay=vc4-kms-dsi-waveshare-800x480 (no params)
+
+
+===============================================================
+4. SuperClock-Slow       (planned)
+===============================================================
+Hostname:    SuperClock-Slow
+SBC:         Raspberry Pi Zero 2 W (with header), 1 GB RAM
+Display:     Waveshare 5" 1080×1080 round LCD (HDMI + USB-C) — same as Fast
+Power:       Wall-only, no battery
+Form:        Flat wall-mount (round)
+Notes:       Zero 2 W (1 GHz A53) will be borderline driving
+             a Chromium kiosk at 1080×1080 — expect frame drops.
+
+
+
+===============================================================
+PHYSICAL SIZE ESTIMATES
+===============================================================
+All numbers are approximate from vendor datasheets; enclosure
+totals assume a basic 3D-printed shell with 3-5 mm wall thickness
+and standoffs for the Pi + HAT stack.
+
+
+--- Displays (panels alone) ---
+
+Waveshare 5" 1080×1080 round LCD (HDMI)
+  Active area:   ~127 mm diameter (circular)
+  PCB outline:   ~138 × 138 mm (square board, round visible area)
+  Thickness:     ~12–15 mm (incl. driver board)
+
+Waveshare 3.4" 800×800 round DSI (Goodix touch)
+  Active area:   ~86 mm diameter (circular)
+  PCB outline:   ~95 × 95 mm
+  Thickness:     ~10 mm
+
+Waveshare 5" 800×480 DSI (B), capacitive
+  Active area:   ~120.7 × 75.6 mm
+  Outline:       ~150.7 × 95.45 mm
+  Thickness:     ~10–12 mm
+
+
+--- SBCs ---
+
+Raspberry Pi 5         85 × 56 × 17 mm  (≈ 46 g)
+Raspberry Pi 4B        85 × 56 × 17 mm  (≈ 46 g)
+Raspberry Pi Zero 2 W  65 × 30 × 5 mm   (≈ 11 g)
+
+
+--- HATs / Power ---
+
+SunFounder Fusion HAT     ~65 × 56 mm board, +~10 mm stack height
+  + 18650 cell holder      adds ~25 mm depth with battery installed
+Waveshare UPS HAT          ~65 × 56 mm board, +~12 mm with cells
+
+
+
+===============================================================
+ENCLOSURE SIZE ESTIMATES (stacked + cased)
+===============================================================
+Conservative estimates for a finished, wall-or-shelf-mountable
+unit. "D" = deepest dimension when display faces the viewer.
+
+
+--- SuperClockFast (round, battery, Pi 5 + Fusion HAT) ---
+Bezel/face:    ~150 × 150 mm  (round face cut from square front)
+Total depth:   ~55–65 mm
+                (display 14 + Pi 5 17 + HAT 10 + battery 25 + walls 5–10)
+Weight est:    ~280–350 g w/ 18650, no mounting hardware
+
+--- SmallSuperClock (round, 3.4", Pi 4B, no battery) ---
+Bezel/face:    ~105 × 105 mm
+Total depth:   ~35–45 mm
+                (display 10 + Pi 4B 17 + walls 8)
+Weight est:    ~180–220 g
+
+--- superclok-square (rectangular, Pi 4B + UPS HAT) ---
+Bezel/face:    ~160 × 105 mm
+Total depth:   ~45–55 mm
+                (display 12 + Pi 4B 17 + UPS HAT 12 + walls 6–10)
+Weight est:    ~250–300 g w/ cells
+
+--- SuperClock-Slow (round, 5" 1080×1080, Pi Zero 2 W, wall) ---
+Bezel/face:    ~150 × 150 mm
+Total depth:   ~30–40 mm  (slimmest of the fleet — Zero is only 5 mm)
+                (display 14 + Zero 5 + walls 8 + HDMI/USB adapters 5–10)
+Weight est:    ~180–220 g
+Notes:         A bulky HDMI-to-micro-HDMI adapter or a flexible
+               ribbon will determine how flat the back can be.
+
+
+
+===============================================================
+NAMING / CONFIG INCONSISTENCIES (open items)
+===============================================================
+- "superclok-square" hostname missing the 'c' — not yet renamed.
+- device.json files: superclock/ says Pi 4B (stale; now Pi 5).
+  square-superclock/ shows 192.168.4.22 (current is .42).
+- No device.json yet for SmallSuperClock or SuperClock-Slow.
+- Mixed naming: SuperClockFast / SmallSuperClock (CamelCase),
+  superclok-square (lowercase-hyphen), SuperClock-Slow (mixed).
