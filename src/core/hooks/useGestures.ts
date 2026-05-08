@@ -16,27 +16,40 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
     return () => el.removeEventListener('contextmenu', prevent);
   }, [containerRef]);
 
-  // 3-finger touch — track active touch pointers (more reliable than touchstart on Chromium/Pi)
+  // 3-finger touch — listen on BOTH pointer and touch event channels in capture phase
+  // so use-gesture can't swallow them, plus update a debug overlay.
   useEffect(() => {
     const active = new Set<number>();
+    const debug = document.getElementById('gesture-debug');
+    const updateDebug = (label: string) => {
+      if (debug) debug.textContent = `${label}: ptr=${active.size}`;
+    };
+    const trigger = () => {
+      const { mode, showGrid } = useNavigation.getState();
+      if (mode === 'app') showGrid();
+    };
     const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType !== 'touch') return;
       active.add(e.pointerId);
-      if (active.size >= 3) {
-        const { mode, showGrid } = useNavigation.getState();
-        if (mode === 'app') showGrid();
-      }
+      updateDebug('pd');
+      if (active.size >= 3) trigger();
     };
     const onPointerEnd = (e: PointerEvent) => {
       active.delete(e.pointerId);
+      updateDebug('pu');
     };
-    window.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointerup', onPointerEnd);
-    window.addEventListener('pointercancel', onPointerEnd);
+    const onTouchStart = (e: TouchEvent) => {
+      updateDebug(`ts(${e.touches.length})`);
+      if (e.touches.length >= 3) trigger();
+    };
+    window.addEventListener('pointerdown', onPointerDown, { capture: true });
+    window.addEventListener('pointerup', onPointerEnd, { capture: true });
+    window.addEventListener('pointercancel', onPointerEnd, { capture: true });
+    window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     return () => {
-      window.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointerup', onPointerEnd);
-      window.removeEventListener('pointercancel', onPointerEnd);
+      window.removeEventListener('pointerdown', onPointerDown, { capture: true });
+      window.removeEventListener('pointerup', onPointerEnd, { capture: true });
+      window.removeEventListener('pointercancel', onPointerEnd, { capture: true });
+      window.removeEventListener('touchstart', onTouchStart, { capture: true });
     };
   }, []);
 
