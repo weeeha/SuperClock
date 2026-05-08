@@ -28,9 +28,9 @@ export default function AnalogClock({ isActive }: AppProps) {
       <line
         key={i}
         x1="500"
-        y1={isHour ? 60 : 80}
+        y1={isHour ? 20 : 40}
         x2="500"
-        y2={isHour ? 120 : 105}
+        y2={isHour ? 80 : 65}
         stroke="currentColor"
         strokeWidth={isHour ? 12 : 4}
         strokeLinecap="round"
@@ -43,10 +43,10 @@ export default function AnalogClock({ isActive }: AppProps) {
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Clock face */}
-        <circle cx="500" cy="500" r="460" fill="white" />
+        <circle cx="500" cy="500" r="500" fill="#1a1a1a" />
 
         {/* Tick marks */}
-        <g className="text-black">{ticks}</g>
+        <g className="text-white">{ticks}</g>
 
         {/* Hour hand */}
         <line
@@ -54,7 +54,7 @@ export default function AnalogClock({ isActive }: AppProps) {
           y1="500"
           x2="500"
           y2="220"
-          stroke="black"
+          stroke="white"
           strokeWidth="28"
           strokeLinecap="round"
           style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
@@ -66,7 +66,7 @@ export default function AnalogClock({ isActive }: AppProps) {
           y1="500"
           x2="500"
           y2="120"
-          stroke="black"
+          stroke="white"
           strokeWidth="20"
           strokeLinecap="round"
           style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
@@ -90,7 +90,7 @@ export default function AnalogClock({ isActive }: AppProps) {
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="12" fill="#FFD700" />
-        <circle cx="500" cy="500" r="6" fill="black" />
+        <circle cx="500" cy="500" r="6" fill="#1a1a1a" />
       </svg>
     </div>
   );

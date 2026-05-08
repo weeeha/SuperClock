@@ -21,10 +21,10 @@ export default function SquareClock({ isActive }: AppProps) {
 
   // Hour numbers at cardinal positions
   const hourLabels = [
-    { num: 12, x: 500, y: 130 },
-    { num: 3, x: 870, y: 515 },
-    { num: 6, x: 500, y: 900 },
-    { num: 9, x: 130, y: 515 },
+    { num: 12, x: 500, y: 90 },
+    { num: 3, x: 910, y: 500 },
+    { num: 6, x: 500, y: 910 },
+    { num: 9, x: 90, y: 500 },
   ];
 
   // Tick marks
@@ -38,9 +38,9 @@ export default function SquareClock({ isActive }: AppProps) {
       <line
         key={i}
         x1="500"
-        y1={isHour ? 70 : 85}
+        y1={isHour ? 30 : 45}
         x2="500"
-        y2={isHour ? 115 : 105}
+        y2={isHour ? 75 : 65}
         stroke="white"
         strokeWidth={isHour ? 6 : 2}
         strokeLinecap="round"
@@ -55,10 +55,10 @@ export default function SquareClock({ isActive }: AppProps) {
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Square face with rounded corners */}
         <rect
-          x="40"
-          y="40"
-          width="920"
-          height="920"
+          x="0"
+          y="0"
+          width="1000"
+          height="1000"
           rx="80"
           ry="80"
           fill="#1a1a2e"
@@ -69,10 +69,10 @@ export default function SquareClock({ isActive }: AppProps) {
 
         {/* Inner border accent */}
         <rect
-          x="65"
-          y="65"
-          width="870"
-          height="870"
+          x="25"
+          y="25"
+          width="950"
+          height="950"
           rx="60"
           ry="60"
           fill="none"
