@@ -34,18 +34,6 @@ export default function ClockApp(props: AppProps) {
   return (
     <div className="relative h-full w-full">
       <Face {...props} onSwipeOut={handleSwipeOut} />
-
-      {/* Face indicator dots */}
-      <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
-        {faces.map((_, i) => (
-          <div
-            key={i}
-            className={`h-2 w-2 rounded-full transition-colors ${
-              i === faceIndex ? 'bg-white' : 'bg-white/30'
-            }`}
-          />
-        ))}
-      </div>
     </div>
   );
 }
