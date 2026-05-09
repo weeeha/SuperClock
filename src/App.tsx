@@ -25,12 +25,6 @@ export default function App() {
       <AnimatePresence>
         {mode === 'grid' && <AppGrid />}
       </AnimatePresence>
-      <div
-        id="gesture-debug"
-        className="fixed left-1/2 top-[10%] -translate-x-1/2 z-[9999] rounded bg-fuchsia-600 px-3 py-1 font-mono text-base text-white pointer-events-none"
-      >
-        ready
-      </div>
     </div>
   );
 }
