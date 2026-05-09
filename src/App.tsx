@@ -27,7 +27,7 @@ export default function App() {
       </AnimatePresence>
       <div
         id="gesture-debug"
-        className="fixed top-1 right-1 z-[9999] rounded bg-black/70 px-2 py-1 font-mono text-xs text-white pointer-events-none"
+        className="fixed left-1/2 top-[10%] -translate-x-1/2 z-[9999] rounded bg-fuchsia-600 px-3 py-1 font-mono text-base text-white pointer-events-none"
       >
         ready
       </div>
