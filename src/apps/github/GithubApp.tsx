@@ -190,17 +190,13 @@ export default function GithubApp({ isActive }: AppProps) {
   const cx = 500;
   const cy = 500;
   const innerR = 260;
-  const outerR = 450;
+  const outerR = 493;
   const dotR = 7;
   const totalWeeks = data.weeks.length;
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
-        {/* Outer bezel ring */}
-        <circle cx={cx} cy={cy} r={490} fill="none" stroke="#222" strokeWidth="4" />
-        <circle cx={cx} cy={cy} r={470} fill="none" stroke="#1a1a1a" strokeWidth="2" />
-
         {/* Radial contribution dots — each week is a spoke */}
         {data.weeks.map((days, weekIndex) => {
           const angle = ((weekIndex / totalWeeks) * 360 - 90) * (Math.PI / 180);
@@ -222,10 +218,6 @@ export default function GithubApp({ isActive }: AppProps) {
             );
           });
         })}
-
-        {/* Center dark disc */}
-        <circle cx={cx} cy={cy} r={220} fill="#000" />
-        <circle cx={cx} cy={cy} r={220} fill="none" stroke="#161b22" strokeWidth="1" />
 
         {/* ── Center Stats ── */}
 
