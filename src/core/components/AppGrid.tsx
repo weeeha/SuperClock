@@ -66,17 +66,11 @@ export default function AppGrid() {
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Circular mask — matches Figma navigation view (489:25238) */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          clipPath: 'circle(46% at 50% 50%)',
-        }}
-      >
+      <div className="absolute inset-0 flex items-center justify-center">
         {/* Pannable grid of face thumbnails */}
         <div
           ref={containerRef}
-          className="flex items-start cursor-grab active:cursor-grabbing touch-none"
+          className="flex items-center cursor-grab active:cursor-grabbing touch-none"
           style={{ gap }}
         >
           {columns.map((col, ci) => (
@@ -100,14 +94,6 @@ export default function AppGrid() {
           ))}
         </div>
       </div>
-
-      {/* Subtle circular border overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 50% 50%, transparent 47%, black 49%)',
-        }}
-      />
     </motion.div>
   );
 }
