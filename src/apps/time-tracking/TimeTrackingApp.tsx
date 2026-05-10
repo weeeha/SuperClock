@@ -19,7 +19,8 @@ export default function TimeTrackingApp({ isActive }: AppProps) {
   const minutes = Math.floor(elapsed / 60);
   const seconds = elapsed % 60;
   const progress = Math.min(elapsed / (25 * 60), 1); // 25 min Pomodoro
-  const circumference = 2 * Math.PI * 380;
+  const ringRadius = 485; // edge-to-edge, leaves room for 30px stroke
+  const circumference = 2 * Math.PI * ringRadius;
   const offset = circumference * (1 - progress);
 
   function toggleTimer() {
@@ -32,11 +33,15 @@ export default function TimeTrackingApp({ isActive }: AppProps) {
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black" onClick={toggleTimer}>
-      <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
-        {/* Progress ring */}
-        <circle cx="500" cy="500" r="380" fill="none" stroke="#1a1a1a" strokeWidth="30" />
+      <svg
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="xMidYMid slice"
+        className="h-full w-full"
+      >
+        {/* Progress ring — edge-to-edge */}
+        <circle cx="500" cy="500" r={ringRadius} fill="none" stroke="#1a1a1a" strokeWidth="30" />
         <circle
-          cx="500" cy="500" r="380"
+          cx="500" cy="500" r={ringRadius}
           fill="none" stroke="#FF8826" strokeWidth="30" strokeLinecap="round"
           strokeDasharray={circumference} strokeDashoffset={offset}
           style={{ transform: 'rotate(-90deg)', transformOrigin: '500px 500px', transition: 'stroke-dashoffset 1s linear' }}
