@@ -75,7 +75,7 @@ export default function ProductivityClock({ isActive }: AppProps) {
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Dark inner circle */}
-        <circle cx="500" cy="500" r="500" fill="#1a1a1a" />
+        <circle cx="500" cy="500" r="500" fill="#000000" />
 
         {/* Colored segments */}
         {segments.map((seg, i) => (
@@ -83,7 +83,7 @@ export default function ProductivityClock({ isActive }: AppProps) {
         ))}
 
         {/* Inner black circle */}
-        <circle cx="500" cy="500" r="435" fill="#111" />
+        <circle cx="500" cy="500" r="435" fill="#000000" />
 
         {/* Tick marks */}
         {ticks}

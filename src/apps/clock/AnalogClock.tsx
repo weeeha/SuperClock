@@ -43,7 +43,7 @@ export default function AnalogClock({ isActive }: AppProps) {
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Clock face */}
-        <circle cx="500" cy="500" r="500" fill="#1a1a1a" />
+        <circle cx="500" cy="500" r="500" fill="#000000" />
 
         {/* Tick marks */}
         <g className="text-white">{ticks}</g>
@@ -90,7 +90,7 @@ export default function AnalogClock({ isActive }: AppProps) {
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="12" fill="#FFD700" />
-        <circle cx="500" cy="500" r="6" fill="#1a1a1a" />
+        <circle cx="500" cy="500" r="6" fill="#000000" />
       </svg>
     </div>
   );

@@ -25,19 +25,17 @@ export default function QuoteApp(_props: AppProps) {
   }, []);
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black p-[5%]">
-      <div className="flex flex-col items-center justify-center rounded-full bg-white text-black w-[90%] aspect-square p-[12%] gap-[4%]">
-        {/* Author avatar placeholder */}
-        <div className="h-[12%] w-[12%] rounded-full bg-gray-300" />
+    <div className="flex h-full w-full flex-col items-center justify-center bg-white text-black p-[12%] gap-[4%]">
+      {/* Author avatar placeholder */}
+      <div className="h-[12%] w-[12%] rounded-full bg-gray-300" />
 
-        {/* Author name */}
-        <p className="text-[3.5vmin] text-gray-600">{quote.author}</p>
+      {/* Author name */}
+      <p className="text-[3.5vmin] text-gray-600">{quote.author}</p>
 
-        {/* Quote text */}
-        <p className="text-[5vmin] font-semibold text-center leading-snug text-gray-900">
-          "{quote.text}"
-        </p>
-      </div>
+      {/* Quote text */}
+      <p className="text-[5vmin] font-semibold text-center leading-snug text-gray-900">
+        "{quote.text}"
+      </p>
     </div>
   );
 }

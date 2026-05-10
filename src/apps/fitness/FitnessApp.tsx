@@ -13,7 +13,7 @@ export default function FitnessApp(_props: AppProps) {
 
   const goal = 50;
   const progress = Math.min(count / goal, 1);
-  const circumference = 2 * Math.PI * 420;
+  const circumference = 2 * Math.PI * 460;
   const offset = circumference * (1 - progress);
 
   function handleTap() {
@@ -29,11 +29,11 @@ export default function FitnessApp(_props: AppProps) {
     >
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Background circle */}
-        <circle cx="500" cy="500" r="460" fill="#f5f0eb" />
+        <circle cx="500" cy="500" r="500" fill="#f5f0eb" />
 
         {/* Progress ring track */}
         <circle
-          cx="500" cy="500" r="420"
+          cx="500" cy="500" r="460"
           fill="none"
           stroke="#e0d8d0"
           strokeWidth="40"
@@ -41,7 +41,7 @@ export default function FitnessApp(_props: AppProps) {
 
         {/* Progress ring fill — gradient from red to dark red */}
         <circle
-          cx="500" cy="500" r="420"
+          cx="500" cy="500" r="460"
           fill="none"
           stroke="url(#fitnessGradient)"
           strokeWidth="40"
