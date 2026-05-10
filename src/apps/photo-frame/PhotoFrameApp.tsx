@@ -50,23 +50,21 @@ export default function PhotoFrameApp({ isActive }: AppProps) {
     : null;
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
-      <div
-        className="rounded-full w-[90%] aspect-square overflow-hidden transition-opacity duration-500"
-        style={{
-          opacity: fade ? 1 : 0,
-          background: currentGradient ?? '#000',
-        }}
-      >
-        {currentSrc && (
-          <img
-            src={currentSrc}
-            alt=""
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
-        )}
-      </div>
+    <div
+      className="h-full w-full overflow-hidden transition-opacity duration-500"
+      style={{
+        opacity: fade ? 1 : 0,
+        background: currentGradient ?? '#000',
+      }}
+    >
+      {currentSrc && (
+        <img
+          src={currentSrc}
+          alt=""
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+      )}
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function SquareClock({ isActive }: AppProps) {
           height="1000"
           rx="80"
           ry="80"
-          fill="#1a1a2e"
+          fill="#000000"
           stroke="white"
           strokeWidth="3"
           opacity="0.95"
@@ -143,7 +143,7 @@ export default function SquareClock({ isActive }: AppProps) {
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="10" fill="#e94560" />
-        <circle cx="500" cy="500" r="4" fill="#1a1a2e" />
+        <circle cx="500" cy="500" r="4" fill="#000000" />
       </svg>
     </div>
   );
