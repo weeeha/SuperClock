@@ -196,7 +196,11 @@ export default function GithubApp({ isActive }: AppProps) {
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
-      <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+      <svg
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="xMidYMid slice"
+        className="h-full w-full"
+      >
         {/* Radial contribution dots — each week is a spoke */}
         {data.weeks.map((days, weekIndex) => {
           const angle = ((weekIndex / totalWeeks) * 360 - 90) * (Math.PI / 180);

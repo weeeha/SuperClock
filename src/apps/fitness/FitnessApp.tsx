@@ -24,12 +24,16 @@ export default function FitnessApp(_props: AppProps) {
 
   return (
     <div
-      className="flex h-full w-full items-center justify-center bg-black"
+      className="flex h-full w-full items-center justify-center bg-[#f5f0eb]"
       onClick={handleTap}
     >
-      <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
-        {/* Background circle */}
-        <circle cx="500" cy="500" r="500" fill="#f5f0eb" />
+      <svg
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="xMidYMid slice"
+        className="h-full w-full"
+      >
+        {/* Background fills viewBox so any over-scan stays cream */}
+        <rect x="0" y="0" width="1000" height="1000" fill="#f5f0eb" />
 
         {/* Progress ring track */}
         <circle
