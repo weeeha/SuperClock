@@ -8,6 +8,7 @@ interface NavigationState {
   activeAppId: string;
   appOrder: string[];
   transitionDirection: 'left' | 'right' | null;
+  verticalSwipeCallback: ((dir: 'up' | 'down') => void) | null;
 
   // Actions
   initApps: () => void;
@@ -17,6 +18,7 @@ interface NavigationState {
   showGrid: () => void;
   hideGrid: () => void;
   finishTransition: () => void;
+  setVerticalSwipeCallback: (fn: ((dir: 'up' | 'down') => void) | null) => void;
 }
 
 export const useNavigation = create<NavigationState>((set, get) => ({
@@ -24,6 +26,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   activeAppId: '',
   appOrder: [],
   transitionDirection: null,
+  verticalSwipeCallback: null,
 
   initApps: () => {
     const ids = getAppIds();
@@ -67,8 +70,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   showGrid: () => set({ mode: 'grid' }),
   hideGrid: () => set({ mode: 'app' }),
-
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
+  setVerticalSwipeCallback: (fn) => set({ verticalSwipeCallback: fn }),
 }));
 
 // Expose for debugging in dev

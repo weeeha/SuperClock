@@ -59,14 +59,19 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
   useGesture(
     {
       onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
-        const { mode, swipeToNext, swipeToPrev, showGrid, hideGrid } = useNavigation.getState();
+        const { mode, swipeToNext, swipeToPrev, showGrid, hideGrid, verticalSwipeCallback } = useNavigation.getState();
         const absX = Math.abs(mx);
         const absY = Math.abs(my);
 
-        // Vertical swipe — toggle grid
+        // Vertical swipe — delegate to active app or toggle grid
         if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
-          if (my > 0 && mode === 'app') showGrid();
-          else if (my < 0 && mode === 'grid') hideGrid();
+          if (mode === 'app' && verticalSwipeCallback) {
+            verticalSwipeCallback(my > 0 ? 'down' : 'up');
+          } else if (my > 0 && mode === 'app') {
+            showGrid();
+          } else if (my < 0 && mode === 'grid') {
+            hideGrid();
+          }
           return;
         }
 
