@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from '../navigation';
 import { getApp } from '../registry';
+import { useActiveInstance } from '../device-config';
 
 const variants = {
   enter: (direction: 'left' | 'right' | null) => ({
@@ -18,6 +19,7 @@ const variants = {
 export default function SwipeContainer() {
   const { activeAppId, transitionDirection, finishTransition } = useNavigation();
   const app = getApp(activeAppId);
+  const instance = useActiveInstance(activeAppId);
 
   if (!app) return null;
 
@@ -48,7 +50,7 @@ export default function SwipeContainer() {
               </div>
             }
           >
-            <AppComponent isActive={true} />
+            <AppComponent isActive={true} config={instance?.config} />
           </Suspense>
         </motion.div>
       </AnimatePresence>

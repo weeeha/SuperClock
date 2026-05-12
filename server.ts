@@ -1,25 +1,18 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { getCalendarEvents, listPhotos } from './server/handlers';
+import { buildApiApp } from './server/api-mount';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, uptime: process.uptime() });
-});
-
-app.get('/api/calendar', async (_req, res) => {
-  const events = await getCalendarEvents(process.env.CALENDAR_ICS_URL ?? '');
-  res.json(events);
-});
-
-app.get('/api/photos', async (_req, res) => {
-  const photos = await listPhotos(join(__dirname, 'dist', 'photos'));
-  res.json(photos);
-});
+app.use(
+  buildApiApp({
+    publicRoot: join(__dirname, 'dist'),
+    adminHost: process.env.ADMIN_HOST === 'true',
+  }),
+);
 
 app.use(
   '/assets',
@@ -31,6 +24,12 @@ app.use(
 
 app.use(express.static(join(__dirname, 'dist')));
 
+// Admin SPA fallback — any unmatched /admin/* route serves the admin entry.
+app.get('/admin{/*splat}', (_req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'admin', 'index.html'));
+});
+
+// Kiosk SPA fallback — everything else.
 app.get('/{*splat}', (_req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });

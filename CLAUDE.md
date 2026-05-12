@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project context
 
-SuperClock is a smart-clock dashboard that runs full-screen on a Raspberry Pi 4 driving a Waveshare 1080×1080 round LCD (a square device variant also exists — see `square-superclock/device.json`). The UI is laid out for a circular viewport, so most full-screen surfaces assume a 1:1 aspect ratio and may apply a circular clip-path (see `AppGrid.tsx`). It is a single-page React app served either by the bundled Express server (`server.ts`) or by nginx on the Pi.
+SuperClock is a smart-clock dashboard that runs full-screen on a Raspberry Pi 4 driving a Waveshare 1080×1080 round LCD. Per-device hardware specs live in `superclock-{fast,small,square,slow}/device.json`. The UI is laid out for a circular viewport on the round devices, so most full-screen surfaces assume a 1:1 aspect ratio and may apply a circular clip-path (see `AppGrid.tsx`). It is a single-page React app served by the bundled Express server (`server.ts`) on every Pi. (The `slow` device runs a separate native LVGL binary — not Chromium.)
 
 ## Commands
 
@@ -20,7 +20,7 @@ There is no test runner configured.
 
 ### Pi deployment
 
-`scripts/deploy.sh pi@<pi-ip>` builds locally and rsyncs `dist/` + `scripts/` to the Pi. First-time provisioning uses `scripts/setup-pi.sh` (installs Chromium, nginx, the systemd unit). The kiosk runs via `scripts/kiosk.sh` launched by `scripts/superclock.service`.
+`scripts/deploy.sh pi@<pi-ip>` builds locally and rsyncs `dist/` + `scripts/` to the Pi. First-time provisioning uses `scripts/setup-pi.sh` (installs Chromium, Node.js 22, and two systemd units: `superclock-server.service` runs the Express server on `:3000`, `superclock.service` runs the Chromium kiosk against `http://localhost:3000`).
 
 ## Architecture
 

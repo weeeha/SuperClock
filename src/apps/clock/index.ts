@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import { registerApp } from '../../core/registry';
+import { FACES } from '../../shared/face-registry';
 
 registerApp({
   metadata: {
@@ -9,6 +10,7 @@ registerApp({
     description: 'Watch faces with analog and productivity views',
     category: 'utility',
     supportsInternalSwipe: true,
+    faces: FACES,
   },
   component: lazy(() => import('./ClockApp')),
 });

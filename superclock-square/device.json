@@ -1,6 +1,6 @@
 {
   "name": "SuperClock Square",
-  "hostname": "superclok-square",
+  "hostname": "superclock-square",
   "user": "nickv2026",
   "network": {
     "interface": "wlan0",

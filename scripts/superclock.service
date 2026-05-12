@@ -1,14 +1,14 @@
 [Unit]
 Description=SuperClock Kiosk Browser
-After=graphical.target nginx.service
-Wants=nginx.service
+After=graphical.target superclock-server.service
+Wants=superclock-server.service
 
 [Service]
 User=pi
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/pi/.Xauthority
 ExecStartPre=/bin/sleep 5
-ExecStart=/home/pi/SuperClock/scripts/kiosk.sh
+ExecStart=/home/pi/SuperClock/scripts/kiosk.sh http://localhost:3000
 Restart=always
 RestartSec=5
 

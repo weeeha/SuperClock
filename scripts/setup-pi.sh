@@ -2,21 +2,39 @@
 # SuperClock Raspberry Pi Setup Script
 # Run this once on a fresh Raspberry Pi OS (Bookworm) install
 # Usage: sudo bash setup-pi.sh
+#
+# Provisions Node.js + the SuperClock Express server (port 3000) and
+# the Chromium kiosk pointed at it. No nginx — Express serves both the
+# kiosk SPA and the admin/device APIs from a single origin.
 
 set -e
+
+REPO_DIR="/home/pi/SuperClock"
+SERVICE_USER="pi"
 
 echo "=== SuperClock Pi Setup ==="
 
 # Update system
 apt-get update && apt-get upgrade -y
 
-# Install required packages
+# Install required system packages
 apt-get install -y \
   chromium-browser \
   unclutter \
   xdotool \
-  nginx \
+  curl \
+  ca-certificates \
   git
+
+# Install Node.js 22 LTS via NodeSource if not already present
+if ! command -v node >/dev/null 2>&1; then
+  echo "=== Installing Node.js 22 ==="
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  apt-get install -y nodejs
+fi
+
+node -v
+npm -v
 
 # Disable screen blanking
 mkdir -p /etc/X11/xorg.conf.d
@@ -34,46 +52,36 @@ if [ -f /etc/lightdm/lightdm.conf ]; then
   sed -i 's/#xserver-command=X/xserver-command=X -s 0 -dpms/' /etc/lightdm/lightdm.conf
 fi
 
-# Configure nginx to serve the static build
-cat > /etc/nginx/sites-available/superclock << 'NEOF'
-server {
-    listen 8080;
-    server_name localhost;
-    root /home/pi/SuperClock/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Cache static assets aggressively
-    location /assets/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-}
-NEOF
-
-ln -sf /etc/nginx/sites-available/superclock /etc/nginx/sites-enabled/superclock
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl restart nginx
-
-# Create autostart directory for the pi user
-AUTOSTART_DIR="/home/pi/.config/autostart"
-mkdir -p "$AUTOSTART_DIR"
-
-# Install the systemd service
-cp /home/pi/SuperClock/scripts/superclock.service /etc/systemd/system/
+# Install systemd units (server + kiosk)
+cp "$REPO_DIR/scripts/superclock-server.service" /etc/systemd/system/
+cp "$REPO_DIR/scripts/superclock.service" /etc/systemd/system/
 systemctl daemon-reload
+systemctl enable superclock-server.service
 systemctl enable superclock.service
+
+# Generate admin auth token on first run (admin Pi only).
+# Set ADMIN_HOST=true in /etc/default/superclock to make this Pi the admin host.
+ADMIN_CONFIG_DIR="$REPO_DIR/config"
+mkdir -p "$ADMIN_CONFIG_DIR"
+if [ ! -f "$ADMIN_CONFIG_DIR/admin.json" ] && [ "${ADMIN_HOST:-false}" = "true" ]; then
+  TOKEN="$(openssl rand -hex 32)"
+  cat > "$ADMIN_CONFIG_DIR/admin.json" << EOF
+{ "token": "$TOKEN" }
+EOF
+  chown "$SERVICE_USER:$SERVICE_USER" "$ADMIN_CONFIG_DIR/admin.json"
+  chmod 600 "$ADMIN_CONFIG_DIR/admin.json"
+  HOSTNAME_FQDN="$(hostname).local"
+  echo ""
+  echo "=== Admin host bootstrap ==="
+  echo "  Open this URL ONCE on a phone/laptop on the same network:"
+  echo "    http://${HOSTNAME_FQDN}:3000/admin/setup?token=${TOKEN}"
+  echo ""
+fi
 
 echo ""
 echo "=== Setup Complete ==="
 echo "Next steps:"
-echo "  1. Copy the built dist/ folder to /home/pi/SuperClock/dist/"
-echo "  2. Run: sudo systemctl start superclock"
-echo "  3. Or reboot: sudo reboot"
-echo ""
-echo "To build on your dev machine:"
-echo "  npm run build"
-echo "  scp -r dist/ pi@<pi-ip>:~/SuperClock/dist/"
+echo "  1. Build on dev machine:    npm run build"
+echo "  2. Copy to Pi:              scripts/deploy.sh pi@<pi-ip>"
+echo "  3. Start services:          sudo systemctl start superclock-server superclock"
+echo "  4. Or reboot:               sudo reboot"

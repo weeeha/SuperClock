@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/* shadcn-style tokens scoped to .admin-root so they cannot collide with the
+   kiosk's @theme block in src/index.css. */
+.admin-root {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 96%;
+
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 96%;
+
+  --primary: 20 96% 60%;
+  --primary-foreground: 0 0% 7%;
+
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 96%;
+
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 20 96% 60%;
+  --accent-foreground: 0 0% 7%;
+
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 96%;
+
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 20 96% 60%;
+
+  --radius: 0.5rem;
+
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Re-enable normal interaction within the admin — the kiosk's index.css
+     globally disables touch/select; admin needs them. */
+  touch-action: auto;
+  user-select: auto;
+}
+
+.admin-root *,
+.admin-root *::before,
+.admin-root *::after {
+  border-color: hsl(var(--border));
+}
+
+.admin-root ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-root ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
