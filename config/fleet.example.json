@@ -1,0 +1,37 @@
+{
+  "devices": [
+    {
+      "deviceId": "superclock-fast",
+      "enabledApps": [],
+      "instances": [],
+      "playlist": { "items": [], "rotationSeconds": null },
+      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "deviceId": "superclock-small",
+      "enabledApps": [],
+      "instances": [],
+      "playlist": { "items": [], "rotationSeconds": null },
+      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "deviceId": "superclock-square",
+      "enabledApps": [],
+      "instances": [],
+      "playlist": { "items": [], "rotationSeconds": null },
+      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "deviceId": "superclock-slow",
+      "enabledApps": [],
+      "instances": [],
+      "playlist": { "items": [], "rotationSeconds": null },
+      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    }
+  ],
+  "version": 0
+}

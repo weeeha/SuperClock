@@ -30,3 +30,7 @@ dist-ssr
 # User-supplied photos (kept locally, baked into build via public/)
 public/photos/*
 !public/photos/.gitkeep
+
+# Admin runtime config (per-Pi state — never checked in)
+config/fleet.json
+config/admin.json

@@ -1,6 +1,6 @@
 {
-  "name": "SuperClock",
-  "hostname": "superclock",
+  "name": "SuperClock Fast",
+  "hostname": "superclock-fast",
   "user": "nickv2026",
   "network": {
     "interface": "wlan0",

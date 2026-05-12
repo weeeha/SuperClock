@@ -1,0 +1,20 @@
+{
+  "name": "SuperClock Small",
+  "hostname": "superclock-small",
+  "user": "nickv2026",
+  "network": {
+    "interface": "wlan0",
+    "ip": "TBD",
+    "mac": "TBD"
+  },
+  "display": {
+    "model": "TBD",
+    "resolution": "TBD",
+    "shape": "TBD"
+  },
+  "sbc": {
+    "model": "Raspberry Pi (TBD)",
+    "url": "https://www.raspberrypi.com/"
+  },
+  "notes": "Small form-factor clock — hardware specs to be filled in"
+}

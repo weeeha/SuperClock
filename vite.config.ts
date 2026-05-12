@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { getCalendarEvents, listPhotos } from './server/handlers';
+import { buildApiApp } from './server/api-mount';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -11,19 +11,21 @@ function superclockApi(): Plugin {
   return {
     name: 'superclock-api',
     configureServer(server) {
-      server.middlewares.use('/api/calendar', async (_req, res) => {
-        const events = await getCalendarEvents(process.env.CALENDAR_ICS_URL ?? '');
-        res.setHeader('content-type', 'application/json');
-        res.end(JSON.stringify(events));
+      const apiApp = buildApiApp({
+        publicRoot: join(__dirname, 'public'),
+        adminHost: true, // always on in dev so /admin can talk to /api/admin/*
       });
-      server.middlewares.use('/api/photos', async (_req, res) => {
-        const photos = await listPhotos(join(__dirname, 'public/photos'));
-        res.setHeader('content-type', 'application/json');
-        res.end(JSON.stringify(photos));
-      });
-      server.middlewares.use('/api/health', (_req, res) => {
-        res.setHeader('content-type', 'application/json');
-        res.end(JSON.stringify({ ok: true, uptime: process.uptime() }));
+      // Express app is connect-compatible — falls through via next() for
+      // unmatched paths so Vite's HTML/SPA handler keeps working.
+      server.middlewares.use(apiApp);
+
+      // Map /admin and /admin/<route> (no file extension) → /admin/index.html
+      // so React Router can take over client-side routing in dev.
+      server.middlewares.use((req, _res, next) => {
+        if (req.url && /^\/admin(\/|$)/.test(req.url) && !/\.\w+(\?|$)/.test(req.url)) {
+          req.url = '/admin/index.html';
+        }
+        next();
       });
     },
   };
@@ -33,5 +35,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), superclockApi()],
   build: {
     target: 'es2020',
+    rollupOptions: {
+      input: {
+        kiosk: join(__dirname, 'index.html'),
+        admin: join(__dirname, 'admin/index.html'),
+      },
+    },
   },
 });

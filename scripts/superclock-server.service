@@ -1,0 +1,16 @@
+[Unit]
+Description=SuperClock Express Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/SuperClock
+EnvironmentFile=-/etc/default/superclock
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

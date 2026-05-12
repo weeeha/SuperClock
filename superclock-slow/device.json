@@ -1,0 +1,21 @@
+{
+  "name": "SuperClock Slow",
+  "hostname": "superclock-slow",
+  "user": "nickv2026",
+  "runtime": "lvgl-native",
+  "network": {
+    "interface": "wlan0",
+    "ip": "TBD",
+    "mac": "TBD"
+  },
+  "display": {
+    "model": "TBD",
+    "resolution": "TBD",
+    "shape": "TBD"
+  },
+  "sbc": {
+    "model": "Raspberry Pi (TBD)",
+    "url": "https://www.raspberrypi.com/"
+  },
+  "notes": "Native LVGL clock (not Chromium). Read-only in admin v1 — exposes capabilities + state, no config push. Implementation lives in a separate slow-native repo."
+}
