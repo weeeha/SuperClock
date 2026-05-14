@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
+import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
 
 function getTimeInTZ(date: Date, tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -102,7 +103,7 @@ export default function WorldClock({ isActive }: AppProps) {
   const localS = time.getSeconds();
   const hourDeg = localH * 30 + localM * 0.5;
   const minuteDeg = localM * 6 + localS * 0.1;
-  const secondDeg = localS * 6;
+  const secondDeg = useContinuousSecondAngle(localS);
 
   const ticks = [];
   for (let i = 0; i < 60; i++) {
