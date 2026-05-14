@@ -19,6 +19,7 @@ const appFaces: { id: string; src: string }[] = [
   { id: 'clock',          src: '/cee377e32880ba501c02f449690367b8028ab4cf.png' },
   { id: 'time-tracking',  src: '/690ef2a4d2142a144f030f7a4f4bc796609d3518.png' },
   { id: 'github',          src: '/github-thumb.svg' },
+  { id: 'claude-usage',    src: '/claude-usage-thumb.svg' },
 ];
 
 // Arrange into columns matching Figma layout (489:30357)
@@ -30,7 +31,7 @@ const columns = [
   [appFaces[6], appFaces[7], appFaces[8], appFaces[9]], // Watchface, Abstract, Weather, Space
   [appFaces[10], appFaces[11], appFaces[0]], // Clock, Relax, Gym
   [appFaces[1], appFaces[2]],             // Photo, Habits
-  [appFaces[3]],                          // Magnetic Liquid
+  [appFaces[3], appFaces[12], appFaces[13]], // Magnetic Liquid, GitHub, Claude Usage
 ];
 
 export default function AppGrid() {

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect width="1000" height="1000" fill="#0a0a09"/>
+
+  <!-- Session arc (62%) -->
+  <circle cx="500" cy="500" r="460" fill="none" stroke="#171717" stroke-width="38"/>
+  <path d="M 500 40 A 460 460 0 0 1 945.2 612.9" fill="none" stroke="#bf6b53" stroke-width="38" stroke-linecap="round"/>
+
+  <!-- Week arc (28%) -->
+  <circle cx="500" cy="500" r="380" fill="none" stroke="#171717" stroke-width="26"/>
+  <path d="M 500 120 A 380 380 0 0 1 814.1 333.8" fill="none" stroke="#5b8c5a" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Pixel Clawd (simplified 8x8 silhouette, scaled) -->
+  <g fill="#CD7F6A">
+    <rect x="380" y="380" width="60" height="60"/>
+    <rect x="440" y="380" width="60" height="60"/>
+    <rect x="500" y="380" width="60" height="60"/>
+    <rect x="560" y="380" width="60" height="60"/>
+    <rect x="320" y="440" width="60" height="60"/>
+    <rect x="380" y="440" width="60" height="60"/>
+    <rect x="440" y="440" width="60" height="60"/>
+    <rect x="500" y="440" width="60" height="60"/>
+    <rect x="560" y="440" width="60" height="60"/>
+    <rect x="620" y="440" width="60" height="60"/>
+    <rect x="320" y="500" width="60" height="60"/>
+    <rect x="440" y="500" width="60" height="60"/>
+    <rect x="500" y="500" width="60" height="60"/>
+    <rect x="620" y="500" width="60" height="60"/>
+    <rect x="380" y="560" width="60" height="60"/>
+    <rect x="440" y="560" width="60" height="60"/>
+    <rect x="500" y="560" width="60" height="60"/>
+    <rect x="560" y="560" width="60" height="60"/>
+  </g>
+  <!-- Eyes -->
+  <rect x="440" y="500" width="60" height="60" fill="#0f0f0f"/>
+  <rect x="560" y="500" width="60" height="60" fill="#0f0f0f"/>
+</svg>

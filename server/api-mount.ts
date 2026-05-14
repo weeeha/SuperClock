@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import { join } from 'node:path';
 import { getCalendarEvents, listPhotos } from './handlers';
+import { claudeUsageHandler } from './claude-usage-proxy';
 import deviceRoutes from './device-routes';
 import adminRoutes from './admin-routes';
 
@@ -32,6 +33,8 @@ export function buildApiApp(opts: MountOptions): Express {
     const photos = await listPhotos(join(opts.publicRoot, 'photos'));
     res.json(photos);
   });
+
+  app.get('/api/claude-usage', claudeUsageHandler);
 
   app.use('/api/device', deviceRoutes);
 

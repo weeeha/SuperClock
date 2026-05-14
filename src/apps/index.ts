@@ -9,3 +9,4 @@ import './fitness';
 import './habits';
 import './time-tracking';
 import './github';
+import './claude-usage';
