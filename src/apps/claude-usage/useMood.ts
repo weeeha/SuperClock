@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { MoodGroup } from './sprites';
 
 // Mirrors firmware/src/usage_rate.cpp from Clawdmeter:
@@ -19,40 +19,39 @@ interface Sample {
   pct: number;
 }
 
+function moodFromRing(ring: Sample[]): MoodGroup {
+  if (ring.length < 2) return 0;
+  const oldest = ring[0];
+  const newest = ring[ring.length - 1];
+  const dt = newest.ms - oldest.ms;
+  if (dt < MIN_WINDOW_MS) return 0;
+  const dp = Math.max(0, newest.pct - oldest.pct);
+  const rate = (dp * 60_000) / dt;
+  if (rate < RATE_THRESH_NORMAL) return 0;
+  if (rate < RATE_THRESH_ACTIVE) return 1;
+  if (rate < RATE_THRESH_HEAVY) return 2;
+  return 3;
+}
+
 export function useMood(sessionPct: number | null): MoodGroup {
-  const ring = useRef<Sample[]>([]);
-  const [mood, setMood] = useState<MoodGroup>(0);
+  const [ring, setRing] = useState<Sample[]>([]);
+  const [lastPct, setLastPct] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (sessionPct == null) return;
+  // A new sample arrives whenever sessionPct changes. The mood depends on the
+  // *timing* of past samples, so it can't be a pure render-time derivation —
+  // but recording the sample is still change-driven, so we use React's
+  // sanctioned "adjust state during render" pattern instead of a
+  // setState-in-Effect. Mood is then derived purely from the buffer.
+  if (sessionPct != null && sessionPct !== lastPct) {
+    setLastPct(sessionPct);
+    setRing((prev) => {
+      const last = prev[prev.length - 1];
+      // Session % dropped sharply → 5h window rolled over; discard history.
+      const base = last && sessionPct + 5 < last.pct ? [] : prev;
+      const next = [...base, { ms: Date.now(), pct: sessionPct }];
+      return next.length > RING_SIZE ? next.slice(next.length - RING_SIZE) : next;
+    });
+  }
 
-    const now = Date.now();
-    const last = ring.current[ring.current.length - 1];
-    if (last && sessionPct + 5 < last.pct) {
-      // Session reset rolled over — discard history.
-      ring.current = [];
-    }
-    ring.current.push({ ms: now, pct: sessionPct });
-    if (ring.current.length > RING_SIZE) ring.current.shift();
-
-    if (ring.current.length < 2) {
-      setMood(0);
-      return;
-    }
-    const oldest = ring.current[0];
-    const newest = ring.current[ring.current.length - 1];
-    const dt = newest.ms - oldest.ms;
-    if (dt < MIN_WINDOW_MS) {
-      setMood(0);
-      return;
-    }
-    const dp = Math.max(0, newest.pct - oldest.pct);
-    const rate = (dp * 60_000) / dt;
-    if (rate < RATE_THRESH_NORMAL) setMood(0);
-    else if (rate < RATE_THRESH_ACTIVE) setMood(1);
-    else if (rate < RATE_THRESH_HEAVY) setMood(2);
-    else setMood(3);
-  }, [sessionPct]);
-
-  return mood;
+  return moodFromRing(ring);
 }
