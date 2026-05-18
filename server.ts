@@ -2,6 +2,9 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { buildApiApp } from './server/api-mount';
+import { initDisplayAdapter } from './server/display-adapter';
+import { readDevice } from './server/fleet-store';
+import { resolveDeviceId } from './server/resolve-device';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -50,4 +53,9 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  Open this URL in Chromium kiosk mode on your Pi:\n`);
     console.log(`  chromium-browser --kiosk http://<this-ip>:${PORT}\n`);
   });
+
+  // Apply persisted brightness/sleep to the physical panel on this device
+  // (and start the sleep-schedule evaluator). Safely no-ops off-Pi, with no
+  // Wayland session, or without wlr-randr — never blocks the server.
+  void initDisplayAdapter(() => readDevice(resolveDeviceId()));
 });

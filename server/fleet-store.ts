@@ -7,6 +7,8 @@ import {
   type DeviceId,
   type FleetConfig,
 } from '../src/shared/types';
+import { resolveDeviceId } from './resolve-device';
+import { applyDisplaySettings } from './display-adapter';
 
 const FLEET_PATH = join(process.cwd(), 'config', 'fleet.json');
 const FLEET_EXAMPLE_PATH = join(process.cwd(), 'config', 'fleet.example.json');
@@ -75,6 +77,13 @@ export async function updateDevice(
     devices.push(updated);
   }
   await writeFleet({ ...fleet, devices });
+  // If the device whose config just changed is the one this server runs on,
+  // reconcile the physical panel. The adapter diffs against last-applied
+  // state, so this is a cheap no-op unless brightness/sleep actually moved
+  // (and a permanent no-op off-Pi / in dev).
+  if (updated.deviceId === resolveDeviceId()) {
+    applyDisplaySettings(updated);
+  }
   return updated;
 }
 
