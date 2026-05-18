@@ -20,7 +20,7 @@ There is no test runner configured.
 
 ### Pi deployment
 
-`scripts/deploy.sh pi@<pi-ip>` builds locally and rsyncs `dist/` + `scripts/` to the Pi. First-time provisioning uses `scripts/setup-pi.sh` (installs Chromium, Node.js 22, and two systemd units: `superclock-server.service` runs the Express server on `:3000`, `superclock.service` runs the Chromium kiosk against `http://localhost:3000`).
+`scripts/deploy.sh nickv2026@<pi-ip>` builds locally and rsyncs the runtime payload (`dist/`, `server.ts`, `server/`, `package*.json`, `tsconfig*.json`, `scripts/`) to `~/SuperClock` on the Pi. First-time provisioning uses `scripts/setup-pi.sh` (run as root on Pi OS Trixie): it installs Node 20 + npm 9 via `apt-get`, runs `npm ci --omit=dev`, and installs **one** systemd unit — `superclock-server.service` (user `nickv2026`, `WorkingDirectory=/home/nickv2026/SuperClock`, runs the Express server on `:3000`). The Chromium kiosk is **not** a systemd service: `setup-pi.sh` wires `scripts/kiosk.sh` into `~/.config/labwc/autostart`, which waits for `/api/health` and execs Chromium with the required Wayland/keyring flags (`--ozone-platform=wayland --password-store=basic --use-mock-keychain`). `setup-pi.sh` is idempotent; `SERVICE_USER`/`REPO_DIR`/`PORT`/`ADMIN_HOST` are env-overridable.
 
 ## Architecture
 
