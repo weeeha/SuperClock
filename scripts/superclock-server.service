@@ -5,8 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/SuperClock
+User=nickv2026
+WorkingDirectory=/home/nickv2026/SuperClock
 EnvironmentFile=-/etc/default/superclock
 ExecStart=/usr/bin/npm run start
 Restart=always

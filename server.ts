@@ -48,6 +48,8 @@ app.listen(PORT, '0.0.0.0', () => {
       }
     }
     console.log(`\n  Open this URL in Chromium kiosk mode on your Pi:\n`);
-    console.log(`  chromium-browser --kiosk http://<this-ip>:${PORT}\n`);
+    console.log(
+      `  chromium --kiosk --ozone-platform=wayland --password-store=basic --use-mock-keychain http://<this-ip>:${PORT}\n`,
+    );
   });
 });
