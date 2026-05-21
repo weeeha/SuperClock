@@ -8,6 +8,13 @@ import type { FaceDescriptor } from './types';
 // 4 most prominent faces.
 export const FACES: FaceDescriptor[] = [
   {
+    id: 'minimalismo',
+    name: 'Minimalismo',
+    preview: '/face-previews/minimalismo.png',
+    category: 'classic',
+    slots: [],
+  },
+  {
     id: 'analog',
     name: 'Analog',
     preview: '/0c1961af226ba211646b2b33306bc15147b1b2b6.png',
