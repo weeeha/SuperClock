@@ -1,10 +1,14 @@
 import { useState, useCallback } from 'react';
 import type { AppProps } from '../../core/types';
 import AnalogClock from './AnalogClock';
+import MinimalismoClock from './MinimalismoClock';
 import ProductivityClock from './ProductivityClock';
 import SquareClock from './SquareClock';
 
-const faces = [AnalogClock, ProductivityClock, SquareClock];
+/* Minimalismo first — lifted from the SuperClock-Slow LVGL prototype
+ * (2026-05-09). Same hand geometry as AnalogClock, no tick marks or
+ * center pip — just the sweep. */
+const faces = [MinimalismoClock, AnalogClock, ProductivityClock, SquareClock];
 
 /** Clock app with multiple watch faces — swipe internally to switch faces */
 export default function ClockApp(props: AppProps) {
