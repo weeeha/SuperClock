@@ -34,3 +34,6 @@ public/photos/*
 # Admin runtime config (per-Pi state — never checked in)
 config/fleet.json
 config/admin.json
+
+# Visual brainstorm companion (superpowers)
+.superpowers/

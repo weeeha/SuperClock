@@ -9,12 +9,21 @@ export default function Setup() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get('token') ?? '';
-  const [status, setStatus] = useState<Status>('idle');
+  const [status, setStatus] = useState<Status>(token ? 'pending' : 'idle');
   const [error, setError] = useState<string | null>(null);
+
+  // A freshly-arrived token starts a new exchange. Reset to pending during
+  // render ("adjust state during render") so the synchronous setState no
+  // longer lives in the Effect body; the Effect just does the fetch.
+  const [exchangingToken, setExchangingToken] = useState(token);
+  if (token && token !== exchangingToken) {
+    setExchangingToken(token);
+    setStatus('pending');
+    setError(null);
+  }
 
   useEffect(() => {
     if (!token) return;
-    setStatus('pending');
     fetch('/api/admin/auth/exchange', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

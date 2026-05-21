@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { AppProps } from '../../core/types';
+import { useState, useMemo } from 'react';
 import { quotes } from './quotes';
 
 function initialsOf(name: string): string {
@@ -15,16 +14,15 @@ function hueOf(name: string): number {
 }
 
 /** Quote of the Day — based on Figma S16 design (489:21143). Tap to cycle. */
-export default function QuoteApp(_props: AppProps) {
-  const [index, setIndex] = useState(0);
-  const [imgFailed, setImgFailed] = useState(false);
-
-  useEffect(() => {
+export default function QuoteApp() {
+  // Start on the quote for the calendar day; tap advances from there.
+  const [index, setIndex] = useState(() => {
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
     );
-    setIndex(dayOfYear % quotes.length);
-  }, []);
+    return dayOfYear % quotes.length;
+  });
+  const [imgFailed, setImgFailed] = useState(false);
 
   const quote = quotes[index];
   const initials = useMemo(() => initialsOf(quote.author), [quote.author]);

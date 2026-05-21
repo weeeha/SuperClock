@@ -105,6 +105,23 @@ export interface FleetHealth {
   }>;
 }
 
+// UI metadata for schema-driven forms. Schemas stay pure-zod (data); meta
+// describes labels, descriptions, ranges, and conditional visibility (form).
+// Lives in shared/ so both admin and any future kiosk-side settings UI can
+// import the same descriptors.
+export interface FieldMeta {
+  label?: string;
+  description?: string;
+  placeholder?: string;
+  format?: 'color' | 'url' | 'time';
+  min?: number;
+  max?: number;
+  step?: number;
+  showIf?: (value: Record<string, unknown>) => boolean;
+}
+
+export type FieldMetaMap = Record<string, FieldMeta>;
+
 export function emptyDeviceConfig(deviceId: DeviceId): DeviceConfig {
   return {
     deviceId,

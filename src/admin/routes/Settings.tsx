@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,9 +30,14 @@ export default function Settings() {
 
   const initial: SettingsShape = { ...DEFAULTS, ...(deviceQ.data?.settings ?? {}) };
   const [working, setWorking] = useState<SettingsShape>(initial);
-  useEffect(() => {
-    if (deviceQ.data) setWorking({ ...DEFAULTS, ...deviceQ.data.settings });
-  }, [deviceQ.data]);
+  // Re-seed the editable copy when the device query (re)resolves — e.g. after
+  // a save invalidates and refetches. "Adjust state during render" pattern,
+  // replacing a setState-in-Effect.
+  const [syncedData, setSyncedData] = useState(deviceQ.data);
+  if (deviceQ.data && deviceQ.data !== syncedData) {
+    setSyncedData(deviceQ.data);
+    setWorking({ ...DEFAULTS, ...deviceQ.data.settings });
+  }
 
   const save = useMutation({
     mutationFn: () => adminApi.patchDevice(activeDeviceId, { settings: working }),
