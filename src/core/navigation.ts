@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { getAppIds } from './registry';
 
-export type NavMode = 'app' | 'grid' | 'transitioning';
+export type NavMode = 'app' | 'grid' | 'settings' | 'transitioning';
 
 interface NavigationState {
   mode: NavMode;
@@ -16,6 +16,8 @@ interface NavigationState {
   swipeToPrev: () => void;
   showGrid: () => void;
   hideGrid: () => void;
+  showSettings: () => void;
+  hideSettings: () => void;
   finishTransition: () => void;
 }
 
@@ -67,6 +69,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   showGrid: () => set({ mode: 'grid' }),
   hideGrid: () => set({ mode: 'app' }),
+
+  showSettings: () => set({ mode: 'settings' }),
+  hideSettings: () => set({ mode: 'app' }),
 
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
 }));

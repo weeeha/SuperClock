@@ -4,6 +4,7 @@ import { useNavigation } from './core/navigation';
 import { useAppGestures } from './core/hooks/useGestures';
 import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
+import Settings from './core/components/Settings';
 
 // Register all apps
 import './apps';
@@ -24,6 +25,9 @@ export default function App() {
       <SwipeContainer />
       <AnimatePresence>
         {mode === 'grid' && <AppGrid />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {mode === 'settings' && <Settings />}
       </AnimatePresence>
       <div
         id="gesture-debug"
