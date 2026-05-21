@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
+import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
 
 const COMP_R = 125;
 const COMPS = {
@@ -28,7 +29,7 @@ export default function ComplicationsDark({ isActive }: AppProps) {
   const seconds = time.getSeconds();
   const hourDeg = hours * 30 + minutes * 0.5;
   const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = seconds * 6;
+  const secondDeg = useContinuousSecondAngle(seconds);
 
   const dayName = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   const dateNum = time.getDate();

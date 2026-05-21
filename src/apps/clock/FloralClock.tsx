@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
+import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
 
 export default function FloralClock({ isActive }: AppProps) {
   const [time, setTime] = useState(new Date());
@@ -15,7 +16,7 @@ export default function FloralClock({ isActive }: AppProps) {
   const seconds = time.getSeconds();
   const hourDeg = hours * 30 + minutes * 0.5;
   const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = seconds * 6;
+  const secondDeg = useContinuousSecondAngle(seconds);
 
   return (
     <div className="flex h-full w-full items-center justify-center">
