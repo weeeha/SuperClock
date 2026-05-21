@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { AppProps } from '../../core/types';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 interface PanelProps {
   value: string;
@@ -120,13 +121,7 @@ function FlipPanel({ value }: PanelProps) {
 }
 
 export default function FlipClock({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
+  const { time } = useClockHands(isActive);
 
   const hh = String(time.getHours()).padStart(2, '0');
   const mm = String(time.getMinutes()).padStart(2, '0');

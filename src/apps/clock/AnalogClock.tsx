@@ -1,24 +1,9 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 /** Swiss railway-style analog clock — based on Figma S10 design (489:21023) */
 export default function AnalogClock({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const hours = time.getHours() % 12;
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-
-  const hourDeg = hours * 30 + minutes * 0.5;
-  const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = useContinuousSecondAngle(seconds);
+  const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
 
   // Generate tick marks
   const ticks = [];

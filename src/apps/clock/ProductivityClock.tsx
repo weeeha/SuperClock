@@ -1,26 +1,11 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 /** Productivity clock with colored segments — based on Figma S3 design (489:20734) */
 export default function ProductivityClock({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const hours = time.getHours() % 12;
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
+  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   const day = time.toLocaleDateString('en-US', { weekday: 'short' });
   const date = time.getDate();
-
-  const hourDeg = hours * 30 + minutes * 0.5;
-  const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = useContinuousSecondAngle(seconds);
 
   // Colored time block segments around the rim
   const segments = [

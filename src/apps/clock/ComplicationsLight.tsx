@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 // Complication circle centers (1000×1000 SVG space)
 const COMP_R = 125;
@@ -17,20 +16,7 @@ function arcDash(r: number, pct: number) {
 }
 
 export default function ComplicationsLight({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const hours = time.getHours() % 12;
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-  const hourDeg = hours * 30 + minutes * 0.5;
-  const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = useContinuousSecondAngle(seconds);
+  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
 
   const dayName = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   const dateNum = time.getDate();

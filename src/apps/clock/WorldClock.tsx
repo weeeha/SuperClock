@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 function getTimeInTZ(date: Date, tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -90,20 +89,7 @@ const ZONES = [
 ];
 
 export default function WorldClock({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const localH = time.getHours() % 12;
-  const localM = time.getMinutes();
-  const localS = time.getSeconds();
-  const hourDeg = localH * 30 + localM * 0.5;
-  const minuteDeg = localM * 6 + localS * 0.1;
-  const secondDeg = useContinuousSecondAngle(localS);
+  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
 
   const ticks = [];
   for (let i = 0; i < 60; i++) {
