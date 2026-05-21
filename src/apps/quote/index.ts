@@ -9,6 +9,7 @@ registerApp({
     description: 'Quote of the day',
     category: 'ambient',
     supportsInternalSwipe: false,
+    configSchemaId: 'app.quote',
   },
   component: lazy(() => import('./QuoteApp')),
 });

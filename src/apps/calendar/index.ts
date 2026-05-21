@@ -9,6 +9,7 @@ registerApp({
     description: 'Today\'s date at a glance',
     category: 'utility',
     supportsInternalSwipe: false,
+    configSchemaId: 'app.calendar',
   },
   component: lazy(() => import('./CalendarApp')),
 });
