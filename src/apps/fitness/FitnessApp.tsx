@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react';
-import type { AppProps } from '../../core/types';
+import { useState } from 'react';
 
 /** Fitness/Gym screen — based on Figma S4 design (489:20936). Circular progress ring. */
-export default function FitnessApp(_props: AppProps) {
-  const [count, setCount] = useState(33);
-
-  useEffect(() => {
-    // Load from localStorage
+export default function FitnessApp() {
+  // Seed the count from localStorage once via a lazy initializer instead of an
+  // Effect that overwrites the initial state on mount.
+  const [count, setCount] = useState(() => {
     const saved = localStorage.getItem('superclock-fitness-count');
-    if (saved) setCount(parseInt(saved, 10));
-  }, []);
+    return saved ? parseInt(saved, 10) : 33;
+  });
 
   const goal = 50;
   const progress = Math.min(count / goal, 1);

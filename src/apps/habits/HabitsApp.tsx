@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import type { AppProps } from '../../core/types';
 
 type View = 'daily' | 'monthly';
 
@@ -193,7 +192,7 @@ function MonthlyView({
 
 // ── Root component ────────────────────────────────────────────────────────────
 
-export default function HabitsApp(_props: AppProps) {
+export default function HabitsApp() {
   const [view, setView] = useState<View>('daily');
   const [completions, setCompletions] = useState<Record<string, boolean>>(loadCompletions);
   const touchStartY = useRef(0);

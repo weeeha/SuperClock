@@ -155,15 +155,16 @@ function generateMockData(): ContributionData {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function GithubApp({ isActive }: AppProps) {
-  const [data, setData] = useState<ContributionData | null>(null);
+  // With no token the mock data is deterministic, so seed it via a lazy
+  // initializer; the Effect then only performs the async fetch (its setState
+  // calls stay inside promise callbacks, which is the sanctioned pattern).
+  const [data, setData] = useState<ContributionData | null>(() =>
+    import.meta.env.VITE_GITHUB_TOKEN ? null : generateMockData(),
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = import.meta.env.VITE_GITHUB_TOKEN;
-    if (!token) {
-      setData(generateMockData());
-      return;
-    }
+    if (!import.meta.env.VITE_GITHUB_TOKEN) return;
 
     fetchContributions()
       .then(setData)

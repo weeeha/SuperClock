@@ -10,12 +10,13 @@ function FlipPanel({ value }: PanelProps) {
   const [prev, setPrev] = useState(value);
   const [flipping, setFlipping] = useState(false);
 
-  useEffect(() => {
-    if (value !== current && !flipping) {
-      setPrev(current);
-      setFlipping(true);
-    }
-  }, [value, current, flipping]);
+  // Arm the flip when the digit changes. React's sanctioned "adjust state
+  // during render" pattern — runs before paint (no extra committed frame) and
+  // replaces a setState-in-Effect.
+  if (value !== current && !flipping) {
+    setPrev(current);
+    setFlipping(true);
+  }
 
   const handleAnimEnd = () => {
     setCurrent(value);

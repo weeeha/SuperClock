@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Trash2 } from 'lucide-react';
@@ -34,9 +34,14 @@ export default function FaceConfig() {
   const face = faceId ? getFace(faceId) : undefined;
 
   const [working, setWorking] = useState<FaceConfigShape>(initialConfig);
-  useEffect(() => {
-    if (instance) setWorking((instance.config ?? {}) as FaceConfigShape);
-  }, [instance]);
+  // Re-seed the editable copy when the underlying instance changes (query
+  // resolves, refetches after a save, or a different instance is opened).
+  // "Adjust state during render" — replaces a setState-in-Effect.
+  const [syncedInstance, setSyncedInstance] = useState(instance);
+  if (instance && instance !== syncedInstance) {
+    setSyncedInstance(instance);
+    setWorking((instance.config ?? {}) as FaceConfigShape);
+  }
 
   const save = useMutation({
     mutationFn: () =>

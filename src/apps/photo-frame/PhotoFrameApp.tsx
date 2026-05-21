@@ -28,6 +28,9 @@ export default function PhotoFrameApp({ isActive }: AppProps) {
       }
     }
     load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

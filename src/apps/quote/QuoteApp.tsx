@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import type { AppProps } from '../../core/types';
+import { useState } from 'react';
 
 const quotes = [
   { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
@@ -13,16 +12,15 @@ const quotes = [
 ];
 
 /** Quote of the Day — based on Figma S16 design (489:21143) */
-export default function QuoteApp(_props: AppProps) {
-  const [quote, setQuote] = useState(quotes[0]);
-
-  useEffect(() => {
-    // Pick quote based on day of year for consistency
+export default function QuoteApp() {
+  // The quote is deterministic for the calendar day, so compute it once via a
+  // lazy initializer instead of syncing it through an Effect.
+  const [quote] = useState(() => {
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
     );
-    setQuote(quotes[dayOfYear % quotes.length]);
-  }, []);
+    return quotes[dayOfYear % quotes.length];
+  });
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center bg-white text-black p-[12%] gap-[4%]">
