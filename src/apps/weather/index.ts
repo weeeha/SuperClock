@@ -9,6 +9,7 @@ registerApp({
     description: 'Current conditions and forecast',
     category: 'utility',
     supportsInternalSwipe: false,
+    configSchemaId: 'app.weather',
   },
   component: lazy(() => import('./WeatherApp')),
 });

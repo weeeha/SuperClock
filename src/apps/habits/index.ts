@@ -9,6 +9,7 @@ registerApp({
     description: 'Daily habit tracker with streaks',
     category: 'productivity',
     supportsInternalSwipe: false,
+    configSchemaId: 'app.habits',
   },
   component: lazy(() => import('./HabitsApp')),
 });

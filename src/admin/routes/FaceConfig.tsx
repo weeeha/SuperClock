@@ -5,9 +5,11 @@ import { ChevronLeft, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { SlotGrid } from '../components/SlotGrid';
+import { SchemaForm } from '../lib/schema-form';
 import { adminApi } from '../lib/api';
 import { useActiveDevice } from '../store/active-device';
 import { getFace } from '../../shared/face-registry';
+import { getSchema, defaultsFor } from '../../shared/schema-registry';
 
 type FaceConfigShape = {
   faceId?: string;
@@ -124,15 +126,26 @@ export default function FaceConfig() {
           <CardTitle>Face options</CardTitle>
         </CardHeader>
         <CardContent>
-          {face?.configSchemaId ? (
-            <p className="text-sm opacity-60">
-              Schema-driven form coming with the retrofit of this face.
-            </p>
-          ) : (
-            <p className="text-sm opacity-60">
-              This face has no configurable options.
-            </p>
-          )}
+          {(() => {
+            const entry = getSchema(face?.configSchemaId);
+            if (!entry) {
+              return (
+                <p className="text-sm opacity-60">
+                  This face has no configurable options.
+                </p>
+              );
+            }
+            const faceDefaults = defaultsFor(face?.configSchemaId);
+            const faceValue = { ...faceDefaults, ...(working.face ?? {}) };
+            return (
+              <SchemaForm
+                schema={entry.schema}
+                meta={entry.meta}
+                value={faceValue}
+                onChange={(next) => setWorking({ ...working, face: next })}
+              />
+            );
+          })()}
         </CardContent>
       </Card>
 
