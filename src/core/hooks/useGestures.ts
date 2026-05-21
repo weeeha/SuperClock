@@ -5,6 +5,7 @@ import { useNavigation } from '../navigation';
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VELOCITY = 0.3;
 const PINCH_IN_THRESHOLD = 0.9;
+const EDGE_ZONE = 100;
 
 export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | null>) {
   // Prevent context menu on long-press
@@ -58,19 +59,47 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
 
   useGesture(
     {
-      onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
-        const { mode, swipeToNext, swipeToPrev, showGrid, hideGrid, verticalSwipeCallback } = useNavigation.getState();
+      onDragEnd: ({ movement: [mx, my], velocity: [vx, vy], xy: [, py] }) => {
+        const {
+          mode,
+          swipeToNext,
+          swipeToPrev,
+          showGrid,
+          hideGrid,
+          showSettings,
+          hideSettings,
+          verticalSwipeCallback,
+        } = useNavigation.getState();
         const absX = Math.abs(mx);
         const absY = Math.abs(my);
 
-        // Vertical swipe — delegate to active app or toggle grid
+        // Vertical swipe
         if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
-          if (mode === 'app' && verticalSwipeCallback) {
-            verticalSwipeCallback(my > 0 ? 'down' : 'up');
-          } else if (my > 0 && mode === 'app') {
-            showGrid();
-          } else if (my < 0 && mode === 'grid') {
+          // Dismiss open overlays — any vertical swipe in the right direction
+          if (mode === 'grid' && my < 0) {
             hideGrid();
+            return;
+          }
+          if (mode === 'settings' && my > 0) {
+            hideSettings();
+            return;
+          }
+
+          if (mode !== 'app') return;
+
+          // Where the gesture started (clientY at pointer-down)
+          const startY = py - my;
+          const fromTopEdge = startY <= EDGE_ZONE;
+          const fromBottomEdge = startY >= window.innerHeight - EDGE_ZONE;
+
+          // Edge-originated swipes open menu / settings (iPhone-style)
+          if (fromTopEdge && my > 0) {
+            showGrid();
+          } else if (fromBottomEdge && my < 0) {
+            showSettings();
+          } else if (verticalSwipeCallback) {
+            // Middle zone (or off-direction edge swipe) → in-app navigation
+            verticalSwipeCallback(my > 0 ? 'down' : 'up');
           }
           return;
         }
