@@ -4,8 +4,8 @@
   "user": "nickv2026",
   "network": {
     "interface": "wlan0",
-    "ip": "192.168.4.31",
-    "mac": "d8:3a:dd:2a:a7:e4"
+    "ip": "192.168.4.28",
+    "mac": "2c:cf:67:92:ed:74"
   },
   "display": {
     "model": "Waveshare 5inch 1080x1080 LCD",
@@ -14,12 +14,30 @@
     "wiki": "https://www.waveshare.com/wiki/5inch_1080x1080_LCD"
   },
   "sbc": {
-    "model": "Raspberry Pi 4 Model B",
-    "url": "https://www.raspberrypi.com/products/raspberry-pi-4-model-b/"
+    "model": "Raspberry Pi 5 Model B Rev 1.0",
+    "ram": "8GB",
+    "url": "https://www.raspberrypi.com/products/raspberry-pi-5/"
   },
   "hat": {
     "model": "SunFounder Fusion HAT",
-    "url": "https://www.sunfounder.com/products/sunfounder-fusion-hat-expansion-board"
+    "url": "https://www.sunfounder.com/products/sunfounder-fusion-hat-expansion-board",
+    "eeprom_product_id": "0x0774",
+    "eeprom_product_ver": "0x000a",
+    "provides": ["battery", "audio", "mcu_i2c_0x17"]
   },
-  "notes": "Round form-factor clock with 1080x1080 circular display"
+  "camera": {
+    "model": "OV5647 5MP (Pi v1 sensor)",
+    "interface": "CSI 22-pin",
+    "max_resolution": "2592x1944",
+    "test": "rpicam-still --immediate -t 1000 -o /tmp/cam.jpg"
+  },
+  "audio": {
+    "topology": "I2S DAC + I2S MEMS mic via SunFounder Fusion HAT",
+    "alsa_card": "sndrpigooglevoi",
+    "alsa_pcm": "hat",
+    "speaker_amp_sysfs": "/sys/class/fusion_hat/fusion_hat/speaker",
+    "test_speaker": "pico2wave -w /tmp/x.wav 'hello' && aplay -D hat /tmp/x.wav",
+    "test_mic": "arecord -D hat -f S16_LE -r 16000 -c 1 -d 5 /tmp/r.wav"
+  },
+  "notes": "Round 1080x1080 circular display. Camera + mic + mono speaker all wired via Fusion HAT (also supplies the battery). Speaker amp is enabled on boot by /etc/systemd/system/fusion-hat-speaker.service."
 }
