@@ -9,6 +9,13 @@ import type { FaceDescriptor } from './types';
 // components rendered at a fixed time (see PR "admin face previews").
 export const FACES: FaceDescriptor[] = [
   {
+    id: 'minimalismo',
+    name: 'Minimalismo',
+    preview: '/minimalismo-thumb.svg',
+    category: 'classic',
+    slots: [],
+  },
+  {
     id: 'analog',
     name: 'Analog',
     preview: '/0c1961af226ba211646b2b33306bc15147b1b2b6.png',

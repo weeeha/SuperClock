@@ -1,6 +1,7 @@
 import { useState, useEffect, type ComponentType } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import MinimalismoClock from './MinimalismoClock';
 import AnalogClock from './AnalogClock';
 import ProductivityClock from './ProductivityClock';
 import SquareClock from './SquareClock';
@@ -15,6 +16,7 @@ type FaceComponent = ComponentType<{ isActive: boolean }>;
 // Maps face id (from src/shared/face-registry.ts) to its component.
 // Keys here MUST match face-registry ids.
 const FACE_COMPONENTS: Record<string, FaceComponent> = {
+  minimalismo: MinimalismoClock,
   analog: AnalogClock,
   productivity: ProductivityClock,
   square: SquareClock,
@@ -26,6 +28,7 @@ const FACE_COMPONENTS: Record<string, FaceComponent> = {
 };
 
 const SWIPE_CYCLE_ORDER: FaceComponent[] = [
+  MinimalismoClock,
   AnalogClock,
   ProductivityClock,
   SquareClock,

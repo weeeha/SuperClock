@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
-// Captured once when this module first loads (≈ page load on the kiosk). The
-// second-hand angle is derived relative to this so it increases continuously —
-// never resetting 354°→0° (which makes the CSS transition sweep the hand
-// backward) — while staying numerically SMALL. An absolute epoch angle
-// (Math.floor(Date.now()/1000)*6 ≈ 1e10°) loses ~150° to float32 precision in
-// the compositor's transform matrix, so the hand quantizes and jumps. Kiosk
-// Chromium is recycled every 6h, so this stays under ~130k° (float32-safe).
+// Captured once at module load. Used ONLY by the tick path while faces still
+// render via `transform: rotate()` + a CSS transition: the second-hand angle is
+// derived relative to here so it increases continuously (never resetting 354°→0°,
+// which would sweep the hand backward) while staying numerically small (an
+// absolute epoch angle ≈1e10° loses ~150° to the compositor's float32 transform
+// matrix and jumps). Faces migrated to geometric handPoints() rendering don't
+// need this — trig runs in JS float64 and there's no transition.
 const MOUNT_SEC = Math.floor(Date.now() / 1000);
 const MOUNT_ANGLE = (MOUNT_SEC % 60) * 6;
 
@@ -15,41 +15,60 @@ export interface ClockHands {
   time: Date;
   hourDeg: number;
   minuteDeg: number;
-  /**
-   * Continuously increasing rotation in degrees, relative to module mount — NOT
-   * reset mod 360. A plain `seconds * 6` resets 354°→0° each minute and the faces'
-   * `transition: transform` then sweeps the hand backward. This keeps the wrap
-   * going forward (354°→360°) while staying small enough for the compositor's
-   * float32 transform matrix (bounded by page uptime, not absolute epoch).
-   */
+  /** Second-hand angle in degrees (bounded; safe for geometric and legacy transform rendering). */
   secondDeg: number;
+}
+
+export interface ClockHandsOptions {
+  /**
+   * Smooth sweep instead of a once-per-second tick: drives updates with
+   * requestAnimationFrame (throttled ~30fps for the Pi) and folds the sub-second
+   * fraction into the angles so the second hand glides. Off by default (tick).
+   */
+  sweep?: boolean;
 }
 
 /**
  * Single source of truth for analog clock-hand angles.
  *
- * Owns the per-second tick (gated on `isActive` so backgrounded faces stop ticking,
- * per the active-aware convention) and derives the three hand rotations. Every
- * watch face must consume this rather than recomputing angles inline — an ESLint
- * guard forbids `setInterval` inside `src/apps/clock` to keep it that way.
+ * Owns the time updates (gated on `isActive` so backgrounded faces stop ticking)
+ * and derives the three hand rotations. Every watch face must consume this rather
+ * than recomputing angles inline — an ESLint guard forbids `setInterval` inside
+ * `src/apps/clock` to keep it that way.
  */
-export function useClockHands(isActive: boolean, tickMs = 1000): ClockHands {
+export function useClockHands(isActive: boolean, options: ClockHandsOptions = {}): ClockHands {
+  const { sweep = false } = options;
   const [time, setTime] = useState(() => new Date());
 
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), tickMs);
+    if (sweep) {
+      let raf = 0;
+      let last = 0;
+      const loop = (t: number) => {
+        if (t - last >= 33) {
+          setTime(new Date());
+          last = t;
+        }
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      return () => cancelAnimationFrame(raf);
+    }
+    const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
-  }, [isActive, tickMs]);
+  }, [isActive, sweep]);
 
   const hours = time.getHours() % 12;
   const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
+  const seconds = sweep ? time.getSeconds() + time.getMilliseconds() / 1000 : time.getSeconds();
 
   return {
     time,
     hourDeg: hours * 30 + minutes * 0.5,
     minuteDeg: minutes * 6 + seconds * 0.1,
-    secondDeg: MOUNT_ANGLE + (Math.floor(time.getTime() / 1000) - MOUNT_SEC) * 6,
+    secondDeg: sweep
+      ? seconds * 6
+      : MOUNT_ANGLE + (Math.floor(time.getTime() / 1000) - MOUNT_SEC) * 6,
   };
 }
