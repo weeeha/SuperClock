@@ -23,7 +23,8 @@ export type FeatureFlag =
   | 'brightness'
   | 'sleep_schedule'
   | 'theme'
-  | 'accent';
+  | 'accent'
+  | 'night_mode';
 
 export interface ComplicationSlot {
   id: string;
@@ -81,6 +82,7 @@ export interface DeviceConfig {
     accent: string;
     brightness?: number;
     sleepSchedule?: { wake: string; sleep: string };
+    night?: { start: string; end: string; brightness?: number };
   };
   updatedAt: string;
 }
@@ -88,6 +90,9 @@ export interface DeviceConfig {
 export interface FleetConfig {
   devices: DeviceConfig[];
   version: number;
+  // Migration stamp bumped by fleet-store schema migrations — NOT the
+  // per-write counter above.
+  schemaVersion?: number;
 }
 
 export interface DeviceState {

@@ -49,7 +49,7 @@ export const STATIC_DEVICE_INFO: Record<DeviceId, StaticDeviceInfo> = {
     kind: 'kiosk',
     host: 'superclock-fast.local',
     readOnly: false,
-    features: ['brightness', 'sleep_schedule', 'theme', 'accent'],
+    features: ['brightness', 'sleep_schedule', 'theme', 'accent', 'night_mode'],
     supportedAppIds: ALL_KIOSK_APP_IDS,
   },
   'superclock-small': {
@@ -57,7 +57,7 @@ export const STATIC_DEVICE_INFO: Record<DeviceId, StaticDeviceInfo> = {
     kind: 'kiosk',
     host: 'superclock-small.local',
     readOnly: false,
-    features: ['brightness', 'sleep_schedule', 'theme', 'accent'],
+    features: ['brightness', 'sleep_schedule', 'theme', 'accent', 'night_mode'],
     supportedAppIds: ALL_KIOSK_APP_IDS,
   },
   'superclock-square': {
@@ -65,7 +65,7 @@ export const STATIC_DEVICE_INFO: Record<DeviceId, StaticDeviceInfo> = {
     kind: 'kiosk',
     host: 'superclock-square.local',
     readOnly: false,
-    features: ['brightness', 'sleep_schedule', 'theme', 'accent'],
+    features: ['brightness', 'sleep_schedule', 'theme', 'accent', 'night_mode'],
     supportedAppIds: ALL_KIOSK_APP_IDS,
   },
   'superclock-slow': {
