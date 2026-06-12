@@ -29,7 +29,7 @@ export default function ComplicationsLight({ isActive }: AppProps) {
       <line
         key={i}
         x1="500" y1={isHour ? 22 : 38} x2="500" y2={isHour ? 72 : 62}
-        stroke="#444" strokeWidth={isHour ? 9 : 4} strokeLinecap="round"
+        className="theme-fade stroke-(--face-tick)" strokeWidth={isHour ? 9 : 4} strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
       />,
     );
@@ -49,15 +49,15 @@ export default function ComplicationsLight({ isActive }: AppProps) {
           </filter>
         </defs>
 
-        {/* White face */}
-        <circle cx="500" cy="500" r="500" fill="white" />
+        {/* Face (white by day, black at night) */}
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
 
         {/* Tick marks */}
         {ticks}
 
         {/* Brand mark at 12 — two linked circles */}
-        <circle cx="489" cy="88" r="9" fill="none" stroke="#666" strokeWidth="4" />
-        <circle cx="511" cy="88" r="9" fill="none" stroke="#666" strokeWidth="4" />
+        <circle cx="489" cy="88" r="9" fill="none" className="theme-fade stroke-(--face-tick)" strokeWidth="4" />
+        <circle cx="511" cy="88" r="9" fill="none" className="theme-fade stroke-(--face-tick)" strokeWidth="4" />
 
         {/* ── Top complication: caffeine ── */}
         <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} fill="#1a1a1a" />
