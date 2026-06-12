@@ -115,7 +115,7 @@ The server imports **values** from `../src/shared/` but deploy.sh does not ship 
 - **`slow` LVGL device** — its native Minimalismo stays white at night; needs a C-side theme (follow-up).
 - Sunset/sunrise trigger (would need location + sun math).
 - Theming the remaining apps/faces and AppGrid — the tokens make opt-in cheap later.
-- True backlight control — `wlr-randr --brightness` is a gamma multiplier (documented in display-adapter); unchanged here.
+- True backlight control — the panel exposes no backlight device, and (per the 2026-06-12 amendment) `wlr-randr` has no brightness flag at all; night dimming is a client-side CSS filter, day brightness is a tracked follow-up.
 
 ## Verification
 
@@ -126,3 +126,18 @@ No test runner is configured in this repo.
 3. Preview: force `html.dark` and confirm all three surfaces flip with the cross-fade; the preview tab suppresses timers, so the evaluator is exercised by direct invocation / a temporarily-near window, not by waiting.
 4. On-device (**fastclock**): set a night window starting ~2 min out via admin → watch recolor + dim land within ~35 s; verify morning un-flip, midnight wrap, sleep-overlap wake behavior, and that Minimalismo’s gold hand stays gold on black.
 5. Admin: Night mode card gates on the flag, saves round-trip, Auto label renders for `'system'`.
+
+## Amendment — 2026-06-12 (post-verification)
+
+On-device verification found that `wlr-randr` has no `--brightness` option in
+any released version (0.4.1 is current; the man page lists only
+mode/position/scale/on/off). The display-adapter's gamma plan — and the
+pre-existing day-brightness slider — never worked on real hardware. Decision
+(user-approved): **night dimming is client-side** — the kiosk applies
+`filter: brightness(night.brightness / 100)` on `<html>` while the window is
+active (independent of theme, clamped 0–100, 1 s fade), implemented in the
+same evaluator that owns the dark class. The display-adapter no longer reads
+`settings.night`; it keeps day brightness (still broken on current wlroots
+tooling — tracked as a follow-up) and the sleep schedule (works; `--on/--off`
+are real flags). On this fixed-backlight LCD, CSS dimming is visually
+equivalent to compositor gamma. §6 above is superseded accordingly.

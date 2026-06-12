@@ -1,8 +1,9 @@
 // On-device display adapter.
 //
 // Bridges persisted per-device settings (`settings.brightness`,
-// `settings.night`, `settings.sleepSchedule`) to the physical panel on a Raspberry Pi running
+// `settings.sleepSchedule`) to the physical panel on a Raspberry Pi running
 // labwc / wlroots, using the `wlr-randr` CLI.
+// Night dimming is deliberately NOT handled here — it's a client-side CSS filter (src/core/apply-settings.ts); no released wlr-randr has a brightness flag.
 //
 // Design constraints (see PR for the full rationale):
 //
@@ -17,14 +18,12 @@
 //    invoke `applyDisplaySettings` as often as they like; it diffs against
 //    the last-applied state and is otherwise a cheap no-op.
 //
-//  - `wlr-randr --brightness` is a *gamma multiplier* applied in the
-//    compositor, NOT true backlight/PWM control. On the Waveshare round
-//    LCD there is no DRM backlight device exposed, so this is the best
-//    available knob: 0.0 → black output, 1.0 → unmodified. It dims the
-//    rendered image, it does not reduce panel power. A real backlight
-//    would need a board-specific sysfs/PWM path which these panels don't
-//    provide. Documented here and in the PR so it isn't mistaken for
-//    power management.
+//  - `wlr-randr --brightness` DOES NOT EXIST in any released wlr-randr
+//    (≤0.4.1 ships only --on/--off/--mode/--pos/--transform/--scale). The
+//    day-brightness path below therefore fails on real hardware and always
+//    has; it is kept pending the tracked follow-up (gamma daemon or removal).
+//    Night dimming moved client-side — see the 2026-06-12 amendment in
+//    docs/superpowers/specs/2026-06-12-night-mode-design.md.
 //
 //  - The "sleep" feature is a *schedule* (`{ wake, sleep }` HH:MM), not an
 //    instantaneous toggle. We turn the output fully off (`--output X
@@ -43,7 +42,7 @@ import { isWithinWindow } from '../src/shared/time-window';
 const execFileAsync = promisify(exec);
 
 const LOG_PREFIX = '[display-adapter]';
-// How often to re-evaluate the sleep schedule + night window (independent of config pushes).
+// How often to re-evaluate the sleep schedule (independent of config pushes).
 const SCHEDULE_TICK_MS = 30_000;
 
 type Support =
@@ -51,7 +50,7 @@ type Support =
   | { ok: false; reason: string };
 
 interface AppliedState {
-  // wlr-randr brightness multiplier last pushed, 0.0..1.0, or null if never set.
+  // wlr-randr brightness multiplier last pushed (never succeeds on current hardware — see header), or null.
   brightness: number | null;
   // Whether the output is currently powered on (false = we issued --off).
   poweredOn: boolean;
@@ -197,13 +196,9 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
       return;
     }
 
-    const { brightness, night, sleepSchedule } = config.settings;
+    const { brightness, sleepSchedule } = config.settings;
     const now = new Date();
-    // Night brightness wins inside the night window; day brightness otherwise.
-    const nightActive = isWithinWindow(night, now);
-    const wantBrightness = clampBrightness(
-      nightActive && typeof night?.brightness === 'number' ? night.brightness : brightness,
-    );
+    const wantBrightness = clampBrightness(brightness);
     const wantPoweredOn = !isWithinWindow(
       sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
       now,
@@ -237,6 +232,7 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
       );
       if (ok) {
         applied.brightness = wantBrightness;
+        // Unreachable on released wlr-randr (no --brightness flag) — kept for a future gamma-capable tool.
         console.log(
           `${LOG_PREFIX} ${output} → brightness ${wantBrightness.toFixed(3)} ` +
             `(gamma multiplier, not backlight)`,
@@ -259,7 +255,7 @@ export function applyDisplaySettings(config: DeviceConfig): void {
 
 // Called once from server startup. Probes support (logging the no-op reason
 // if unsupported), applies the current persisted config, and starts the
-// schedule evaluator so the panel sleeps/wakes and dims/undims on time without further
+// schedule evaluator so the panel sleeps/wakes on time without further
 // config pushes. Resolves quickly; never throws.
 export async function initDisplayAdapter(getConfig: () => Promise<DeviceConfig>): Promise<void> {
   try {
