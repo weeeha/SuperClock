@@ -115,7 +115,7 @@ The server imports **values** from `../src/shared/` but deploy.sh does not ship 
 - **`slow` LVGL device** — its native Minimalismo stays white at night; needs a C-side theme (follow-up).
 - Sunset/sunrise trigger (would need location + sun math).
 - Theming the remaining apps/faces and AppGrid — the tokens make opt-in cheap later.
-- True backlight control — the panel exposes no backlight device, and (per the 2026-06-12 amendment) `wlr-randr` has no brightness flag at all; night dimming is a client-side CSS filter, day brightness is a tracked follow-up.
+- True backlight control — the panel exposes no backlight device, and (per the 2026-06-12 amendments) `wlr-randr` has no brightness flag at all; night dimming *and* day brightness are a client-side CSS filter (Amendment 2).
 
 ## Verification
 
@@ -141,3 +141,20 @@ same evaluator that owns the dark class. The display-adapter no longer reads
 tooling — tracked as a follow-up) and the sleep schedule (works; `--on/--off`
 are real flags). On this fixed-backlight LCD, CSS dimming is visually
 equivalent to compositor gamma. §6 above is superseded accordingly.
+
+## Amendment 2 — 2026-06-12 (day-brightness follow-up resolved)
+
+The follow-up above is resolved in the same direction: **day brightness is
+client-side too.** `settings.brightness` is now the daytime baseline of the
+same `<html>` `brightness()` filter, and `night.brightness` overrides it
+inside the night window (values ≥ 100 or unset render unfiltered). The
+display-adapter's `wlr-randr --brightness` path is deleted — it failed on
+every 30 s evaluator tick (the failed call never updated last-applied state,
+so it retried forever) and warn-spammed journald ~2,880 lines/day/device.
+The adapter now owns only the sleep schedule, which is unchanged.
+
+Fleet schema v2 clears stored `settings.brightness` on kiosk devices: the
+admin form had been baking its old default (80) into every settings save
+while the slider was inert, so stored values carry no intent — honoring them
+would surprise-dim panels on deploy. The admin slider stays, now functional,
+defaulting to 100 %.
