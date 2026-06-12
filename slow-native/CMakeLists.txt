@@ -75,6 +75,7 @@ target_link_libraries(lvgl PRIVATE ${LIBDRM_LIBRARIES})
 add_executable(superclock_native
   src/main.c
   src/clock_face.c
+  src/night_window.c
   src/http_api.c
   src/weather_widget.c
 )

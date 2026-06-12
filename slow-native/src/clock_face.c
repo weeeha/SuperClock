@@ -1,7 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include "clock_face.h"
+#include "night_window.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #ifndef M_PI
@@ -54,10 +56,39 @@ typedef struct {
     lv_point_precise_t hour_pts[2];
     lv_point_precise_t min_pts[2];
     lv_point_precise_t sec_pts[2];
+    /* Shared styles so the night palette flips every themed widget at once:
+     * style_face paints the dial circle, style_ink the hour/minute hands and
+     * tick marks. Gold parts are styled locally and never change. */
+    lv_style_t style_face;
+    lv_style_t style_ink;
+    bool is_night;
+    int8_t night_override; /* 1 = force night, -1 = force day, 0 = schedule */
 } clock_state_t;
 
 /* Swiss railway gold for the second hand and center pip. */
 #define COLOR_GOLD lv_color_hex(0xFFD700)
+
+/* -------------------------------------------------------------------------
+ * Night palette — mirrors the kiosk's scheduled night mode
+ * (docs/superpowers/specs/2026-06-12-night-mode-design.md): inside the night
+ * window the face inverts in place — black dial, white hour/minute hands —
+ * while gold stays literal, exactly like the React Minimalismo face under
+ * `html.dark`.
+ *
+ * v1 schedule is compile-time: SuperClock-Slow is read-only in admin v1 (no
+ * config push, no polling), so we bake the fleet default — the same
+ * 21:00 → 07:00 seed the kiosk admin uses for `settings.night`. When this
+ * device grows config access, read `settings.night` from the fleet API
+ * instead of these constants. Window semantics are [start, end) with
+ * midnight wrap, matching src/shared/time-window.ts — see night_window.h.
+ * ------------------------------------------------------------------------- */
+#define NIGHT_START_MIN (21 * 60) /* 21:00 — night begins (inclusive) */
+#define NIGHT_END_MIN   ( 7 * 60) /* 07:00 — night ends (exclusive) */
+
+#define COLOR_FACE_DAY   lv_color_white()
+#define COLOR_INK_DAY    lv_color_black()
+#define COLOR_FACE_NIGHT lv_color_black()
+#define COLOR_INK_NIGHT  lv_color_white()
 
 /* Convert a clock angle (0° = 12 o'clock, clockwise) to LVGL screen radians.
  * LVGL +x is right, +y is down — same as SVG. */
@@ -79,6 +110,18 @@ static void set_hand(lv_obj_t *line, lv_point_precise_t *pts,
     lv_line_set_points(line, pts, 2);
 }
 
+/* Repaint the shared styles for day or night. Every widget holding
+ * style_face / style_ink is invalidated by lv_obj_report_style_change, so
+ * the whole dial flips in one frame (instant, no cross-fade — the kiosk's
+ * 1 s CSS fade has no cheap LVGL equivalent and isn't worth an anim here). */
+static void apply_palette(clock_state_t *s, bool night) {
+    s->is_night = night;
+    lv_style_set_bg_color(&s->style_face, night ? COLOR_FACE_NIGHT : COLOR_FACE_DAY);
+    lv_style_set_line_color(&s->style_ink, night ? COLOR_INK_NIGHT : COLOR_INK_DAY);
+    lv_obj_report_style_change(&s->style_face);
+    lv_obj_report_style_change(&s->style_ink);
+}
+
 static void tick_cb(lv_timer_t *t) {
     clock_state_t *s = (clock_state_t *)lv_timer_get_user_data(t);
 
@@ -86,6 +129,16 @@ static void tick_cb(lv_timer_t *t) {
     clock_gettime(CLOCK_REALTIME, &ts);
     struct tm tm;
     localtime_r(&ts.tv_sec, &tm);
+
+    /* Scheduled night palette. A few int compares at 20 Hz — restyles only
+     * when the window boundary is crossed (or the debug override differs). */
+    bool night = s->night_override != 0
+                     ? s->night_override > 0
+                     : night_window_contains(NIGHT_START_MIN, NIGHT_END_MIN,
+                                             tm.tm_hour * 60 + tm.tm_min);
+    if (night != s->is_night) {
+        apply_palette(s, night);
+    }
 
     /* Sub-second fraction lets the second hand sweep instead of ticking. */
     double sec       = tm.tm_sec + ts.tv_nsec / 1.0e9;
@@ -110,9 +163,11 @@ static lv_obj_t *make_dot(lv_obj_t *parent, int32_t center, int32_t size, lv_col
     return d;
 }
 
-static lv_obj_t *make_hand(lv_obj_t *parent, lv_color_t color, int32_t width) {
+/* Line widget for a hand. Color comes from the caller — either the shared
+ * ink style (hour/minute, so the night palette can restyle them) or a local
+ * gold that never changes (second hand). */
+static lv_obj_t *make_hand(lv_obj_t *parent, int32_t width) {
     lv_obj_t *h = lv_line_create(parent);
-    lv_obj_set_style_line_color(h, color, 0);
     lv_obj_set_style_line_width(h, width, 0);
     lv_obj_set_style_line_rounded(h, true, 0);
     return h;
@@ -148,17 +203,30 @@ void clock_face_create(lv_obj_t *parent, int32_t viewport_px) {
     LV_ASSERT_MALLOC(s);
     s->g = scale_geom(viewport_px);
 
+    /* Verification override — exercise the night palette on demand
+     * (SUPERCLOCK_NIGHT=always|never, settable fleet-side via
+     * /etc/superclock-native.env — see the systemd unit) instead of waiting
+     * for 21:00. Unset or any other value → the schedule rules. */
+    const char *ov = getenv("SUPERCLOCK_NIGHT");
+    s->night_override = (ov && strcmp(ov, "always") == 0) ? 1
+                      : (ov && strcmp(ov, "never") == 0)  ? -1
+                                                          : 0;
+
+    lv_style_init(&s->style_face);
+    lv_style_init(&s->style_ink);
+    apply_palette(s, false); /* seed day colors; first tick flips if night */
+
     /* Black backdrop — the whole screen. */
     lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
     lv_obj_set_style_bg_opa(parent, LV_OPA_COVER, 0);
     lv_obj_remove_flag(parent, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_all(parent, 0, 0);
 
-    /* White circular face. */
+    /* Circular face — white by day, black inside the night window. */
     lv_obj_t *face = lv_obj_create(parent);
     lv_obj_set_size(face, s->g.face_r * 2, s->g.face_r * 2);
     lv_obj_set_pos(face, s->g.center - s->g.face_r, s->g.center - s->g.face_r);
-    lv_obj_set_style_bg_color(face, lv_color_white(), 0);
+    lv_obj_add_style(face, &s->style_face, 0);
     lv_obj_set_style_bg_opa(face, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(face, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_border_width(face, 0, 0);
@@ -181,17 +249,21 @@ void clock_face_create(lv_obj_t *parent, int32_t viewport_px) {
         };
         lv_obj_t *tick = lv_line_create(parent);
         lv_line_set_points(tick, pts, 2);
-        lv_obj_set_style_line_color(tick, lv_color_black(), 0);
+        lv_obj_add_style(tick, &s->style_ink, 0); /* follows the night palette */
         lv_obj_set_style_line_width(tick, is_hour ? s->g.hour_tick_w : s->g.min_tick_w, 0);
         lv_obj_set_style_line_rounded(tick, true, 0);
     }
 
     /* Hands. Order matters — second hand on top. */
-    s->hour = make_hand(parent, lv_color_black(), s->g.hour_w);
-    s->min  = make_hand(parent, lv_color_black(), s->g.min_w);
-    s->sec  = make_hand(parent, COLOR_GOLD,       s->g.sec_w);
+    s->hour = make_hand(parent, s->g.hour_w);
+    lv_obj_add_style(s->hour, &s->style_ink, 0);
+    s->min  = make_hand(parent, s->g.min_w);
+    lv_obj_add_style(s->min, &s->style_ink, 0);
+    s->sec  = make_hand(parent, s->g.sec_w);
+    lv_obj_set_style_line_color(s->sec, COLOR_GOLD, 0); /* gold stays literal */
 
-    /* Center pip — gold outer, black inner. */
+    /* Center pip — gold outer, black inner. Deliberately not themed: the
+     * inner dot sits on the gold disc, so it reads on both dial colors. */
     make_dot(parent, s->g.center, s->g.dot_outer, COLOR_GOLD);
     make_dot(parent, s->g.center, s->g.dot_inner, lv_color_black());
 
@@ -201,5 +273,5 @@ void clock_face_create(lv_obj_t *parent, int32_t viewport_px) {
      * each hand's bounding box per redraw, so the actual rasterisation is
      * cheap; bottleneck is the dirty-area scan loop. */
     lv_timer_t *timer = lv_timer_create(tick_cb, 50, s);
-    tick_cb(timer);
+    tick_cb(timer); /* also applies the night palette before first paint */
 }
