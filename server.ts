@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { buildApiApp } from './server/api-mount';
 import { initDisplayAdapter } from './server/display-adapter';
-import { readDevice } from './server/fleet-store';
+import { migrateFleet, readDevice } from './server/fleet-store';
 import { resolveDeviceId } from './server/resolve-device';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -55,6 +55,11 @@ app.listen(PORT, '0.0.0.0', () => {
       `  chromium --kiosk --ozone-platform=wayland --password-store=basic --use-mock-keychain http://<this-ip>:${PORT}\n`,
     );
   });
+
+  // One-time fleet schema migration (theme 'dark' → 'system' for kiosks).
+  void migrateFleet().catch((err) =>
+    console.warn('[fleet] migration failed (ignored):', (err as Error).message),
+  );
 
   // Apply persisted brightness/sleep to the physical panel on this device
   // (and start the sleep-schedule evaluator). Safely no-ops off-Pi, with no

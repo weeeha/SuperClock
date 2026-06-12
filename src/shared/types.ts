@@ -133,7 +133,7 @@ export function emptyDeviceConfig(deviceId: DeviceId): DeviceConfig {
     enabledApps: [],
     instances: [],
     playlist: { items: [], rotationSeconds: null },
-    settings: { theme: 'dark', accent: '#ff6b35' },
+    settings: { theme: 'system', accent: '#ff6b35' },
     updatedAt: new Date(0).toISOString(),
   };
 }

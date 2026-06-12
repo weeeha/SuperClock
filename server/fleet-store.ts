@@ -7,11 +7,13 @@ import {
   type DeviceId,
   type FleetConfig,
 } from '../src/shared/types';
+import { STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { resolveDeviceId } from './resolve-device';
 import { applyDisplaySettings } from './display-adapter';
 
 const FLEET_PATH = join(process.cwd(), 'config', 'fleet.json');
 const FLEET_EXAMPLE_PATH = join(process.cwd(), 'config', 'fleet.example.json');
+const FLEET_SCHEMA_VERSION = 1;
 
 let writeLock: Promise<unknown> = Promise.resolve();
 
@@ -19,6 +21,7 @@ function defaultFleet(): FleetConfig {
   return {
     devices: ALL_DEVICE_IDS.map(emptyDeviceConfig),
     version: 0,
+    schemaVersion: FLEET_SCHEMA_VERSION,
   };
 }
 
@@ -91,4 +94,25 @@ export async function readDevice(deviceId: DeviceId): Promise<DeviceConfig> {
   const fleet = await readFleet();
   const existing = fleet.devices.find((d) => d.deviceId === deviceId);
   return existing ?? emptyDeviceConfig(deviceId);
+}
+
+// One-time, idempotent schema migration, called at server startup.
+// v1: `theme` was a visual no-op before night mode shipped, so stored 'dark'
+// values carry no user intent — normalize kiosk devices to 'system' (Auto) so
+// daytime keeps today's light faces and the night window takes effect.
+export async function migrateFleet(): Promise<void> {
+  const fleet = await readFleet();
+  if ((fleet.schemaVersion ?? 0) >= FLEET_SCHEMA_VERSION) return;
+  const devices = fleet.devices.map((d) => {
+    if (STATIC_DEVICE_INFO[d.deviceId]?.kind !== 'kiosk') return d;
+    if (d.settings.theme !== 'dark') return d;
+    // Stamp updatedAt so polling kiosks adopt the migrated value (their cache
+    // change-detection keys on updatedAt).
+    return {
+      ...d,
+      settings: { ...d.settings, theme: 'system' as const },
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  await writeFleet({ ...fleet, devices, schemaVersion: FLEET_SCHEMA_VERSION });
 }
