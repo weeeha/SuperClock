@@ -7,6 +7,31 @@
   --font-family-display: 'Inter', system-ui, sans-serif;
 }
 
+/* Night-mode face tokens. Light is the default (matches the pre-night-mode
+   look); html.dark flips them. Only surfaces that opt in consume these. */
+:root,
+html.light {
+  --face-bg: #ffffff;
+  --face-ink: #000000;
+  --face-ink-muted: #52525b;
+  --face-tick: #444444;
+}
+html.dark {
+  --face-bg: #000000;
+  --face-ink: #ffffff;
+  --face-ink-muted: #a1a1aa;
+  --face-tick: #8a8a8a;
+}
+
+/* Soft cross-fade for the theme flip. Applied per themed element. */
+.theme-fade {
+  transition:
+    background-color 1s ease,
+    fill 1s ease,
+    stroke 1s ease,
+    color 1s ease;
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
