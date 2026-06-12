@@ -5,7 +5,7 @@
       "enabledApps": [],
       "instances": [],
       "playlist": { "items": [], "rotationSeconds": null },
-      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "settings": { "theme": "system", "accent": "#ff6b35" },
       "updatedAt": "1970-01-01T00:00:00.000Z"
     },
     {
@@ -13,7 +13,7 @@
       "enabledApps": [],
       "instances": [],
       "playlist": { "items": [], "rotationSeconds": null },
-      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "settings": { "theme": "system", "accent": "#ff6b35" },
       "updatedAt": "1970-01-01T00:00:00.000Z"
     },
     {
@@ -21,7 +21,7 @@
       "enabledApps": [],
       "instances": [],
       "playlist": { "items": [], "rotationSeconds": null },
-      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "settings": { "theme": "system", "accent": "#ff6b35" },
       "updatedAt": "1970-01-01T00:00:00.000Z"
     },
     {
@@ -29,9 +29,10 @@
       "enabledApps": [],
       "instances": [],
       "playlist": { "items": [], "rotationSeconds": null },
-      "settings": { "theme": "dark", "accent": "#ff6b35" },
+      "settings": { "theme": "system", "accent": "#ff6b35" },
       "updatedAt": "1970-01-01T00:00:00.000Z"
     }
   ],
-  "version": 0
+  "version": 0,
+  "schemaVersion": 1
 }

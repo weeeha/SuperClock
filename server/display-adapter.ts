@@ -3,6 +3,7 @@
 // Bridges persisted per-device settings (`settings.brightness`,
 // `settings.sleepSchedule`) to the physical panel on a Raspberry Pi running
 // labwc / wlroots, using the `wlr-randr` CLI.
+// Night dimming is deliberately NOT handled here — it's a client-side CSS filter (src/core/apply-settings.ts); no released wlr-randr has a brightness flag.
 //
 // Design constraints (see PR for the full rationale):
 //
@@ -17,14 +18,12 @@
 //    invoke `applyDisplaySettings` as often as they like; it diffs against
 //    the last-applied state and is otherwise a cheap no-op.
 //
-//  - `wlr-randr --brightness` is a *gamma multiplier* applied in the
-//    compositor, NOT true backlight/PWM control. On the Waveshare round
-//    LCD there is no DRM backlight device exposed, so this is the best
-//    available knob: 0.0 → black output, 1.0 → unmodified. It dims the
-//    rendered image, it does not reduce panel power. A real backlight
-//    would need a board-specific sysfs/PWM path which these panels don't
-//    provide. Documented here and in the PR so it isn't mistaken for
-//    power management.
+//  - `wlr-randr --brightness` DOES NOT EXIST in any released wlr-randr
+//    (≤0.4.1 ships only --on/--off/--mode/--pos/--transform/--scale). The
+//    day-brightness path below therefore fails on real hardware and always
+//    has; it is kept pending the tracked follow-up (gamma daemon or removal).
+//    Night dimming moved client-side — see the 2026-06-12 amendment in
+//    docs/superpowers/specs/2026-06-12-night-mode-design.md.
 //
 //  - The "sleep" feature is a *schedule* (`{ wake, sleep }` HH:MM), not an
 //    instantaneous toggle. We turn the output fully off (`--output X
@@ -38,6 +37,7 @@ import { access, readdir } from 'node:fs/promises';
 import { constants as FS } from 'node:fs';
 import { promisify } from 'node:util';
 import type { DeviceConfig } from '../src/shared/types';
+import { isWithinWindow } from '../src/shared/time-window';
 
 const execFileAsync = promisify(exec);
 
@@ -50,7 +50,7 @@ type Support =
   | { ok: false; reason: string };
 
 interface AppliedState {
-  // wlr-randr brightness multiplier last pushed, 0.0..1.0, or null if never set.
+  // wlr-randr brightness multiplier last pushed (never succeeds on current hardware — see header), or null.
   brightness: number | null;
   // Whether the output is currently powered on (false = we issued --off).
   poweredOn: boolean;
@@ -178,30 +178,6 @@ function clampBrightness(pct: number | undefined): number {
   return Math.min(1, Math.max(0, pct / 100));
 }
 
-// Returns true when `now` falls inside the [sleep, wake) window, handling the
-// common case where the window wraps past midnight (e.g. 23:00 → 07:00).
-function isWithinSleepWindow(
-  schedule: { wake: string; sleep: string } | undefined,
-  now: Date,
-): boolean {
-  if (!schedule) return false;
-  const toMin = (hhmm: string): number | null => {
-    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
-    if (!m) return null;
-    const h = Number(m[1]);
-    const min = Number(m[2]);
-    if (h > 23 || min > 59) return null;
-    return h * 60 + min;
-  };
-  const sleep = toMin(schedule.sleep);
-  const wake = toMin(schedule.wake);
-  if (sleep === null || wake === null || sleep === wake) return false;
-  const cur = now.getHours() * 60 + now.getMinutes();
-  return sleep < wake
-    ? cur >= sleep && cur < wake // same-day window
-    : cur >= sleep || cur < wake; // wraps midnight
-}
-
 // Reconcile the panel with `config`. Cheap + idempotent: only issues a
 // wlr-randr call when the effective brightness or power state changed.
 // Never throws.
@@ -220,8 +196,13 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
       return;
     }
 
-    const wantBrightness = clampBrightness(config.settings.brightness);
-    const wantPoweredOn = !isWithinSleepWindow(config.settings.sleepSchedule, new Date());
+    const { brightness, sleepSchedule } = config.settings;
+    const now = new Date();
+    const wantBrightness = clampBrightness(brightness);
+    const wantPoweredOn = !isWithinWindow(
+      sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
+      now,
+    );
 
     // Power transitions first. While powered off there's no point pushing
     // brightness; we re-assert brightness on the next wake.
@@ -251,6 +232,7 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
       );
       if (ok) {
         applied.brightness = wantBrightness;
+        // Unreachable on released wlr-randr (no --brightness flag) — kept for a future gamma-capable tool.
         console.log(
           `${LOG_PREFIX} ${output} → brightness ${wantBrightness.toFixed(3)} ` +
             `(gamma multiplier, not backlight)`,
