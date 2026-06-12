@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Amendment (2026-06-12, post-verification):** Night dimming shipped **client-side**
+> (CSS `filter: brightness()` in `src/core/apply-settings.ts`) — no released wlr-randr
+> has a `--brightness` flag, so Task 2's server-side night pick was built and then
+> removed again. deploy.sh also gained an automatic server restart. Task 2's body and
+> the Task 10 PR template below are historical; the spec's dated amendment is canonical.
+
 **Goal:** Scheduled night mode — the white surfaces (Minimalismo, Complications Light, Quote) flip to black during a per-device night window, with optional panel dimming.
 
 **Architecture:** Finish the existing-but-dead theme system. A new `settings.night: { start, end, brightness? }` drives the already-toggled-but-unconsumed `html.dark` class on a 30 s client evaluator; the three white surfaces are retrofitted to CSS tokens (`--face-bg`, `--face-ink`, …) that flip under `html.dark` with a 1 s cross-fade; the server display-adapter picks `night.brightness` inside the same window via a shared `isWithinWindow` helper extracted from its sleep-schedule code. `theme: 'system'` becomes "Auto" (light by day, dark in the window); a one-time fleet migration normalizes stored `'dark'` → `'system'` on kiosks.
@@ -766,7 +772,7 @@ ssh nickv2026@superclock-fast.local 'cd ~/SuperClock && npm ci --omit=dev && sud
 ssh nickv2026@superclock-fast.local 'pkill -TERM chromium'   # reload kiosk
 ```
 
-Then in the admin UI (`http://superclock-fast.local:3000/admin`): confirm the theme row shows **Auto** selected (migration ran), enable **Night mode** with a window starting ~2 min out, save. Within ~35 s of the start time the white faces flip dark and the panel dims (`journalctl -u superclock-server -g display-adapter` shows the brightness change). Set the window back to `21:00 → 07:00`, confirm faces flip back light and brightness restores.
+Then in the admin UI (`http://superclock-fast.local:3000/admin`): confirm the theme row shows **Auto** selected (migration ran), enable **Night mode** with a window starting ~2 min out, save. Within ~35 s of the start time the white faces flip dark and the kiosk dims itself via the CSS filter (visible on the panel; the server journal no longer logs night dimming). Set the window back to `21:00 → 07:00`, confirm faces flip back light and brightness restores.
 
 - [ ] **Step 5: Commit anything outstanding, push, open PR**
 
@@ -776,7 +782,7 @@ gh pr create --title "feat: scheduled night mode (theme tokens + night brightnes
 
 - \`settings.night: { start, end, brightness? }\` — per-device night window; \`theme: 'system'\` is now a real **Auto** mode (light by day, dark in the window). One-time fleet migration normalizes stored kiosk \`'dark'\` → \`'system'\` (theme was a visual no-op before this).
 - White surfaces (Minimalismo, Complications Light, Quote) flip via \`--face-bg\`/\`--face-ink\` tokens under \`html.dark\`, with a 1s cross-fade. Gold/accent colors stay.
-- Display-adapter applies \`night.brightness\` inside the window on its existing 30s loop; shared \`isWithinWindow\` helper replaces the adapter-local sleep-window code.
+- Night dimming is client-side: the kiosk applies a CSS \`brightness()\` filter on \`<html>\` during the window (no released wlr-randr has a brightness flag; the display-adapter no longer reads \`settings.night\`) on its existing 30s loop; shared \`isWithinWindow\` helper replaces the adapter-local sleep-window code.
 - Admin: Night mode card (window + brightness slider), \`night_mode\` feature flag, Auto label.
 - deploy.sh now ships \`src/shared/\` (server imports runtime values from it — was a latent fresh-deploy crash).
 

@@ -96,7 +96,7 @@ The existing diff-before-shelling-out, 30 s tick, output detection, and sleep ha
 ### 8. Admin UI (`src/admin/routes/Settings.tsx`)
 
 - Theme selector: wire value `'system'` renders the label **Auto** (no type change).
-- New **Night mode** block in the Display card, beside Sleep schedule: a Switch (on → seeds `{ start: '21:00', end: '07:00', brightness: 30 }`, off → `undefined`), start/end `<input type="time">`, and a “Night brightness” slider 0–100 step 5 (set it equal to the day brightness for recolor-only behavior). Gated by `has('night_mode')`.
+- New **Night mode** block in the Display card, beside Sleep schedule: a Switch (on → seeds `{ start: '21:00', end: '07:00', brightness: 30 }`, off → `undefined`), start/end `<input type="time">`, and a “Night brightness” slider 0–100 step 5 (set it to 100 for recolor-only behavior). Gated by `has('night_mode')`.
 
 ### 9. Deploy prerequisite (`scripts/deploy.sh`)
 

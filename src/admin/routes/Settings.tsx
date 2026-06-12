@@ -11,7 +11,7 @@ import type { DeviceConfig, FeatureFlag } from '../../shared/types';
 type SettingsShape = DeviceConfig['settings'];
 
 const DEFAULTS: SettingsShape = {
-  theme: 'dark',
+  theme: 'system',
   accent: '#ff6b35',
   brightness: 80,
   sleepSchedule: undefined,
