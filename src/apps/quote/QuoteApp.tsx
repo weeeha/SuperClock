@@ -23,15 +23,15 @@ export default function QuoteApp() {
   });
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-white text-black p-[12%] gap-[4%]">
+    <div className="theme-fade flex h-full w-full flex-col items-center justify-center bg-(--face-bg) p-[12%] gap-[4%]">
       {/* Author avatar placeholder */}
       <div className="h-[12%] w-[12%] rounded-full bg-gray-300" />
 
       {/* Author name */}
-      <p className="text-[3.5vmin] text-gray-600">{quote.author}</p>
+      <p className="theme-fade text-[3.5vmin] text-(--face-ink-muted)">{quote.author}</p>
 
       {/* Quote text */}
-      <p className="text-[5vmin] font-semibold text-center leading-snug text-gray-900">
+      <p className="theme-fade text-[5vmin] font-semibold text-center leading-snug text-(--face-ink)">
         "{quote.text}"
       </p>
     </div>
