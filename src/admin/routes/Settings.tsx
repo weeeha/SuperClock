@@ -15,6 +15,7 @@ const DEFAULTS: SettingsShape = {
   accent: '#ff6b35',
   brightness: 80,
   sleepSchedule: undefined,
+  night: undefined,
 };
 
 export default function Settings() {
@@ -46,6 +47,7 @@ export default function Settings() {
 
   const dirty = JSON.stringify(working) !== JSON.stringify(initial);
   const sleepEnabled = Boolean(working.sleepSchedule);
+  const nightEnabled = Boolean(working.night);
 
   return (
     <div className="space-y-6 p-6 pb-32">
@@ -85,7 +87,7 @@ export default function Settings() {
                       : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
                   }`}
                 >
-                  {t}
+                  {t === 'system' ? 'auto' : t}
                 </button>
               ))}
             </div>
@@ -182,6 +184,87 @@ export default function Settings() {
                   />
                 </label>
               </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Night mode</label>
+              <Switch
+                checked={nightEnabled}
+                disabled={!has('night_mode')}
+                onCheckedChange={(on) =>
+                  setWorking({
+                    ...working,
+                    night: on ? { start: '21:00', end: '07:00', brightness: 30 } : undefined,
+                  })
+                }
+              />
+            </div>
+            {nightEnabled && (
+              <>
+                <div className="flex items-center gap-3 text-sm">
+                  <label className="flex items-center gap-2">
+                    Start
+                    <input
+                      type="time"
+                      value={working.night?.start ?? '21:00'}
+                      onChange={(e) =>
+                        setWorking({
+                          ...working,
+                          night: {
+                            start: e.target.value,
+                            end: working.night?.end ?? '07:00',
+                            brightness: working.night?.brightness,
+                          },
+                        })
+                      }
+                      className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 py-1"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2">
+                    End
+                    <input
+                      type="time"
+                      value={working.night?.end ?? '07:00'}
+                      onChange={(e) =>
+                        setWorking({
+                          ...working,
+                          night: {
+                            start: working.night?.start ?? '21:00',
+                            end: e.target.value,
+                            brightness: working.night?.brightness,
+                          },
+                        })
+                      }
+                      className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 py-1"
+                    />
+                  </label>
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm">Night brightness</label>
+                  <span className="text-xs opacity-60">{working.night?.brightness ?? 30}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  disabled={!has('night_mode')}
+                  value={working.night?.brightness ?? 30}
+                  onChange={(e) =>
+                    setWorking({
+                      ...working,
+                      night: {
+                        start: working.night?.start ?? '21:00',
+                        end: working.night?.end ?? '07:00',
+                        brightness: Number(e.target.value),
+                      },
+                    })
+                  }
+                  className="w-full disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </>
             )}
           </div>
         </CardContent>
