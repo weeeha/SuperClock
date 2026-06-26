@@ -1,0 +1,27 @@
+[Unit]
+Description=SuperClock native (LVGL) kiosk
+After=multi-user.target network-online.target
+Wants=network-online.target
+Conflicts=graphical.target
+# We own /dev/dri/cardN — must run before the desktop session would grab it.
+
+[Service]
+Type=simple
+User=nickv2026
+# DRM access needs membership in 'video' (already true for nickv2026 on Pi OS).
+SupplementaryGroups=video render input
+WorkingDirectory=/home/nickv2026/SuperClock-native
+# Optional config — WEATHER_LAT / WEATHER_LON / WEATHER_UNIT live here.
+# The leading "-" makes it non-fatal if the file is missing.
+EnvironmentFile=-/etc/superclock-native.env
+ExecStart=/home/nickv2026/SuperClock-native/superclock_native
+Restart=on-failure
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+# A bit of memory headroom protection on a 512 MB device.
+MemoryHigh=200M
+MemoryMax=300M
+
+[Install]
+WantedBy=multi-user.target
