@@ -1,9 +1,15 @@
 // On-device display adapter.
 //
-// Bridges persisted per-device settings (`settings.brightness`,
-// `settings.sleepSchedule`) to the physical panel on a Raspberry Pi running
-// labwc / wlroots, using the `wlr-randr` CLI.
-// Night dimming is deliberately NOT handled here — it's a client-side CSS filter (src/core/apply-settings.ts); no released wlr-randr has a brightness flag.
+// Bridges the persisted per-device sleep schedule (`settings.sleepSchedule`)
+// to the physical panel on a Raspberry Pi running labwc / wlroots, using the
+// `wlr-randr` CLI.
+//
+// Brightness — day (`settings.brightness`) and night (`settings.night`) — is
+// deliberately NOT handled here: no released wlr-randr (≤0.4.1) has a
+// --brightness flag, and these panels expose no backlight device. The kiosk
+// dims its own rendering with a CSS brightness() filter instead
+// (src/core/apply-settings.ts); see the 2026-06-12 amendments in
+// docs/superpowers/specs/2026-06-12-night-mode-design.md.
 //
 // Design constraints (see PR for the full rationale):
 //
@@ -13,17 +19,10 @@
 //    request — when wlr-randr is missing, there is no Wayland session, or
 //    the platform isn't Linux. Support is probed exactly once and cached.
 //
-//  - We only shell out when the *effective* brightness or power state
-//    actually changes, never on the kiosk's 5s config poll. Callers may
-//    invoke `applyDisplaySettings` as often as they like; it diffs against
-//    the last-applied state and is otherwise a cheap no-op.
-//
-//  - `wlr-randr --brightness` DOES NOT EXIST in any released wlr-randr
-//    (≤0.4.1 ships only --on/--off/--mode/--pos/--transform/--scale). The
-//    day-brightness path below therefore fails on real hardware and always
-//    has; it is kept pending the tracked follow-up (gamma daemon or removal).
-//    Night dimming moved client-side — see the 2026-06-12 amendment in
-//    docs/superpowers/specs/2026-06-12-night-mode-design.md.
+//  - We only shell out when the effective power state actually changes,
+//    never on the kiosk's 5s config poll. Callers may invoke
+//    `applyDisplaySettings` as often as they like; it diffs against the
+//    last-applied state and is otherwise a cheap no-op.
 //
 //  - The "sleep" feature is a *schedule* (`{ wake, sleep }` HH:MM), not an
 //    instantaneous toggle. We turn the output fully off (`--output X
@@ -49,19 +48,13 @@ type Support =
   | { ok: true; env: NodeJS.ProcessEnv }
   | { ok: false; reason: string };
 
-interface AppliedState {
-  // wlr-randr brightness multiplier last pushed (never succeeds on current hardware — see header), or null.
-  brightness: number | null;
-  // Whether the output is currently powered on (false = we issued --off).
-  poweredOn: boolean;
-}
-
 // Cached one-shot capability probe. `undefined` = not probed yet.
 let supportPromise: Promise<Support> | undefined;
 // Cached detected output name (e.g. "HDMI-A-1", "DSI-1"). Re-detected if null.
 let cachedOutput: string | null = null;
-// Last state we actually pushed to the panel. Drives change detection.
-const applied: AppliedState = { brightness: null, poweredOn: true };
+// Whether the output is currently powered on (false = we issued --off).
+// Last state we actually pushed — drives change detection.
+let appliedPoweredOn = true;
 // The most recent config we were handed — the schedule evaluator reads this.
 let latestConfig: DeviceConfig | null = null;
 let scheduleTimer: ReturnType<typeof setInterval> | null = null;
@@ -161,8 +154,8 @@ async function detectOutput(env: NodeJS.ProcessEnv): Promise<string | null> {
 
 async function runWlrRandr(args: string[], env: NodeJS.ProcessEnv): Promise<boolean> {
   try {
-    // args are internally constructed (output name + numeric brightness),
-    // never user free-text, but quote the output name defensively anyway.
+    // args are internally constructed (output name + fixed flags), never
+    // user free-text, but quote the output name defensively anyway.
     await execFileAsync(`wlr-randr ${args.join(' ')}`, { env, timeout: 5000 });
     return true;
   } catch (err) {
@@ -171,72 +164,37 @@ async function runWlrRandr(args: string[], env: NodeJS.ProcessEnv): Promise<bool
   }
 }
 
-function clampBrightness(pct: number | undefined): number {
-  // settings.brightness is an integer 0..100 from the admin UI. Map to the
-  // 0.0..1.0 multiplier wlr-randr expects; default to full when unset.
-  if (typeof pct !== 'number' || Number.isNaN(pct)) return 1;
-  return Math.min(1, Math.max(0, pct / 100));
-}
-
 // Reconcile the panel with `config`. Cheap + idempotent: only issues a
-// wlr-randr call when the effective brightness or power state changed.
-// Never throws.
+// wlr-randr call when the desired power state changed. Never throws.
 async function reconcile(config: DeviceConfig | null): Promise<void> {
   try {
     if (!config) return;
     const support = await getSupport();
     if (!support.ok) {
-      logOnce(`disabled — ${support.reason}; brightness/sleep are no-ops on this host`);
+      logOnce(`disabled — ${support.reason}; sleep schedule is a no-op on this host`);
       return;
     }
     const { env } = support;
     const output = await detectOutput(env);
     if (!output) {
-      logOnce('no wlr-randr output detected; brightness/sleep are no-ops');
+      logOnce('no wlr-randr output detected; sleep schedule is a no-op');
       return;
     }
 
-    const { brightness, sleepSchedule } = config.settings;
-    const now = new Date();
-    const wantBrightness = clampBrightness(brightness);
+    const { sleepSchedule } = config.settings;
     const wantPoweredOn = !isWithinWindow(
       sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
-      now,
+      new Date(),
     );
 
-    // Power transitions first. While powered off there's no point pushing
-    // brightness; we re-assert brightness on the next wake.
-    if (wantPoweredOn !== applied.poweredOn) {
+    if (wantPoweredOn !== appliedPoweredOn) {
       const ok = await runWlrRandr(
         ['--output', output, wantPoweredOn ? '--on' : '--off'],
         env,
       );
       if (ok) {
-        applied.poweredOn = wantPoweredOn;
+        appliedPoweredOn = wantPoweredOn;
         console.log(`${LOG_PREFIX} ${output} → ${wantPoweredOn ? 'on' : 'off (sleep)'}`);
-        if (wantPoweredOn) {
-          // Force brightness re-application after a wake.
-          applied.brightness = null;
-        }
-      }
-    }
-
-    if (
-      applied.poweredOn &&
-      (applied.brightness === null ||
-        Math.abs(applied.brightness - wantBrightness) > 0.001)
-    ) {
-      const ok = await runWlrRandr(
-        ['--output', output, '--brightness', wantBrightness.toFixed(3)],
-        env,
-      );
-      if (ok) {
-        applied.brightness = wantBrightness;
-        // Unreachable on released wlr-randr (no --brightness flag) — kept for a future gamma-capable tool.
-        console.log(
-          `${LOG_PREFIX} ${output} → brightness ${wantBrightness.toFixed(3)} ` +
-            `(gamma multiplier, not backlight)`,
-        );
       }
     }
   } catch (err) {
@@ -261,7 +219,7 @@ export async function initDisplayAdapter(getConfig: () => Promise<DeviceConfig>)
   try {
     const support = await getSupport();
     if (!support.ok) {
-      logOnce(`disabled — ${support.reason}; brightness/sleep are no-ops on this host`);
+      logOnce(`disabled — ${support.reason}; sleep schedule is a no-op on this host`);
       return;
     }
     const config = await getConfig();

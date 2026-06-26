@@ -13,7 +13,9 @@ type SettingsShape = DeviceConfig['settings'];
 const DEFAULTS: SettingsShape = {
   theme: 'system',
   accent: '#ff6b35',
-  brightness: 80,
+  // 100 = no dimming. Must stay neutral: the form saves the whole settings
+  // object, so a non-neutral default would get baked in by unrelated saves.
+  brightness: 100,
   sleepSchedule: undefined,
   night: undefined,
 };
@@ -117,7 +119,7 @@ export default function Settings() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Brightness</label>
-              <span className="text-xs opacity-60">{working.brightness ?? 0}%</span>
+              <span className="text-xs opacity-60">{working.brightness ?? 100}%</span>
             </div>
             <input
               type="range"
@@ -125,12 +127,15 @@ export default function Settings() {
               max={100}
               step={5}
               disabled={!has('brightness')}
-              value={working.brightness ?? 80}
+              value={working.brightness ?? 100}
               onChange={(e) =>
                 setWorking({ ...working, brightness: Number(e.target.value) })
               }
               className="w-full disabled:cursor-not-allowed disabled:opacity-50"
             />
+            <p className="text-xs opacity-60">
+              Software dimming of the rendered image — the panel has no backlight control.
+            </p>
           </div>
 
           <div className="space-y-2">
