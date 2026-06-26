@@ -25,7 +25,8 @@ talks straight to /dev/dri/card1.
 |---|---|
 | Boot direct to clock (no desktop) | ✅ designed (see `superclock-native.service`) |
 | Analog clock face (Swiss railway) | ✅ matches `src/apps/clock/AnalogClock.tsx` |
-| Smooth second-hand sweep | ✅ 30 ms timer + sub-second fraction |
+| Smooth second-hand sweep | ✅ 50 ms timer + sub-second fraction |
+| Scheduled night palette | ✅ compile-time 21:00 → 07:00 — see *Night mode* |
 | Touch input (panel has USB touch) | ⏳ not wired |
 | Weather / calendar / etc. from `/api/*` | ⏳ next step (libcurl + cJSON) |
 | App switcher (gesture) | ⏳ later |
@@ -67,6 +68,36 @@ sudo reboot
 After this, the Pi boots straight into the clock — no labwc, no desktop.
 SSH still works. To revert: `sudo raspi-config nonint do_boot_behaviour B4`.
 
+## Night mode
+
+Mirrors the kiosk's scheduled night mode
+(`docs/superpowers/specs/2026-06-12-night-mode-design.md`): between
+**21:00 and 07:00 local time** the dial inverts in place — black face,
+white hour/minute hands, gold second hand unchanged.
+
+- **Window semantics** are identical to `src/shared/time-window.ts`
+  `isWithinWindow()`: minute-of-day comparison, `[start, end)`, midnight
+  wrap, `start == end` → never night. The C port is
+  `src/night_window.c` — if the TS helper ever changes, change both.
+- **The schedule is compile-time** (`NIGHT_START_MIN` / `NIGHT_END_MIN` in
+  `src/clock_face.c`). This device is read-only in admin v1 — no config
+  push or polling — so it bakes the fleet's `settings.night` admin default.
+  When the slow device grows config access, read the window from the fleet
+  API instead.
+- **Local time** comes from the Pi's timezone (`timedatectl`) — make sure
+  it's set to the device's real location.
+- **Testing without waiting for 21:00:** set `SUPERCLOCK_NIGHT=always` (or
+  `never`) — e.g. in `/etc/superclock-native.env`, which the systemd unit
+  loads — and restart. Unset it to return to the schedule.
+
+The window predicate has a host-side unit test (no LVGL, runs on the Mac):
+
+```sh
+cd slow-native
+cc -std=c11 -Wall -Wextra -Isrc -o /tmp/test_night_window \
+   tests/test_night_window.c src/night_window.c && /tmp/test_night_window
+```
+
 ## Source layout
 
 ```
@@ -75,8 +106,12 @@ slow-native/
 ├── lv_conf.h                # LVGL config — DRM driver, 32 bpp, 1 MB heap
 ├── src/
 │   ├── main.c               # entry point, DRM setup, main loop
-│   ├── clock_face.c         # analog clock widget
-│   └── clock_face.h
+│   ├── clock_face.c         # analog clock widget (incl. night palette)
+│   ├── clock_face.h
+│   ├── night_window.c       # [start, end) wrap logic — port of time-window.ts
+│   └── night_window.h
+├── tests/
+│   └── test_night_window.c  # host-side unit test (see "Night mode")
 └── scripts/
     ├── setup-pi.sh                  # build on the Pi
     ├── deploy-from-mac.sh           # rsync + remote build
