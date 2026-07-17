@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { defaultsFor } from '../../shared/schema-registry';
 import { FACE_COMPONENTS, SWIPE_CYCLE_ORDER } from './face-components';
 
 export default function ClockApp(props: AppProps) {
@@ -25,9 +26,19 @@ export default function ClockApp(props: AppProps) {
 
   const Face = configFace ?? SWIPE_CYCLE_ORDER[faceIndex];
 
+  // Face options saved by the admin (FaceConfig.tsx) live at config.face.
+  // Merge over schema defaults so new fields appear with sane values.
+  const savedFace =
+    props.config?.face && typeof props.config.face === 'object'
+      ? (props.config.face as Record<string, unknown>)
+      : undefined;
+  const faceConfig = configFaceId
+    ? { ...defaultsFor(`face.${configFaceId}`), ...savedFace }
+    : undefined;
+
   return (
     <div className="relative h-full w-full">
-      <Face isActive={props.isActive} />
+      <Face isActive={props.isActive} faceConfig={faceConfig} />
     </div>
   );
 }

@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F43E}',
     description: 'Session + weekly Claude Code rate-limit utilization with mood-aware Clawd',
     category: 'productivity',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.claude-usage',
   },
   component: lazy(() => import('./ClaudeUsageApp')),
 });

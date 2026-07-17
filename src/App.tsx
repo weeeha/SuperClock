@@ -7,6 +7,7 @@ import { useApplySettings } from './core/apply-settings';
 import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
 import { startConfigPolling, stopConfigPolling } from './shared/local-config';
+import { useDeviceConfig } from './core/device-config';
 
 // Register all apps
 import './apps';
@@ -15,10 +16,15 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const initApps = useNavigation((s) => s.initApps);
   const mode = useNavigation((s) => s.mode);
+  const config = useDeviceConfig();
+  const enabledApps = config?.enabledApps;
 
+  // Re-derive the swipe order whenever the admin's enabled-apps set changes
+  // (the config store returns stable snapshots, so this only fires on real
+  // config updates, not on every 5s poll).
   useEffect(() => {
-    initApps();
-  }, [initApps]);
+    initApps(enabledApps);
+  }, [initApps, enabledApps]);
 
   useEffect(() => {
     startConfigPolling();

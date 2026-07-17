@@ -9,7 +9,14 @@ import ComplicationsDark from './ComplicationsDark';
 import WorldClock from './WorldClock';
 import FlipClock from './FlipClock';
 
-export type FaceComponent = ComponentType<{ isActive: boolean }>;
+export interface FaceProps {
+  isActive: boolean;
+  /** Merged (schema defaults ← saved values) face options from the
+   *  instance's `config.face` — present only for config-driven faces. */
+  faceConfig?: Record<string, unknown>;
+}
+
+export type FaceComponent = ComponentType<FaceProps>;
 
 // Maps face id (from src/shared/face-registry.ts) to its component.
 // Keys MUST match face-registry ids — pinned by registry-coherence.test.ts.

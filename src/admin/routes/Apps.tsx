@@ -32,7 +32,11 @@ export default function Apps() {
 
   const toggle = useMutation({
     mutationFn: async ({ deviceId, appId, enabled }: { deviceId: DeviceId; appId: string; enabled: boolean }) => {
-      const current = deviceQ.data?.enabledApps ?? [];
+      // Kiosk semantics: an EMPTY enabledApps means "all apps enabled"
+      // (fresh-device default). Turning one app off from that state must
+      // therefore materialize the full list first, or the write is a no-op.
+      const stored = deviceQ.data?.enabledApps ?? [];
+      const current = stored.length > 0 ? stored : (capsQ.data?.apps ?? []).map((a) => a.id);
       const next = enabled
         ? Array.from(new Set([...current, appId]))
         : current.filter((id) => id !== appId);
@@ -44,7 +48,9 @@ export default function Apps() {
   });
 
   const apps = capsQ.data?.apps ?? [];
-  const enabled = new Set(deviceQ.data?.enabledApps ?? []);
+  // Empty list = all enabled (mirror the kiosk's interpretation).
+  const storedEnabled = deviceQ.data?.enabledApps ?? [];
+  const enabled = new Set(storedEnabled.length > 0 ? storedEnabled : apps.map((a) => a.id));
   const instancesByApp = new Map<string, number>();
   for (const inst of deviceQ.data?.instances ?? []) {
     instancesByApp.set(inst.appId, (instancesByApp.get(inst.appId) ?? 0) + 1);

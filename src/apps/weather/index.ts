@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{26C5}',
     description: 'Current conditions and forecast',
     category: 'utility',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.weather',
   },
   component: lazy(() => import('./WeatherApp')),
 });
