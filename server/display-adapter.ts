@@ -17,7 +17,11 @@
 //    "slow" Pi-Zero (native LVGL, no Wayland/Chromium). The adapter MUST
 //    safely no-op — one info log, never throw, never block startup or a
 //    request — when wlr-randr is missing, there is no Wayland session, or
-//    the platform isn't Linux. Support is probed exactly once and cached.
+//    the platform isn't Linux. Successful probes are cached; failed probes
+//    are retried on every schedule tick, because at boot the server races
+//    labwc's session startup and the Wayland socket often appears seconds
+//    AFTER we first look for it. Caching that first failure would silently
+//    disable the sleep schedule until the next server restart.
 //
 //  - We only shell out when the effective power state actually changes,
 //    never on the kiosk's 5s config poll. Callers may invoke
@@ -31,14 +35,17 @@
 //    window so the panel sleeps/wakes at the scheduled times without any
 //    further config change.
 
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { access, readdir } from 'node:fs/promises';
 import { constants as FS } from 'node:fs';
 import { promisify } from 'node:util';
 import type { DeviceConfig } from '../src/shared/types';
 import { isWithinWindow } from '../src/shared/time-window';
 
-const execFileAsync = promisify(exec);
+// Shell (for `command -v` only) vs direct binary invocation — wlr-randr is
+// always run via execFile so no argument ever passes through a shell.
+const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const LOG_PREFIX = '[display-adapter]';
 // How often to re-evaluate the sleep schedule (independent of config pushes).
@@ -48,13 +55,16 @@ type Support =
   | { ok: true; env: NodeJS.ProcessEnv }
   | { ok: false; reason: string };
 
-// Cached one-shot capability probe. `undefined` = not probed yet.
-let supportPromise: Promise<Support> | undefined;
+// Capability probe result — cached only on success. Failures re-probe on the
+// next tick (boot race: the Wayland socket may not exist yet; see header).
+let supportCached: Support | undefined;
 // Cached detected output name (e.g. "HDMI-A-1", "DSI-1"). Re-detected if null.
 let cachedOutput: string | null = null;
-// Whether the output is currently powered on (false = we issued --off).
-// Last state we actually pushed — drives change detection.
-let appliedPoweredOn = true;
+// Last power state we actually pushed — drives change detection.
+// null = unknown (fresh process): the first reconcile always asserts state,
+// so a restart while the panel is off can't strand it dark until the next
+// sleep/wake cycle.
+let appliedPoweredOn: boolean | null = null;
 // The most recent config we were handed — the schedule evaluator reads this.
 let latestConfig: DeviceConfig | null = null;
 let scheduleTimer: ReturnType<typeof setInterval> | null = null;
@@ -103,7 +113,7 @@ async function onPath(bin: string, env: NodeJS.ProcessEnv): Promise<boolean> {
     }
   }
   try {
-    await execFileAsync(`command -v ${bin}`, { env, timeout: 4000 });
+    await execAsync(`command -v ${bin}`, { env, timeout: 4000 });
     return true;
   } catch {
     return false;
@@ -124,9 +134,17 @@ async function probeSupport(): Promise<Support> {
   return { ok: true, env };
 }
 
-function getSupport(): Promise<Support> {
-  if (!supportPromise) supportPromise = probeSupport();
-  return supportPromise;
+async function getSupport(): Promise<Support> {
+  if (supportCached) return supportCached;
+  const result = await probeSupport();
+  if (result.ok) {
+    supportCached = result;
+    if (logged) {
+      // We previously logged "disabled — …"; make the recovery visible.
+      console.log(`${LOG_PREFIX} support now available — sleep schedule active`);
+    }
+  }
+  return result;
 }
 
 // Parse the first connected output name out of `wlr-randr` output. Lines for
@@ -137,7 +155,7 @@ function getSupport(): Promise<Support> {
 async function detectOutput(env: NodeJS.ProcessEnv): Promise<string | null> {
   if (cachedOutput) return cachedOutput;
   try {
-    const { stdout } = await execFileAsync('wlr-randr', { env, timeout: 5000 });
+    const { stdout } = await execFileAsync('wlr-randr', [], { env, timeout: 5000 });
     for (const line of stdout.split('\n')) {
       if (!line || /^\s/.test(line)) continue; // skip blanks + indented props
       const name = line.split(/\s+/)[0]?.trim();
@@ -154,9 +172,8 @@ async function detectOutput(env: NodeJS.ProcessEnv): Promise<string | null> {
 
 async function runWlrRandr(args: string[], env: NodeJS.ProcessEnv): Promise<boolean> {
   try {
-    // args are internally constructed (output name + fixed flags), never
-    // user free-text, but quote the output name defensively anyway.
-    await execFileAsync(`wlr-randr ${args.join(' ')}`, { env, timeout: 5000 });
+    // execFile: args go straight to the binary, no shell interpolation.
+    await execFileAsync('wlr-randr', args, { env, timeout: 5000 });
     return true;
   } catch (err) {
     console.warn(`${LOG_PREFIX} wlr-randr ${args.join(' ')} failed: ${(err as Error).message}`);
@@ -211,20 +228,17 @@ export function applyDisplaySettings(config: DeviceConfig): void {
   void reconcile(config);
 }
 
-// Called once from server startup. Probes support (logging the no-op reason
-// if unsupported), applies the current persisted config, and starts the
-// schedule evaluator so the panel sleeps/wakes on time without further
-// config pushes. Resolves quickly; never throws.
+// Called once from server startup. Loads the persisted config, attempts a
+// first reconcile, and starts the schedule evaluator UNCONDITIONALLY — even
+// when the first probe fails. At boot the Wayland socket frequently appears
+// after we do (systemd races labwc), so the evaluator keeps re-probing and
+// the schedule comes alive as soon as the session exists. On genuinely
+// unsupported hosts (Mac dev, the slow Pi) each tick is a cheap no-op.
+// Resolves quickly; never throws.
 export async function initDisplayAdapter(getConfig: () => Promise<DeviceConfig>): Promise<void> {
   try {
-    const support = await getSupport();
-    if (!support.ok) {
-      logOnce(`disabled — ${support.reason}; sleep schedule is a no-op on this host`);
-      return;
-    }
-    const config = await getConfig();
-    latestConfig = config;
-    await reconcile(config);
+    latestConfig = await getConfig();
+    await reconcile(latestConfig);
 
     if (scheduleTimer === null) {
       scheduleTimer = setInterval(() => {
