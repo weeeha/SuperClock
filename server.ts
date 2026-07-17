@@ -1,12 +1,15 @@
 import express from 'express';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { buildApiApp } from './server/api-mount';
 import { initDisplayAdapter } from './server/display-adapter';
 import { migrateFleet, readDevice } from './server/fleet-store';
 import { resolveDeviceId } from './server/resolve-device';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// All paths resolve from the working directory (like fleet-store and
+// admin-token already do): the repo root in dev (`npm run start[:src]`) and
+// the systemd unit's WorkingDirectory on the Pi. This keeps the bundled
+// entrypoint (dist/server.mjs) location-independent.
+const ROOT = process.cwd();
 const app = express();
 // /etc/default/superclock is hand-editable — a malformed PORT must not make
 // app.listen(NaN) throw a confusing stack at boot.
@@ -15,29 +18,29 @@ const PORT = Number.isInteger(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 
 app.use(
   buildApiApp({
-    publicRoot: join(__dirname, 'dist'),
+    publicRoot: join(ROOT, 'dist'),
     adminHost: process.env.ADMIN_HOST === 'true',
   }),
 );
 
 app.use(
   '/assets',
-  express.static(join(__dirname, 'dist', 'assets'), {
+  express.static(join(ROOT, 'dist', 'assets'), {
     maxAge: '1y',
     immutable: true,
   }),
 );
 
-app.use(express.static(join(__dirname, 'dist')));
+app.use(express.static(join(ROOT, 'dist')));
 
 // Admin SPA fallback — any unmatched /admin/* route serves the admin entry.
 app.get('/admin{/*splat}', (_req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'admin', 'index.html'));
+  res.sendFile(join(ROOT, 'dist', 'admin', 'index.html'));
 });
 
 // Kiosk SPA fallback — everything else.
 app.get('/{*splat}', (_req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'index.html'));
+  res.sendFile(join(ROOT, 'dist', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
