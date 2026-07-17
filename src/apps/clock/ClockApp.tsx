@@ -1,43 +1,7 @@
-import { useState, useEffect, type ComponentType } from 'react';
+import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
-import MinimalismoClock from './MinimalismoClock';
-import AnalogClock from './AnalogClock';
-import ProductivityClock from './ProductivityClock';
-import SquareClock from './SquareClock';
-import FloralClock from './FloralClock';
-import ComplicationsLight from './ComplicationsLight';
-import ComplicationsDark from './ComplicationsDark';
-import WorldClock from './WorldClock';
-import FlipClock from './FlipClock';
-
-type FaceComponent = ComponentType<{ isActive: boolean }>;
-
-// Maps face id (from src/shared/face-registry.ts) to its component.
-// Keys here MUST match face-registry ids.
-const FACE_COMPONENTS: Record<string, FaceComponent> = {
-  minimalismo: MinimalismoClock,
-  analog: AnalogClock,
-  productivity: ProductivityClock,
-  square: SquareClock,
-  floral: FloralClock,
-  'complications-light': ComplicationsLight,
-  'complications-dark': ComplicationsDark,
-  world: WorldClock,
-  flip: FlipClock,
-};
-
-const SWIPE_CYCLE_ORDER: FaceComponent[] = [
-  MinimalismoClock,
-  AnalogClock,
-  ProductivityClock,
-  SquareClock,
-  FloralClock,
-  ComplicationsLight,
-  ComplicationsDark,
-  WorldClock,
-  FlipClock,
-];
+import { FACE_COMPONENTS, SWIPE_CYCLE_ORDER } from './face-components';
 
 export default function ClockApp(props: AppProps) {
   const [faceIndex, setFaceIndex] = useState(0);

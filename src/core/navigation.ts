@@ -99,7 +99,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),
 }));
 
-// Expose for debugging in dev
-if (import.meta.env.DEV) {
+// Expose for debugging in dev (window-guarded: this module also loads under
+// node in tests).
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as { __nav: typeof useNavigation }).__nav = useNavigation;
 }
