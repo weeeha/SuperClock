@@ -8,7 +8,10 @@ import { resolveDeviceId } from './server/resolve-device';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+// /etc/default/superclock is hand-editable — a malformed PORT must not make
+// app.listen(NaN) throw a confusing stack at boot.
+const parsedPort = Number.parseInt(process.env.PORT || '3000', 10);
+const PORT = Number.isInteger(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 
 app.use(
   buildApiApp({
