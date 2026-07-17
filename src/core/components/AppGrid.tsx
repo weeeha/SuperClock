@@ -35,7 +35,7 @@ const columns = [
 ];
 
 export default function AppGrid() {
-  const { mode, switchToApp } = useNavigation();
+  const { switchToApp } = useNavigation();
   const panRef = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,8 +43,12 @@ export default function AppGrid() {
     {
       onDrag: ({ offset: [ox, oy] }) => {
         if (containerRef.current) {
-          containerRef.current.style.transform = `translate(${ox}px, ${oy}px)`;
-          panRef.current = { x: ox, y: oy };
+          // Clamp so the grid can't be flung fully off-screen with no way
+          // back (short of closing and reopening the overlay).
+          const x = Math.max(-window.innerWidth, Math.min(window.innerWidth, ox));
+          const y = Math.max(-window.innerHeight / 2, Math.min(window.innerHeight / 2, oy));
+          containerRef.current.style.transform = `translate(${x}px, ${y}px)`;
+          panRef.current = { x, y };
         }
       },
     },
@@ -54,7 +58,8 @@ export default function AppGrid() {
     },
   );
 
-  if (mode !== 'grid') return null;
+  // No mode check here: App.tsx mounts this only in grid mode, and an early
+  // null return would defeat AnimatePresence's exit animation.
 
   const tileSize = 'min(22vw, 22vh)';
   const gap = 'min(1.5vw, 1.5vh)';

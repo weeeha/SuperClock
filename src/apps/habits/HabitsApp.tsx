@@ -1,4 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import type { AppProps } from '../../core/types';
+import { useNavigation } from '../../core/navigation';
 
 type View = 'daily' | 'monthly';
 
@@ -16,8 +18,14 @@ const CX = 500;
 const CY = 500;
 const STORAGE_KEY = 'superclock-habits-v2';
 
+// LOCAL calendar date, not toISOString() (UTC) — mixing the two shifted
+// day keys by one around midnight in any UTC+ timezone, so a habit toggled
+// today lit up the wrong cell in the monthly ring.
 function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function hKey(habitId: string, dateStr: string): string {
@@ -192,11 +200,49 @@ function MonthlyView({
 
 // ── Root component ────────────────────────────────────────────────────────────
 
-export default function HabitsApp() {
+export default function HabitsApp({ isActive }: AppProps) {
   const [view, setView] = useState<View>('daily');
   const [completions, setCompletions] = useState<Record<string, boolean>>(loadCompletions);
-  const touchStartY = useRef(0);
-  const [now] = useState(() => new Date());
+  const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
+  const showGrid = useNavigation((s) => s.showGrid);
+
+  // Ticks at most once a day: same-date checks return the previous state,
+  // so a kiosk left on this screen overnight rolls over to the new day
+  // (the old frozen `now` kept checking yesterday's keys after midnight,
+  // making taps look like no-ops).
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!isActive) return;
+    const id = setInterval(() => {
+      setNow((prev) => {
+        const d = new Date();
+        return toDateStr(d) === toDateStr(prev) ? prev : d;
+      });
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [isActive]);
+
+  // View switching consumes vertical swipes via the shell's callback slot
+  // (same mechanism as ClockApp's face cycling). The old touch-event
+  // stopPropagation never reached the shell — it listens on the POINTER
+  // channel with pointer capture — so a swipe both switched views AND
+  // opened the app grid on top.
+  useEffect(() => {
+    if (!isActive) {
+      setVerticalSwipeCallback(null);
+      return;
+    }
+    setVerticalSwipeCallback((dir) => {
+      if (dir === 'up') {
+        if (view === 'daily') setView('monthly');
+      } else if (view === 'monthly') {
+        setView('daily');
+      } else {
+        showGrid(); // swipe down at daily = the shell's default gesture
+      }
+    });
+    return () => setVerticalSwipeCallback(null);
+  }, [isActive, view, setVerticalSwipeCallback, showGrid]);
 
   function toggle(habitId: string) {
     const key = hKey(habitId, toDateStr(new Date()));
@@ -205,31 +251,8 @@ export default function HabitsApp() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }
 
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartY.current = e.touches[0].clientY;
-  }
-
-  function onTouchEnd(e: React.TouchEvent) {
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dy) > 50) {
-      if (dy < 0 && view === 'daily') {
-        setView('monthly');
-        e.stopPropagation();
-        e.nativeEvent.stopImmediatePropagation();
-      } else if (dy > 0 && view === 'monthly') {
-        setView('daily');
-        e.stopPropagation();
-        e.nativeEvent.stopImmediatePropagation();
-      }
-    }
-  }
-
   return (
-    <div
-      className="relative w-full h-full bg-black overflow-hidden"
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
+    <div className="relative w-full h-full bg-black overflow-hidden">
       {view === 'daily'
         ? <DailyView completions={completions} toggle={toggle} now={now} />
         : <MonthlyView completions={completions} now={now} />

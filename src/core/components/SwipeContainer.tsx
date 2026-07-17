@@ -17,7 +17,8 @@ const variants = {
 };
 
 export default function SwipeContainer() {
-  const { activeAppId, activeInstanceId, transitionDirection, finishTransition } = useNavigation();
+  const { activeAppId, activeInstanceId, mode, transitionDirection, finishTransition } =
+    useNavigation();
   const app = getApp(activeAppId);
   const instance = useActiveInstance(activeAppId);
 
@@ -53,7 +54,11 @@ export default function SwipeContainer() {
               </div>
             }
           >
-            <AppComponent isActive={true} config={instance?.config} />
+            {/* Deactivate the app while the grid overlay covers it — apps
+                gate their intervals/rAF on isActive, and the fireplace's
+                particle sim burning CPU behind an opaque overlay is real
+                heat on a Pi. */}
+            <AppComponent isActive={mode !== 'grid'} config={instance?.config} />
           </Suspense>
         </motion.div>
       </AnimatePresence>
