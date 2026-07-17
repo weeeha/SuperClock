@@ -41,7 +41,7 @@ Cross-cutting concerns currently re-rolled per app. Target location: `src/core/h
 
 | Capability | Used by | Notes |
 |---|---|---|
-| Peer sub-view swiping (tier 2) | 8+ apps | Honor `supportsInternalSwipe` from app metadata; defer when app handles it |
+| Peer sub-view swiping (tier 2) | 8+ apps | Register `setVerticalSwipeCallback` on the nav store while active (ClockApp/HabitsApp pattern) |
 | Drill-down + back stack (tier 3+) | 4+ apps | Fitness needs 3 nested levels |
 | `useScopedStorage(appId)` | 5+ apps | Namespaced localStorage with zod schema |
 | `useCachedFetch(url, { refreshMs, requiresActive })` | 4+ apps | Polled fetch with isActive gating |
@@ -89,7 +89,7 @@ Alternative considered: primitives-first. Rejected for now — abstractions desi
 - **Statistics.** Every "do something daily" app wants a weekly/monthly summary. Implement as a `WeekRing` widget that any trackable app drops in; data via a shared `useDailyTotals(appId)` hook.
 - **Persistence.** Apps use various localStorage keys with various JSON shapes. `useScopedStorage(appId, schema)` standardizes namespacing and validation.
 - **Data fetch + refresh.** Weather/calendar/github/claude-usage each implement their own setInterval + fetch + isActive gating. `useCachedFetch(url, { refreshMs, requiresActive })` centralizes.
-- **Internal-swipe gestures.** Apps that consume horizontal swipe (clock face cycling, habits day/month) hand-roll. Wire `supportsInternalSwipe: true` from app metadata into the root `useAppGestures` hook so the shell defers when the app handles it.
+- **Internal-swipe gestures.** Resolved: apps that consume vertical swipes register `setVerticalSwipeCallback` on the navigation store while active (ClockApp face cycling, HabitsApp day/month). The `supportsInternalSwipe` metadata flag was dead API and has been deleted. A shared `useVerticalSwipeViews(views)` hook could still standardize the registration boilerplate.
 
 ## Roadmap (rough, open to amendment)
 
@@ -135,7 +135,6 @@ registerApp({
     id: 'example',
     name: 'Example',
     icon: '/icons/example.png',
-    supportsInternalSwipe: true,
   },
   component: lazy(() => import('./ExampleApp')),
 });
