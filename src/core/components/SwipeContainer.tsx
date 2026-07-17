@@ -17,7 +17,7 @@ const variants = {
 };
 
 export default function SwipeContainer() {
-  const { activeAppId, transitionDirection, finishTransition } = useNavigation();
+  const { activeAppId, activeInstanceId, transitionDirection, finishTransition } = useNavigation();
   const app = getApp(activeAppId);
   const instance = useActiveInstance(activeAppId);
 
@@ -33,8 +33,11 @@ export default function SwipeContainer() {
         mode="popLayout"
         onExitComplete={finishTransition}
       >
+        {/* Keyed on the instance when one is active: switching between two
+            instances of the same app must still remount/animate, otherwise
+            onExitComplete never fires and mode wedges at 'transitioning'. */}
         <motion.div
-          key={activeAppId}
+          key={activeInstanceId ?? activeAppId}
           custom={transitionDirection}
           variants={variants}
           initial="enter"
