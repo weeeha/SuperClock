@@ -138,7 +138,8 @@ echo "=== Writing /etc/default/superclock ==="
 if [ ! -f /etc/default/superclock ]; then
   cat > /etc/default/superclock <<EOF
 # SuperClock server environment (sourced by superclock-server.service).
-# Add app secrets here too (CALENDAR_ICS_URL, VITE_* are build-time only).
+# Add server-side app secrets here too (CALENDAR_ICS_URL, GITHUB_TOKEN).
+# VITE_* vars are build-time only and belong in .env on the build machine.
 PORT=$PORT
 ADMIN_HOST=$ADMIN_HOST
 EOF

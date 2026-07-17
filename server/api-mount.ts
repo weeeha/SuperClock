@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import { join } from 'node:path';
 import { getCalendarEvents, listPhotos } from './handlers';
 import { claudeUsageHandler } from './claude-usage-proxy';
+import { githubContributionsHandler } from './github-proxy';
 import deviceRoutes from './device-routes';
 import adminRoutes from './admin-routes';
 import { startPushRetryLoop } from './device-push';
@@ -36,6 +37,8 @@ export function buildApiApp(opts: MountOptions): Express {
   });
 
   app.get('/api/claude-usage', claudeUsageHandler);
+
+  app.get('/api/github/contributions', githubContributionsHandler);
 
   app.use('/api/device', deviceRoutes);
 
