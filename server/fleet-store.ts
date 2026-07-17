@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import {
   ALL_DEVICE_IDS,
@@ -15,7 +15,19 @@ const FLEET_PATH = join(process.cwd(), 'config', 'fleet.json');
 const FLEET_EXAMPLE_PATH = join(process.cwd(), 'config', 'fleet.example.json');
 const FLEET_SCHEMA_VERSION = 2;
 
-let writeLock: Promise<unknown> = Promise.resolve();
+// Serializes every read-modify-write cycle, not just the final file write:
+// two overlapping mutations would otherwise read the same base snapshot and
+// the later write would silently drop the earlier change (both returning 200).
+let mutationLock: Promise<unknown> = Promise.resolve();
+
+function withMutationLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = mutationLock.then(fn, fn);
+  mutationLock = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
 
 function defaultFleet(): FleetConfig {
   return {
@@ -35,28 +47,76 @@ async function readJson<T>(path: string): Promise<T | null> {
   }
 }
 
+async function readFleetFromDisk(): Promise<FleetConfig | null> {
+  let raw: string;
+  try {
+    raw = await readFile(FLEET_PATH, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    // Transient read failure (permissions, EIO): serve defaults for this
+    // request but leave the file alone — it may be readable again later.
+    console.error('[fleet] cannot read fleet.json, serving fallback:', err);
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw) as FleetConfig;
+    if (!Array.isArray(parsed?.devices)) throw new Error('missing devices array');
+    return parsed;
+  } catch (err) {
+    // Corrupt content (power loss on the SD card, disk full, hand edit) must
+    // not permanently 500 every config route on a headless device. Quarantine
+    // the file so the next write recreates a healthy one.
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const quarantine = `${FLEET_PATH}.corrupt-${stamp}`;
+    console.error(
+      `[fleet] corrupt fleet.json (${(err as Error).message}) — quarantining to ${quarantine}`,
+    );
+    await rename(FLEET_PATH, quarantine).catch(() => undefined);
+    return null;
+  }
+}
+
 export async function readFleet(): Promise<FleetConfig> {
-  const fromDisk = await readJson<FleetConfig>(FLEET_PATH);
+  const fromDisk = await readFleetFromDisk();
   if (fromDisk) return fromDisk;
-  const example = await readJson<FleetConfig>(FLEET_EXAMPLE_PATH);
+  const example = await readJson<FleetConfig>(FLEET_EXAMPLE_PATH).catch(() => null);
   return example ?? defaultFleet();
 }
 
 async function writeFleetAtomic(fleet: FleetConfig): Promise<void> {
   await mkdir(dirname(FLEET_PATH), { recursive: true });
   const tmp = `${FLEET_PATH}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(tmp, JSON.stringify(fleet, null, 2) + '\n', 'utf8');
+  const handle = await open(tmp, 'w');
+  try {
+    await handle.writeFile(JSON.stringify(fleet, null, 2) + '\n', 'utf8');
+    // Flush data before rename: without fsync, power loss can journal the
+    // rename ahead of the file contents and leave an empty/garbled fleet.json.
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
   await rename(tmp, FLEET_PATH);
 }
 
-export async function writeFleet(fleet: FleetConfig): Promise<FleetConfig> {
+// Bump version + persist. Callers must hold the mutation lock.
+async function commitFleet(fleet: FleetConfig): Promise<FleetConfig> {
   const next: FleetConfig = { ...fleet, version: fleet.version + 1 };
-  writeLock = writeLock.then(() => writeFleetAtomic(next));
-  await writeLock;
+  await writeFleetAtomic(next);
   return next;
 }
 
-export async function updateDevice(
+export function writeFleet(fleet: FleetConfig): Promise<FleetConfig> {
+  return withMutationLock(() => commitFleet(fleet));
+}
+
+export function updateDevice(
+  deviceId: DeviceId,
+  updater: (config: DeviceConfig) => DeviceConfig,
+): Promise<DeviceConfig> {
+  return withMutationLock(() => updateDeviceLocked(deviceId, updater));
+}
+
+async function updateDeviceLocked(
   deviceId: DeviceId,
   updater: (config: DeviceConfig) => DeviceConfig,
 ): Promise<DeviceConfig> {
@@ -79,7 +139,7 @@ export async function updateDevice(
     };
     devices.push(updated);
   }
-  await writeFleet({ ...fleet, devices });
+  await commitFleet({ ...fleet, devices });
   // If the device whose config just changed is the one this server runs on,
   // reconcile the physical panel. The adapter diffs against last-applied
   // state, so this is a cheap no-op unless brightness/sleep actually moved
@@ -105,7 +165,11 @@ export async function readDevice(deviceId: DeviceId): Promise<DeviceConfig> {
 // the slider was inert — stored values carry no intent. Now that the kiosk
 // honors brightness via a CSS filter, clear them so panels don't
 // surprise-dim on deploy.
-export async function migrateFleet(): Promise<void> {
+export function migrateFleet(): Promise<void> {
+  return withMutationLock(migrateFleetLocked);
+}
+
+async function migrateFleetLocked(): Promise<void> {
   const fleet = await readFleet();
   const from = fleet.schemaVersion ?? 0;
   if (from >= FLEET_SCHEMA_VERSION) return;
@@ -124,5 +188,5 @@ export async function migrateFleet(): Promise<void> {
     // change-detection keys on updatedAt).
     return { ...d, settings, updatedAt: new Date().toISOString() };
   });
-  await writeFleet({ ...fleet, devices, schemaVersion: FLEET_SCHEMA_VERSION });
+  await commitFleet({ ...fleet, devices, schemaVersion: FLEET_SCHEMA_VERSION });
 }
