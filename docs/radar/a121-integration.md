@@ -31,6 +31,13 @@ A121 module ──USB serial──► server/radar/driver.ts   (transport, recon
 - `POST /api/radar/mode {"mode":"breathing"|"presence"}` — the Breathing app
   leases breathing mode while active; the lease expires after 90 s without
   renewal and the sensor reverts to presence mode.
+- `GET /api/occupancy` — desk-occupancy summary (`src/shared/occupancy.ts`)
+  derived from presence transitions by `server/occupancy/service.ts`:
+  today's at-desk total, per-hour buckets, and a 7-day history. Sessions
+  persist to `config/occupancy.json` (gitignored, 30 days kept); dropouts
+  shorter than 60 s merge into the surrounding session. Consumed by the
+  Time Tracking app, which also auto-pauses its Pomodoro timer after 45 s
+  of radar absence and auto-resumes on return.
 
 ## Behavior
 

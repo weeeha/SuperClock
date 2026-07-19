@@ -6,6 +6,7 @@ import deviceRoutes from './device-routes';
 import adminRoutes from './admin-routes';
 import radarRoutes from './radar/routes';
 import { initRadarService } from './radar/service';
+import { getOccupancySummary, initOccupancyService } from './occupancy/service';
 
 interface MountOptions {
   publicRoot: string; // for /api/photos directory lookup
@@ -45,6 +46,12 @@ export function buildApiApp(opts: MountOptions): Express {
   // it no-ops into "unavailable" when no sensor is attached.
   initRadarService();
   app.use('/api/radar', radarRoutes);
+
+  // Desk-occupancy log derived from radar presence (Time Tracking app).
+  initOccupancyService();
+  app.get('/api/occupancy', (_req, res) => {
+    res.json(getOccupancySummary());
+  });
 
   if (opts.adminHost) {
     app.use('/api/admin', adminRoutes);
