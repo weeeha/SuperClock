@@ -83,6 +83,9 @@ export interface DeviceConfig {
     brightness?: number;
     sleepSchedule?: { wake: string; sleep: string };
     night?: { start: string; end: string; brightness?: number };
+    // Radar presence wake/sleep (A121 module). Only meaningful on the device
+    // the sensor is attached to; ignored when /api/radar reports unavailable.
+    presence?: { enabled?: boolean; absentAfterMin?: number };
   };
   updatedAt: string;
 }

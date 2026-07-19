@@ -4,6 +4,8 @@ import { getCalendarEvents, listPhotos } from './handlers';
 import { claudeUsageHandler } from './claude-usage-proxy';
 import deviceRoutes from './device-routes';
 import adminRoutes from './admin-routes';
+import radarRoutes from './radar/routes';
+import { initRadarService } from './radar/service';
 
 interface MountOptions {
   publicRoot: string; // for /api/photos directory lookup
@@ -37,6 +39,12 @@ export function buildApiApp(opts: MountOptions): Express {
   app.get('/api/claude-usage', claudeUsageHandler);
 
   app.use('/api/device', deviceRoutes);
+
+  // A121 mmWave radar (presence / breathing). Service self-starts here so
+  // both the dev middleware and the prod server get it without extra wiring;
+  // it no-ops into "unavailable" when no sensor is attached.
+  initRadarService();
+  app.use('/api/radar', radarRoutes);
 
   if (opts.adminHost) {
     app.use('/api/admin', adminRoutes);

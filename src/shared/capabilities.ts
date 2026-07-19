@@ -27,6 +27,7 @@ const ALL_KIOSK_APP_IDS = [
   'photo-frame',
   'quote',
   'time-tracking',
+  'breathing',
 ];
 
 // AppDescriptors built from the registries — no React imports, safe for server-side.
@@ -41,6 +42,7 @@ const APP_DESCRIPTORS: Record<string, AppDescriptor> = {
   'photo-frame': { id: 'photo-frame' },
   quote: { id: 'quote' },
   'time-tracking': { id: 'time-tracking' },
+  breathing: { id: 'breathing' },
 };
 
 export const STATIC_DEVICE_INFO: Record<DeviceId, StaticDeviceInfo> = {

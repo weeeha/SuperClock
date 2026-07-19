@@ -38,12 +38,17 @@ import { constants as FS } from 'node:fs';
 import { promisify } from 'node:util';
 import type { DeviceConfig } from '../src/shared/types';
 import { isWithinWindow } from '../src/shared/time-window';
+import { getPresenceState, onPresenceTransition } from './radar/service';
+import { DEFAULT_ABSENT_AFTER_MIN } from '../src/shared/radar';
 
 const execFileAsync = promisify(exec);
 
 const LOG_PREFIX = '[display-adapter]';
 // How often to re-evaluate the sleep schedule (independent of config pushes).
 const SCHEDULE_TICK_MS = 30_000;
+// Inside the sleep window a radar wake keeps the panel on this long after
+// the last presence — short on purpose (it's the middle of the night).
+const SLEEP_WAKE_LINGER_MS = 60_000;
 
 type Support =
   | { ok: true; env: NodeJS.ProcessEnv }
@@ -178,6 +183,33 @@ function clampBrightness(pct: number | undefined): number {
   return Math.min(1, Math.max(0, pct / 100));
 }
 
+// Panel power decision. Baseline is the sleep schedule; when the A121 radar
+// is delivering data (and settings.presence.enabled isn't false) presence
+// takes over:
+//   - outside the sleep window: stay on while present (or until absent for
+//     absentAfterMin), so the panel blanks when nobody is around;
+//   - inside the sleep window: normally off, but an approach wakes the panel
+//     until SLEEP_WAKE_LINGER_MS after presence is lost.
+function decidePower(config: DeviceConfig, now: Date): boolean {
+  const { sleepSchedule, presence: presenceCfg } = config.settings;
+  const inSleepWindow = isWithinWindow(
+    sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
+    now,
+  );
+
+  const radar = getPresenceState();
+  if (!radar.available || presenceCfg?.enabled === false) return !inSleepWindow;
+
+  const sinceSeenMs = now.getTime() - radar.lastSeenMs;
+  if (inSleepWindow) {
+    return radar.present === true || sinceSeenMs < SLEEP_WAKE_LINGER_MS;
+  }
+  const absentAfterMs =
+    Math.max(1, presenceCfg?.absentAfterMin ?? DEFAULT_ABSENT_AFTER_MIN) * 60_000;
+  // No verdict yet (present === null) keeps the panel on.
+  return radar.present !== false || sinceSeenMs < absentAfterMs;
+}
+
 // Reconcile the panel with `config`. Cheap + idempotent: only issues a
 // wlr-randr call when the effective brightness or power state changed.
 // Never throws.
@@ -196,13 +228,10 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
       return;
     }
 
-    const { brightness, sleepSchedule } = config.settings;
+    const { brightness } = config.settings;
     const now = new Date();
     const wantBrightness = clampBrightness(brightness);
-    const wantPoweredOn = !isWithinWindow(
-      sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
-      now,
-    );
+    const wantPoweredOn = decidePower(config, now);
 
     // Power transitions first. While powered off there's no point pushing
     // brightness; we re-assert brightness on the next wake.
@@ -275,6 +304,12 @@ export async function initDisplayAdapter(getConfig: () => Promise<DeviceConfig>)
       // Don't keep the event loop alive solely for this timer.
       scheduleTimer.unref?.();
     }
+
+    // Re-reconcile immediately on presence flips so a radar wake doesn't
+    // wait for the next schedule tick.
+    onPresenceTransition(() => {
+      void reconcile(latestConfig);
+    });
   } catch (err) {
     console.warn(`${LOG_PREFIX} init error (ignored): ${(err as Error).message}`);
   }

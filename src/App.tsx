@@ -6,6 +6,7 @@ import { usePlaylistAutoRotate } from './core/playlist';
 import { useApplySettings } from './core/apply-settings';
 import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
+import PresenceShade from './core/components/PresenceShade';
 import { startConfigPolling, stopConfigPolling } from './shared/local-config';
 
 // Register all apps
@@ -35,6 +36,7 @@ export default function App() {
       <AnimatePresence>
         {mode === 'grid' && <AppGrid />}
       </AnimatePresence>
+      <PresenceShade />
       <div
         id="gesture-debug"
         className="fixed top-1 right-1 z-[9999] rounded bg-black/70 px-2 py-1 font-mono text-xs text-white pointer-events-none"

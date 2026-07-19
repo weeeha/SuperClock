@@ -14,6 +14,7 @@ import { dateComplicationSchema } from './schemas/complication.date';
 import { temperatureComplicationSchema } from './schemas/complication.temperature';
 
 // Apps
+import { breathingAppSchema, breathingAppMeta } from './schemas/app.breathing';
 import { calendarAppSchema, calendarAppMeta } from './schemas/app.calendar';
 import { claudeUsageAppSchema, claudeUsageAppMeta } from './schemas/app.claude-usage';
 import { fireplaceAppSchema, fireplaceAppMeta } from './schemas/app.fireplace';
@@ -52,6 +53,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'complication.temperature': { schema: temperatureComplicationSchema },
 
   // Apps
+  'app.breathing': { schema: breathingAppSchema, meta: breathingAppMeta },
   'app.calendar': { schema: calendarAppSchema, meta: calendarAppMeta },
   'app.claude-usage': { schema: claudeUsageAppSchema, meta: claudeUsageAppMeta },
   'app.fireplace': { schema: fireplaceAppSchema, meta: fireplaceAppMeta },
