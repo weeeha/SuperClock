@@ -85,8 +85,8 @@ export function overlapsRange(e: CalendarEvent, from: Date, to: Date): boolean {
 
 export function relativeTime(target: Date, now: Date): string {
   const diffMs = target.getTime() - now.getTime();
+  if (Math.abs(diffMs) < 60000) return 'now';
   const absMin = Math.round(Math.abs(diffMs) / 60000);
-  if (absMin < 1) return 'now';
   const future = diffMs > 0;
   const unit = pickUnit(absMin);
   const phrase = `${unit.value} ${unit.label}${unit.value === 1 ? '' : 's'}`;
