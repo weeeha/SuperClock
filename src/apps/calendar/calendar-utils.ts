@@ -30,7 +30,10 @@ export function addDays(d: Date, n: number): Date {
 
 export function addMonths(d: Date, n: number): Date {
   const r = new Date(d);
+  r.setDate(1);
   r.setMonth(r.getMonth() + n);
+  const lastDay = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
+  r.setDate(Math.min(d.getDate(), lastDay));
   return r;
 }
 
@@ -49,7 +52,7 @@ export function monthWeeks(d: Date, weekStart: WeekStart): Date[][] {
   while (cursor <= last || weeks.length === 0) {
     weeks.push(Array.from({ length: 7 }, (_, i) => addDays(cursor, i)));
     cursor = addDays(cursor, 7);
-    if (weeks.length > 6) break; // safety
+    if (weeks.length >= 6) break; // safety
   }
   return weeks;
 }
@@ -70,7 +73,7 @@ export function groupEventsByDay(events: CalendarEvent[], days: Date[]): DayGrou
   for (const day of days) {
     const dayEvents = eventsForDay(events, day).sort((a, b) => {
       if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
-      return a.start.localeCompare(b.start);
+      return new Date(a.start).getTime() - new Date(b.start).getTime();
     });
     if (dayEvents.length > 0) groups.push({ day, events: dayEvents });
   }

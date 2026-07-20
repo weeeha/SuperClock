@@ -58,6 +58,12 @@ describe('addMonths / addDays', () => {
   it('addDays(+7) from Jul 19 → Jul 26', () => {
     expect(addDays(jul19, 7)).toEqual(new Date(2026, 6, 26, 10, 0, 0));
   });
+  it('addMonths clamps to end of shorter target month (Jan 31 → Feb 28)', () => {
+    expect(addMonths(new Date(2026, 0, 31, 9, 0), 1)).toEqual(new Date(2026, 1, 28, 9, 0));
+  });
+  it('addMonths back a month also clamps (Mar 31 → Feb 28)', () => {
+    expect(addMonths(new Date(2026, 2, 31), -1)).toEqual(new Date(2026, 1, 28));
+  });
 });
 
 describe('sameDay', () => {
@@ -95,6 +101,11 @@ describe('overlapsRange', () => {
     const e = ev({ start: new Date(2026, 6, 19, 18).toISOString(), end: new Date(2026, 6, 19, 20).toISOString() });
     expect(overlapsRange(e, new Date(2026, 6, 19), new Date(2026, 6, 20))).toBe(true);
     expect(overlapsRange(e, new Date(2026, 6, 20), new Date(2026, 6, 21))).toBe(false);
+  });
+  it('is exclusive at the boundaries (touching ranges do not overlap)', () => {
+    const e = ev({ start: new Date(2026, 6, 19, 10).toISOString(), end: new Date(2026, 6, 19, 12).toISOString() });
+    expect(overlapsRange(e, new Date(2026, 6, 19, 12), new Date(2026, 6, 19, 14))).toBe(false);
+    expect(overlapsRange(e, new Date(2026, 6, 19, 8), new Date(2026, 6, 19, 10))).toBe(false);
   });
 });
 
