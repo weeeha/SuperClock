@@ -1,72 +1,95 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
 import type { CalendarEvent } from '../../api/types';
+import { useNavigation } from '../../core/navigation';
+import { calendarAppSchema } from '../../shared/schemas/app.calendar';
+import { useCalendarEvents } from './useCalendarEvents';
+import { addDays, addMonths, monthWeeks, startOfWeek } from './calendar-utils';
+import MonthView from './MonthView';
+import WeekView from './WeekView';
+import DetailsView from './DetailsView';
 
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
+type View = 'month' | 'week' | 'details';
 
-/** Calendar screen — based on Figma S13 design (489:21033). Upcoming events via /api/calendar. */
-export default function CalendarApp({ isActive }: AppProps) {
-  const [now, setNow] = useState(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+export default function CalendarApp({ isActive, config }: AppProps) {
+  const cfg = useMemo(() => calendarAppSchema.parse(config ?? {}), [config]);
+  const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
 
+  const [now, setNow] = useState(() => new Date());
+  const [view, setView] = useState<View>(cfg.defaultView);
+  const [focusDate, setFocusDate] = useState(() => new Date());
+  const [selected, setSelected] = useState<CalendarEvent | null>(null);
+
+  // Roll `now` over roughly each minute so "today"/relative-time stay fresh.
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setNow(new Date()), 60000);
+    const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, [isActive]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch('/api/calendar');
-        if (!res.ok) return;
-        const data = (await res.json()) as CalendarEvent[];
-        if (!cancelled) setEvents(data);
-      } catch {
-        // network error → keep current state, calendar shows date only
-      }
-    }
-    load();
-    if (!isActive) return;
-    const id = setInterval(load, 5 * 60 * 1000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [isActive]);
+  // Fetch range covers the visible month grid (month view is the widest need).
+  const [fromIso, toIso] = useMemo(() => {
+    const weeks = monthWeeks(focusDate, cfg.weekStart);
+    const from = weeks[0][0];
+    const to = addDays(weeks[weeks.length - 1][6], 1);
+    return [from.toISOString(), to.toISOString()];
+  }, [focusDate, cfg.weekStart]);
 
-  const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
-  const date = now.getDate();
-  const month = now.toLocaleDateString('en-US', { month: 'long' });
-  const upcoming = events.slice(0, 3);
+  const { events, offline } = useCalendarEvents(fromIso, toIso, isActive);
+
+  // Vertical swipe = step through time at the current level.
+  useEffect(() => {
+    if (!isActive) {
+      setVerticalSwipeCallback(null);
+      return;
+    }
+    setVerticalSwipeCallback((dir) => {
+      const delta = dir === 'up' ? 1 : -1; // up = forward in time
+      setFocusDate((d) => (view === 'month' ? addMonths(d, delta) : addDays(d, delta * 7)));
+    });
+    return () => setVerticalSwipeCallback(null);
+  }, [isActive, view, setVerticalSwipeCallback]);
+
+  if (view === 'details' && selected) {
+    return (
+      <DetailsView
+        event={selected}
+        now={now}
+        timeFormat={cfg.timeFormat}
+        onBack={() => setView('week')}
+      />
+    );
+  }
+
+  if (view === 'week') {
+    return (
+      <WeekView
+        focusDate={focusDate}
+        now={now}
+        events={events}
+        weekStart={cfg.weekStart}
+        timeFormat={cfg.timeFormat}
+        offline={offline}
+        onBack={() => setView('month')}
+        onSelectEvent={(e) => {
+          setSelected(e);
+          setView('details');
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-black gap-[3%]">
-      <p className="text-[7vmin] font-semibold text-white">{dayName}</p>
-
-      <div className="flex items-center justify-center rounded-3xl bg-[#E33030] w-[36%] aspect-square">
-        <p className="text-[22vmin] font-bold text-white leading-none">{date}</p>
-      </div>
-
-      <p className="text-[7vmin] font-semibold text-white">{month}</p>
-
-      {upcoming.length > 0 && (
-        <div className="flex flex-col items-center gap-[1vmin] mt-[1%] max-w-[80%]">
-          {upcoming.map((event, i) => (
-            <p
-              key={`${event.start}-${i}`}
-              className="text-[3.2vmin] text-white/70 truncate max-w-full"
-            >
-              {event.allDay ? '· ' : `${formatTime(event.start)}  ·  `}
-              {event.title}
-            </p>
-          ))}
-        </div>
-      )}
-    </div>
+    <MonthView
+      focusDate={focusDate}
+      now={now}
+      events={events}
+      weekStart={cfg.weekStart}
+      offline={offline}
+      onSelectWeek={(day) => {
+        setFocusDate(startOfWeek(day, cfg.weekStart));
+        setView('week');
+      }}
+    />
   );
 }
