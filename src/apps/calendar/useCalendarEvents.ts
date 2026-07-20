@@ -41,7 +41,10 @@ export function useCalendarEvents(fromIso: string, toIso: string, enabled: boole
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function load() {
