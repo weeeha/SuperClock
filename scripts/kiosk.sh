@@ -45,6 +45,15 @@ if [ -f "$CHROMIUM_PROFILE/Preferences" ]; then
   sed -i 's/"exit_type":"[^"]*"/"exit_type":"Normal"/'   "$CHROMIUM_PROFILE/Preferences" 2>/dev/null || true
 fi
 
+# --- Cap Chromium metrics bloat ---------------------------------------------
+# Chromium writes unsent UMA histogram snapshots to BrowserMetrics/ and only
+# prunes them after a successful upload — which a locked-down kiosk never does.
+# Over weeks of crash-restarts this grew to 20G and filled smallclock's disk
+# (100% full → write failures → boot instability). The kiosk relaunches on
+# boot and on the 6h Chromium cycle, so clearing it here caps growth to a
+# single session's worth (a few MB).
+rm -rf "$HOME/.config/chromium/BrowserMetrics" 2>/dev/null || true
+
 # --- Resolve the Chromium binary --------------------------------------------
 # Trixie ships /usr/bin/chromium. Fall back to chromium-browser for older images.
 if command -v chromium >/dev/null 2>&1; then
