@@ -92,41 +92,98 @@ function computeStats(weeks: Level[][]): Stats {
   return { average: avg.toFixed(2), most, currentStreak, longestStreak };
 }
 
-/* ── Fallback mock data (if no token) ────────────────────────── */
-function generateMockData(): ContributionData {
-  const seed = new Date().getFullYear();
-  let s = seed;
-  const rand = () => {
-    s = (s * 16807 + 12345) & 0x7fffffff;
-    return (s & 0xffff) / 0x10000;
-  };
+/* ── Last-good cache ──────────────────────────────────────────
+   When the proxy is unreachable (no token, GitHub down), we serve the
+   last REAL graph we successfully fetched — never fabricated data. On a
+   cold start with no cache, the component shows an honest empty state.
+   Same "server is truth, localStorage is the resilience layer" pattern
+   as src/shared/local-config.ts. */
+const CACHE_KEY = 'superclock:github:contrib';
 
-  const weeks: Level[][] = [];
-  let total = 0;
-  for (let w = 0; w < 52; w++) {
-    const days: Level[] = [];
-    const weekActivity = rand();
-    for (let d = 0; d < 7; d++) {
-      const r = rand();
-      let level: Level;
-      if (weekActivity < 0.2) {
-        level = r < 0.7 ? 0 : r < 0.9 ? 1 : 2;
-      } else if (weekActivity < 0.5) {
-        level = r < 0.3 ? 0 : r < 0.6 ? 1 : r < 0.85 ? 2 : 3;
-      } else {
-        level = r < 0.1 ? 0 : r < 0.3 ? 1 : r < 0.55 ? 2 : r < 0.8 ? 3 : 4;
-      }
-      days.push(level);
-      total += level;
-    }
-    weeks.push(days);
+function loadCache(): ContributionData | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ContributionData;
+    // Minimal shape guard — a corrupt/old entry must not crash the render.
+    if (!Array.isArray(parsed.weeks) || typeof parsed.total !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
   }
-  return { weeks, total, username: 'demo' };
+}
+
+function saveCache(data: ContributionData): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore — quota full, private mode, etc.
+  }
+}
+
+/* ── Honest empty state ──────────────────────────────────────
+   Shown only when there is no cached graph AND the fetch failed (no token
+   configured, or GitHub unreachable on a cold start). A dim, contribution-
+   shaped ring makes clear the face is alive but has no data to show — never
+   fabricated numbers. */
+function EmptyState() {
+  const cx = 500;
+  const cy = 500;
+  const innerR = 260;
+  const outerR = 493;
+  const dotR = 7;
+  const weeks = 52;
+
+  const dots = [];
+  for (let w = 0; w < weeks; w++) {
+    const angle = ((w / weeks) * 360 - 90) * (Math.PI / 180);
+    for (let d = 0; d < 7; d++) {
+      const r = innerR + (d / 6) * (outerR - innerR);
+      dots.push(
+        <circle
+          key={`${w}-${d}`}
+          cx={cx + r * Math.cos(angle)}
+          cy={cy + r * Math.sin(angle)}
+          r={dotR}
+          fill={COLORS[0]}
+          opacity={0.4}
+        />,
+      );
+    }
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-black">
+      <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+        {dots}
+        <text
+          x={cx} y={cy - 8}
+          textAnchor="middle" fill="#8b949e"
+          fontSize="34" fontWeight="600"
+          fontFamily="'SF Mono', 'JetBrains Mono', monospace"
+          letterSpacing="1"
+        >
+          GitHub
+        </text>
+        <text
+          x={cx} y={cy + 34}
+          textAnchor="middle" fill="#6e7681"
+          fontSize="20" fontFamily="'SF Mono', 'JetBrains Mono', monospace"
+        >
+          not connected
+        </text>
+      </svg>
+    </div>
+  );
 }
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function GithubApp({ isActive }: AppProps) {
-  const [data, setData] = useState<ContributionData | null>(null);
+  // Seed from the last-good cache so a prior real graph paints instantly on
+  // boot; the network fetch below refreshes it. Never fabricated data.
+  const [data, setData] = useState<ContributionData | null>(loadCache);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -135,13 +192,15 @@ export default function GithubApp({ isActive }: AppProps) {
       .then((d) => {
         if (cancelled) return;
         setData(d);
+        saveCache(d);
         setError(null);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        console.error('GitHub fetch failed, using mock data:', err);
+        // Keep whatever cached graph we seeded; just show the offline tell.
+        // If there's no cache, `data` stays null → honest empty state.
+        console.error('GitHub fetch failed:', err);
         setError(err instanceof Error ? err.message : String(err));
-        setData((prev) => prev ?? generateMockData());
       });
     return () => {
       cancelled = true;
@@ -156,6 +215,7 @@ export default function GithubApp({ isActive }: AppProps) {
       fetchContributions()
         .then((d) => {
           setData(d);
+          saveCache(d);
           setError(null);
         })
         .catch((err: unknown) => {
@@ -167,7 +227,13 @@ export default function GithubApp({ isActive }: AppProps) {
 
   const stats = useMemo(() => (data ? computeStats(data.weeks) : null), [data]);
 
-  if (!data || !stats) return <div className="h-full w-full bg-black" />;
+  // No data + a settled error → honest empty state (no token / cold start
+  // offline). We never render fabricated contributions.
+  if (!data || !stats) {
+    if (error) return <EmptyState />;
+    // Still loading the first fetch.
+    return <div className="h-full w-full bg-black" />;
+  }
 
   const cx = 500;
   const cy = 500;
