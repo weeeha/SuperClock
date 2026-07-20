@@ -12,7 +12,10 @@ import DetailsView from './DetailsView';
 type View = 'month' | 'week' | 'details';
 
 export default function CalendarApp({ isActive, config }: AppProps) {
-  const cfg = useMemo(() => calendarAppSchema.parse(config ?? {}), [config]);
+  const cfg = useMemo(() => {
+    const parsed = calendarAppSchema.safeParse(config ?? {});
+    return parsed.success ? parsed.data : calendarAppSchema.parse({});
+  }, [config]);
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
 
   const [now, setNow] = useState(() => new Date());
@@ -23,7 +26,9 @@ export default function CalendarApp({ isActive, config }: AppProps) {
   // Roll `now` over roughly each minute so "today"/relative-time stay fresh.
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setNow(new Date()), 60_000);
+    const tick = () => setNow(new Date());
+    tick(); // refresh immediately on (re)activation so "today" isn't up to 60s stale
+    const id = setInterval(tick, 60_000);
     return () => clearInterval(id);
   }, [isActive]);
 
@@ -44,6 +49,7 @@ export default function CalendarApp({ isActive, config }: AppProps) {
       return;
     }
     setVerticalSwipeCallback((dir) => {
+      if (view === 'details') return;
       const delta = dir === 'up' ? 1 : -1; // up = forward in time
       setFocusDate((d) => (view === 'month' ? addMonths(d, delta) : addDays(d, delta * 7)));
     });
