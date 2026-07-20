@@ -58,7 +58,19 @@ export function monthWeeks(d: Date, weekStart: WeekStart): Date[][] {
 }
 
 export function eventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
-  return events.filter((e) => sameDay(new Date(e.start), day));
+  const d = atMidnight(day).getTime();
+  return events.filter((e) => {
+    const start = new Date(e.start);
+    let end = new Date(e.end);
+    // All-day events carry an exclusive DTEND (next midnight); step back 1ms so a
+    // single all-day event doesn't leak into the following day.
+    if (e.allDay && end.getTime() > start.getTime()) {
+      end = new Date(end.getTime() - 1);
+    }
+    const startKey = atMidnight(start).getTime();
+    const endKey = Math.max(startKey, atMidnight(end).getTime()); // always cover the start day
+    return d >= startKey && d <= endKey;
+  });
 }
 
 export interface DayGroup {

@@ -79,6 +79,25 @@ describe('eventsForDay', () => {
     expect(eventsForDay([e], new Date(2026, 6, 19))).toEqual([e]);
     expect(eventsForDay([e], new Date(2026, 6, 20))).toEqual([]);
   });
+  it('includes a multi-day all-day event on every spanned day (exclusive DTEND)', () => {
+    // Tue Jul 14 → DTEND Fri Jul 17 (exclusive) = covers Tue/Wed/Thu
+    const trip = ev({ uid: 'trip', allDay: true, title: 'Trip',
+      start: new Date(2026, 6, 14).toISOString(), end: new Date(2026, 6, 17).toISOString() });
+    expect(eventsForDay([trip], new Date(2026, 6, 13))).toHaveLength(0); // Mon before
+    expect(eventsForDay([trip], new Date(2026, 6, 14))).toHaveLength(1); // Tue
+    expect(eventsForDay([trip], new Date(2026, 6, 16))).toHaveLength(1); // Thu
+    expect(eventsForDay([trip], new Date(2026, 6, 17))).toHaveLength(0); // Fri (DTEND exclusive)
+  });
+  it('still matches a zero-duration all-day event on its own day only', () => {
+    const conf = ev({ uid: 'c', allDay: true, title: 'Conf',
+      start: new Date(2026, 6, 16).toISOString(), end: new Date(2026, 6, 16).toISOString() });
+    expect(eventsForDay([conf], new Date(2026, 6, 16))).toHaveLength(1);
+    expect(eventsForDay([conf], new Date(2026, 6, 17))).toHaveLength(0);
+  });
+  it('includes a multi-day timed event across its span', () => {
+    const e = ev({ start: new Date(2026, 6, 14, 10).toISOString(), end: new Date(2026, 6, 16, 15).toISOString() });
+    expect(eventsForDay([e], new Date(2026, 6, 15))).toHaveLength(1); // middle day
+  });
 });
 
 describe('groupEventsByDay', () => {
