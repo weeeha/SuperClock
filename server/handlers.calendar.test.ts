@@ -6,6 +6,7 @@ const ICS = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
 UID:evt-1
+CATEGORIES:Work
 SUMMARY:Dinner with Alex
 LOCATION:Bar Centrale
 DESCRIPTION:Table booked under Nick
@@ -39,5 +40,10 @@ describe('eventsFromParsed', () => {
   it('excludes events outside the range', () => {
     const events = eventsFromParsed(data, from, to);
     expect(events.find((e) => e.uid === 'evt-2')).toBeUndefined();
+  });
+
+  it('extracts the first category from a CATEGORIES line', () => {
+    const events = eventsFromParsed(data, from, to);
+    expect(events[0].category).toBe('Work');
   });
 });

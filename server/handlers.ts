@@ -18,6 +18,13 @@ function readText(value: unknown): string | undefined {
   return undefined;
 }
 
+function readCategory(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value.length ? String(value[0]).trim() || undefined : undefined;
+  }
+  return readText(value);
+}
+
 function toEvent(event: VEvent, start: Date, end: Date, title: string, allDay: boolean): CalendarEvent {
   return {
     start: start.toISOString(),
@@ -27,7 +34,7 @@ function toEvent(event: VEvent, start: Date, end: Date, title: string, allDay: b
     uid: readText(event.uid) ?? `${title}-${start.toISOString()}`,
     location: readText(event.location),
     description: readText(event.description),
-    category: readText((event as unknown as { categories?: unknown }).categories),
+    category: readCategory(event.categories),
   };
 }
 
