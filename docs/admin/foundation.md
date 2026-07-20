@@ -2,6 +2,16 @@
 
 Planning artifact. Captures the agreed shape of the admin panel before any UI/code work. Update as decisions change.
 
+> **Status (2026-07-16):** largely implemented; CLAUDE.md describes the
+> as-built system and is authoritative where the two disagree. Notable
+> deltas from this plan: config writes are zod-validated on both admin and
+> device routes (`src/shared/device-config-schema.ts`); device-side push
+> auth is opt-in per device (see §Auth below); entry file is
+> `admin/index.html`, not a repo-root `admin.html`; the unit is
+> `superclock-server.service`; the server ships as an esbuild bundle
+> (`dist/server.mjs`). Registry coherence is enforced by
+> `src/shared/registry-coherence.test.ts`.
+
 ## Goals
 
 - One web admin to manage the SuperClock fleet (Fast, Small, Square, Slow) from a phone or laptop on the LAN.
@@ -167,7 +177,7 @@ Each face has its own configurable surface: Minimalismo is one accent color; Inf
 
 **Faces** (existing kiosk components, retrofit gradually):
 - `analog`, `complications-light`, `complications-dark`, `flip`, `floral`, `productivity`, `square`, `world`
-- v1: stub all with `configSchemaId: undefined` and `slots: []`. Retrofit each as we touch it. `minimalismo` is not in this worktree — add it as a separate task when implementing.
+- v1: stub all with `configSchemaId: undefined` and `slots: []`. Retrofit each as we touch it. (As built: every face except `minimalismo` now has a `face.*` schema; `analog` is the first face whose component consumes its config — accent, numerals, seconds.)
 
 **Complications** (Clock-scoped in v1):
 - `date` — today's day/month, small
@@ -342,7 +352,7 @@ For v1:
 
 - `config/admin.json` on the admin Pi holds `{ token: "<random 32 bytes hex>" }`. Generated during `setup-pi.sh`.
 - Admin UI bootstraps via a one-time `/admin/setup?token=…` URL that writes the token to a httpOnly cookie. After that, the cookie auths every `/api/admin/*` request.
-- `/api/device/config` accepts the same token in `Authorization: Bearer …` from the admin Pi. Devices reject pushes without it.
+- `/api/device/config` (as built): the body is always zod-validated; the admin Pi sends its token as `Authorization: Bearer …` on every push, and a device *requires* it only when that device has its own `config/admin.json` provisioned (copy the admin host's file to each Pi to enforce authenticated pushes). Without the file the route accepts LAN pushes — LAN-trust default, matching the admin surface's dev behavior.
 - Good enough for LAN; trivially upgradable to OAuth or Cloudflare Access when we move to web.
 
 ## Out of scope for v1

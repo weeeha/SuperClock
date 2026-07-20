@@ -35,15 +35,19 @@ export default function PhotoFrameApp({ isActive }: AppProps) {
 
   useEffect(() => {
     if (!isActive) return;
+    let fadeTimer: number | undefined;
     const id = setInterval(() => {
       setFade(false);
-      setTimeout(() => {
+      fadeTimer = window.setTimeout(() => {
         const length = photos.length || fallbackGradients.length;
         setPhotoIndex((i) => (i + 1) % length);
         setFade(true);
       }, 500);
     }, 8000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      if (fadeTimer !== undefined) clearTimeout(fadeTimer);
+    };
   }, [isActive, photos.length]);
 
   const usingPhotos = photos.length > 0;

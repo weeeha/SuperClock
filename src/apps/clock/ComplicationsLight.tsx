@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
 
 // Complication circle centers (1000×1000 SVG space)
 const COMP_R = 125;
@@ -17,20 +16,7 @@ function arcDash(r: number, pct: number) {
 }
 
 export default function ComplicationsLight({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const hours = time.getHours() % 12;
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-  const hourDeg = hours * 30 + minutes * 0.5;
-  const minuteDeg = minutes * 6 + seconds * 0.1;
-  const secondDeg = useContinuousSecondAngle(seconds);
+  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
 
   const dayName = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   const dateNum = time.getDate();
@@ -43,7 +29,7 @@ export default function ComplicationsLight({ isActive }: AppProps) {
       <line
         key={i}
         x1="500" y1={isHour ? 22 : 38} x2="500" y2={isHour ? 72 : 62}
-        stroke="#444" strokeWidth={isHour ? 9 : 4} strokeLinecap="round"
+        className="theme-fade stroke-(--face-tick)" strokeWidth={isHour ? 9 : 4} strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
       />,
     );
@@ -63,15 +49,15 @@ export default function ComplicationsLight({ isActive }: AppProps) {
           </filter>
         </defs>
 
-        {/* White face */}
-        <circle cx="500" cy="500" r="500" fill="white" />
+        {/* Face (white by day, black at night) */}
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
 
         {/* Tick marks */}
         {ticks}
 
         {/* Brand mark at 12 — two linked circles */}
-        <circle cx="489" cy="88" r="9" fill="none" stroke="#666" strokeWidth="4" />
-        <circle cx="511" cy="88" r="9" fill="none" stroke="#666" strokeWidth="4" />
+        <circle cx="489" cy="88" r="9" fill="none" className="theme-fade stroke-(--face-tick)" strokeWidth="4" />
+        <circle cx="511" cy="88" r="9" fill="none" className="theme-fade stroke-(--face-tick)" strokeWidth="4" />
 
         {/* ── Top complication: caffeine ── */}
         <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} fill="#1a1a1a" />

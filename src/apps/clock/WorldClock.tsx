@@ -1,15 +1,23 @@
-import { useState, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
-import { useContinuousSecondAngle } from '../../core/hooks/useContinuousSecondAngle';
+import { useClockHands } from '../../core/hooks/useClockHands';
+
+// One formatter per timezone, built once — Intl.DateTimeFormat construction
+// costs milliseconds on a Pi and this used to run 5× per second.
+const tzFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getTimeInTZ(date: Date, tz: string) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false,
-  }).formatToParts(date);
+  let fmt = tzFormatters.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    });
+    tzFormatters.set(tz, fmt);
+  }
+  const parts = fmt.formatToParts(date);
   const get = (t: string) => parseInt(parts.find((p) => p.type === t)?.value ?? '0');
   return { h: get('hour') % 12, m: get('minute') };
 }
@@ -90,20 +98,7 @@ const ZONES = [
 ];
 
 export default function WorldClock({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
-
-  const localH = time.getHours() % 12;
-  const localM = time.getMinutes();
-  const localS = time.getSeconds();
-  const hourDeg = localH * 30 + localM * 0.5;
-  const minuteDeg = localM * 6 + localS * 0.1;
-  const secondDeg = useContinuousSecondAngle(localS);
+  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
 
   const ticks = [];
   for (let i = 0; i < 60; i++) {

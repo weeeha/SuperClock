@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F5BC}',
     description: 'Photo frame with slideshow',
     category: 'ambient',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.photo-frame',
   },
   component: lazy(() => import('./PhotoFrameApp')),
 });

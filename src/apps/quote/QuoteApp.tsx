@@ -36,8 +36,9 @@ export default function QuoteApp() {
         setImgFailed(false);
         setIndex((i) => (i + 1) % quotes.length);
       }}
-      className="flex h-full w-full flex-col items-center justify-center bg-white text-black p-[12%] gap-[4%] cursor-pointer select-none"
+      className="theme-fade flex h-full w-full flex-col items-center justify-center bg-(--face-bg) p-[12%] gap-[4%] cursor-pointer select-none"
     >
+      {/* Author portrait — Wikipedia thumbnail, initials-gradient fallback */}
       <div
         className="flex h-[22%] w-[22%] items-center justify-center overflow-hidden rounded-full text-white font-semibold"
         style={!showImg ? { background: fallbackBg, fontSize: '6vmin' } : undefined}
@@ -55,9 +56,11 @@ export default function QuoteApp() {
         )}
       </div>
 
-      <p className="text-[3.5vmin] text-gray-600">{quote.author}</p>
+      {/* Author name */}
+      <p className="theme-fade text-[3.5vmin] text-(--face-ink-muted)">{quote.author}</p>
 
-      <p className="text-[5vmin] font-semibold text-center leading-snug text-gray-900">
+      {/* Quote text */}
+      <p className="theme-fade text-[5vmin] font-semibold text-center leading-snug text-(--face-ink)">
         "{quote.text}"
       </p>
     </div>

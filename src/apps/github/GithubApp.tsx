@@ -25,27 +25,6 @@ interface Stats {
   longestStreak: number;
 }
 
-/* ── Fetch real GitHub contributions via GraphQL API ──────────── */
-const GITHUB_GRAPHQL = 'https://api.github.com/graphql';
-
-const QUERY = `
-query {
-  viewer {
-    login
-    contributionsCollection {
-      contributionCalendar {
-        totalContributions
-        weeks {
-          contributionDays {
-            contributionCount
-            date
-          }
-        }
-      }
-    }
-  }
-}`;
-
 function countToLevel(count: number, max: number): Level {
   if (count === 0) return 0;
   const ratio = count / Math.max(max, 1);
@@ -55,43 +34,35 @@ function countToLevel(count: number, max: number): Level {
   return 4;
 }
 
+// Data comes via the server proxy (/api/github/contributions) — the PAT
+// lives server-side only and never reaches this bundle.
 async function fetchContributions(): Promise<ContributionData> {
-  const token = import.meta.env.VITE_GITHUB_TOKEN;
-  if (!token) throw new Error('No GitHub token configured');
-
-  const res = await fetch(GITHUB_GRAPHQL, {
-    method: 'POST',
-    headers: {
-      Authorization: `bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query: QUERY }),
-  });
-
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-
-  const json = await res.json();
-  const calendar = json.data.viewer.contributionsCollection.contributionCalendar;
-  const username = json.data.viewer.login;
+  const res = await fetch('/api/github/contributions');
+  const json = (await res.json()) as {
+    ok: boolean;
+    username: string;
+    totalContributions: number;
+    weeks: { contributionDays: { contributionCount: number }[] }[];
+    error?: string;
+  };
+  if (!res.ok || !json.ok) throw new Error(json.error ?? `proxy HTTP ${res.status}`);
 
   // Find max contribution count for level scaling
   const allCounts: number[] = [];
-  for (const week of calendar.weeks) {
+  for (const week of json.weeks) {
     for (const day of week.contributionDays) {
       allCounts.push(day.contributionCount);
     }
   }
   const maxCount = Math.max(...allCounts, 1);
 
-  // Convert to Level[][] (exactly 52 weeks for the radial layout)
-  const rawWeeks = calendar.weeks as { contributionDays: { contributionCount: number }[] }[];
-  // Take the most recent 52 weeks
-  const sliced = rawWeeks.slice(-52);
+  // Convert to Level[][] — most recent 52 weeks for the radial layout
+  const sliced = json.weeks.slice(-52);
   const weeks: Level[][] = sliced.map((week) =>
     week.contributionDays.map((day) => countToLevel(day.contributionCount, maxCount)),
   );
 
-  return { weeks, total: calendar.totalContributions, username };
+  return { weeks, total: json.totalContributions, username: json.username };
 }
 
 /* ── Compute stats from raw API data ─────────────────────────── */
@@ -155,31 +126,41 @@ function generateMockData(): ContributionData {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function GithubApp({ isActive }: AppProps) {
-  // With no token the mock data is deterministic, so seed it via a lazy
-  // initializer; the Effect then only performs the async fetch (its setState
-  // calls stay inside promise callbacks, which is the sanctioned pattern).
-  const [data, setData] = useState<ContributionData | null>(() =>
-    import.meta.env.VITE_GITHUB_TOKEN ? null : generateMockData(),
-  );
+  const [data, setData] = useState<ContributionData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!import.meta.env.VITE_GITHUB_TOKEN) return;
-
+    let cancelled = false;
     fetchContributions()
-      .then(setData)
-      .catch((err) => {
+      .then((d) => {
+        if (cancelled) return;
+        setData(d);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
         console.error('GitHub fetch failed, using mock data:', err);
-        setError(err.message);
-        setData(generateMockData());
+        setError(err instanceof Error ? err.message : String(err));
+        setData((prev) => prev ?? generateMockData());
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Refresh every 30 minutes when active
+  // Refresh every 30 minutes when active. Failures must SET the error state:
+  // swallowing them here meant weeks-stale data with no offline tell.
   useEffect(() => {
-    if (!isActive || !import.meta.env.VITE_GITHUB_TOKEN) return;
+    if (!isActive) return;
     const id = setInterval(() => {
-      fetchContributions().then(setData).catch(() => {});
+      fetchContributions()
+        .then((d) => {
+          setData(d);
+          setError(null);
+        })
+        .catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : String(err));
+        });
     }, 30 * 60 * 1000);
     return () => clearInterval(id);
   }, [isActive]);

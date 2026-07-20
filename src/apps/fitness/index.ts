@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F4AA}',
     description: 'Exercise counter with progress ring',
     category: 'productivity',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.fitness',
   },
   component: lazy(() => import('./FitnessApp')),
 });

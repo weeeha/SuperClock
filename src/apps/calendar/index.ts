@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F4C5}',
     description: 'Today\'s date at a glance',
     category: 'utility',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.calendar',
   },
   component: lazy(() => import('./CalendarApp')),
 });

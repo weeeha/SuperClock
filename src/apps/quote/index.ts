@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F4AC}',
     description: 'Quote of the day',
     category: 'ambient',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.quote',
   },
   component: lazy(() => import('./QuoteApp')),
 });

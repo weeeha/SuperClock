@@ -23,7 +23,8 @@ export type FeatureFlag =
   | 'brightness'
   | 'sleep_schedule'
   | 'theme'
-  | 'accent';
+  | 'accent'
+  | 'night_mode';
 
 export interface ComplicationSlot {
   id: string;
@@ -79,8 +80,12 @@ export interface DeviceConfig {
   settings: {
     theme: 'light' | 'dark' | 'system';
     accent: string;
+    // 0-100 daytime brightness. Kiosk-side CSS dimming of the rendered image
+    // (these panels expose no backlight control); undefined or 100 → full.
+    // night.brightness overrides it inside the night window.
     brightness?: number;
     sleepSchedule?: { wake: string; sleep: string };
+    night?: { start: string; end: string; brightness?: number };
   };
   updatedAt: string;
 }
@@ -88,6 +93,9 @@ export interface DeviceConfig {
 export interface FleetConfig {
   devices: DeviceConfig[];
   version: number;
+  // Migration stamp bumped by fleet-store schema migrations — NOT the
+  // per-write counter above.
+  schemaVersion?: number;
 }
 
 export interface DeviceState {
@@ -128,7 +136,7 @@ export function emptyDeviceConfig(deviceId: DeviceId): DeviceConfig {
     enabledApps: [],
     instances: [],
     playlist: { items: [], rotationSeconds: null },
-    settings: { theme: 'dark', accent: '#ff6b35' },
+    settings: { theme: 'system', accent: '#ff6b35' },
     updatedAt: new Date(0).toISOString(),
   };
 }
