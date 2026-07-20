@@ -17,5 +17,5 @@
     "model": "Raspberry Pi (TBD)",
     "url": "https://www.raspberrypi.com/"
   },
-  "notes": "Native LVGL clock (not Chromium). Read-only in admin v1 — exposes capabilities + state, no config push. Implementation lives in a separate slow-native repo."
+  "notes": "Native LVGL clock (not Chromium). Read-only in admin v1 — exposes capabilities + state, no config push. Implementation lives in slow-native/ in this repo. Night palette is compile-time 21:00–07:00 (no config polling) — see slow-native/README.md."
 }
