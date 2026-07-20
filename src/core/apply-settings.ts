@@ -20,15 +20,18 @@ const getServerSnapshot = (): boolean => false;
 //   theme  → 'light'/'dark' force the html class; 'system' ("Auto" in the
 //            admin) follows the night window: dark inside settings.night,
 //            light outside. No config / no window → light (today's look).
-//   night.brightness → CSS brightness() filter on <html> while the window is
-//            active, independent of theme. No released wlr-randr has a
-//            brightness flag, so the kiosk dims its own rendering; on this
+//   brightness → CSS brightness() filter on <html>, independent of theme.
+//            settings.brightness is the daytime baseline; night.brightness
+//            overrides it while the night window is active. No released
+//            wlr-randr has a brightness flag and these panels expose no
+//            backlight device, so the kiosk dims its own rendering; on this
 //            fixed-backlight LCD that is visually equivalent to compositor
 //            gamma. Panel power (sleep schedule) stays server-side.
 export function useApplySettings(): void {
   const config = useDeviceConfig();
   const accent = config?.settings.accent;
   const theme = config?.settings.theme;
+  const dayBrightness = config?.settings.brightness;
   const nightStart = config?.settings.night?.start;
   const nightEnd = config?.settings.night?.end;
   const nightBrightness = config?.settings.night?.brightness;
@@ -64,8 +67,12 @@ export function useApplySettings(): void {
   useEffect(() => {
     const root = document.documentElement;
     root.style.transition = 'filter 1s ease';
-    if (isNight && typeof nightBrightness === 'number') {
-      const pct = Math.min(100, Math.max(0, nightBrightness));
+    const effective =
+      isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
+    // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
+    // filter that still costs a stacking context.
+    if (typeof effective === 'number' && effective < 100) {
+      const pct = Math.max(0, effective);
       root.style.filter = `brightness(${pct / 100})`;
     } else {
       root.style.filter = '';
@@ -74,5 +81,5 @@ export function useApplySettings(): void {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [isNight, nightBrightness]);
+  }, [isNight, nightBrightness, dayBrightness]);
 }

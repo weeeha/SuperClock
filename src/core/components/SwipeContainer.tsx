@@ -17,7 +17,8 @@ const variants = {
 };
 
 export default function SwipeContainer() {
-  const { activeAppId, transitionDirection, finishTransition } = useNavigation();
+  const { activeAppId, activeInstanceId, mode, transitionDirection, finishTransition } =
+    useNavigation();
   const app = getApp(activeAppId);
   const instance = useActiveInstance(activeAppId);
 
@@ -33,8 +34,11 @@ export default function SwipeContainer() {
         mode="popLayout"
         onExitComplete={finishTransition}
       >
+        {/* Keyed on the instance when one is active: switching between two
+            instances of the same app must still remount/animate, otherwise
+            onExitComplete never fires and mode wedges at 'transitioning'. */}
         <motion.div
-          key={activeAppId}
+          key={activeInstanceId ?? activeAppId}
           custom={transitionDirection}
           variants={variants}
           initial="enter"
@@ -50,7 +54,11 @@ export default function SwipeContainer() {
               </div>
             }
           >
-            <AppComponent isActive={true} config={instance?.config} />
+            {/* Deactivate the app while the grid overlay covers it — apps
+                gate their intervals/rAF on isActive, and the fireplace's
+                particle sim burning CPU behind an opaque overlay is real
+                heat on a Pi. */}
+            <AppComponent isActive={mode !== 'grid'} config={instance?.config} />
           </Suspense>
         </motion.div>
       </AnimatePresence>

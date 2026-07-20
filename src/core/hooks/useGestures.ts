@@ -84,9 +84,11 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
       onPinchStart: () => {
         pinchFired.current = false;
       },
-      onPinch: ({ offset: [scale] }) => {
+      onPinch: ({ movement: [dScale] }) => {
         if (pinchFired.current) return;
-        if (scale < PINCH_IN_THRESHOLD) {
+        // movement is per-gesture (offset is cumulative across gestures and
+        // would instantly re-trigger every pinch after the first pinch-in).
+        if (dScale < -(1 - PINCH_IN_THRESHOLD)) {
           const { mode, showGrid } = useNavigation.getState();
           if (mode === 'app') showGrid();
           pinchFired.current = true;

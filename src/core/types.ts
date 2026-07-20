@@ -7,19 +7,20 @@ export interface AppMetadata {
   icon: string;
   description: string;
   category: 'utility' | 'ambient' | 'productivity';
-  /** If true, the app handles left/right swipe internally (e.g., switching watch faces) */
-  supportsInternalSwipe: boolean;
-  /** Optional: zod schema id for this app's per-instance config (resolved in src/shared/schemas/) */
-  configSchemaId?: string;
   /** Optional: only the Clock app populates this — its registered face descriptors */
   faces?: FaceDescriptor[];
 }
 
+// Note: an app's config schema id is `app.<id>` by convention — advertised
+// via src/shared/capabilities.ts descriptors and pinned by
+// registry-coherence.test.ts. Apps that consume horizontal/vertical swipes
+// internally register a callback on the navigation store (see ClockApp's
+// setVerticalSwipeCallback usage) rather than declaring a metadata flag.
+
 export interface AppProps {
   isActive: boolean;
-  /** Called when the app wants to signal internal swipe is exhausted and shell should navigate */
-  onSwipeOut?: (direction: 'left' | 'right') => void;
-  /** Optional per-instance configuration, shape resolved via AppMetadata.configSchemaId */
+  /** Optional per-instance configuration (shape: the app's `app.<id>` schema,
+   *  plus `faceId`/`face` for clock instances). */
   config?: Record<string, unknown>;
 }
 

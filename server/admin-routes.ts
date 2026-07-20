@@ -1,16 +1,20 @@
-import { Router } from 'express';
-import { timingSafeEqual } from 'node:crypto';
+import { Router, type Response } from 'express';
 import { ulid } from 'ulid';
 import { readFleet, readDevice, updateDevice } from './fleet-store';
 import { pushToDevice, getReachability } from './device-push';
-import { adminTokenMiddleware, getAdminToken } from './admin-token';
+import { adminTokenMiddleware, getAdminToken, compareToken } from './admin-token';
+import {
+  deviceConfigPatchSchema,
+  screenInstanceSchema,
+} from '../src/shared/device-config-schema';
+import { STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import {
   ALL_DEVICE_IDS,
-  type DeviceConfig,
   type DeviceId,
   type FleetHealth,
   type ScreenInstance,
 } from '../src/shared/types';
+import { z } from 'zod';
 
 const router: Router = Router();
 
@@ -18,16 +22,17 @@ const router: Router = Router();
 // It must be registered before the auth middleware so unauthenticated users can hit it.
 router.post('/auth/exchange', async (req, res) => {
   const expected = await getAdminToken();
+  if (expected === 'unavailable') {
+    res.status(503).json({ error: 'auth temporarily unavailable' });
+    return;
+  }
   if (!expected) {
     res.status(204).end(); // no token configured = open mode (dev)
     return;
   }
   const body = req.body as { token?: string } | undefined;
   const provided = body?.token ?? '';
-  if (
-    provided.length === expected.length &&
-    timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
-  ) {
+  if (compareToken(provided, expected)) {
     res.cookie('superclock-admin', expected, {
       httpOnly: true,
       sameSite: 'strict',
@@ -45,6 +50,33 @@ router.use(adminTokenMiddleware);
 
 function isDeviceId(id: string): id is DeviceId {
   return (ALL_DEVICE_IDS as readonly string[]).includes(id);
+}
+
+// Central :deviceId guard — every route below gets a validated id.
+router.param('deviceId', (_req, res, next, id: string) => {
+  if (!isDeviceId(id)) {
+    res.status(404).json({ error: 'unknown device' });
+    return;
+  }
+  next();
+});
+
+// Mutations against read-only devices (the LVGL slow clock) would persist to
+// fleet.json, then push → 405 → device flagged pending forever while the
+// stored config silently diverges from the device. Reject them up front.
+function guardWritable(deviceId: DeviceId, res: Response): boolean {
+  if (STATIC_DEVICE_INFO[deviceId].readOnly) {
+    res.status(405).json({ error: 'device is read-only' });
+    return false;
+  }
+  return true;
+}
+
+function sendValidationError(res: Response, error: z.ZodError): void {
+  res.status(400).json({
+    error: 'invalid body',
+    issues: error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
+  });
 }
 
 router.get('/fleet', async (_req, res) => {
@@ -69,41 +101,35 @@ router.get('/health', (_req, res) => {
 });
 
 router.get('/fleet/:deviceId', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
-    return;
-  }
-  const config = await readDevice(req.params.deviceId);
+  const config = await readDevice(req.params.deviceId as DeviceId);
   res.json(config);
 });
 
 router.patch('/fleet/:deviceId', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
+  const deviceId = req.params.deviceId as DeviceId;
+  if (!guardWritable(deviceId, res)) return;
+  const parsed = deviceConfigPatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
     return;
   }
-  const deviceId = req.params.deviceId;
-  const patch = req.body as Partial<DeviceConfig> | undefined;
-  if (!patch || typeof patch !== 'object') {
-    res.status(400).json({ error: 'body must be an object' });
-    return;
-  }
+  const patch = parsed.data;
   const updated = await updateDevice(deviceId, (current) => ({ ...current, ...patch }));
   void pushToDevice(deviceId, updated);
   res.json(updated);
 });
 
+const instanceCreateSchema = screenInstanceSchema.partial({ id: true, config: true });
+
 router.post('/fleet/:deviceId/instances', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
+  const deviceId = req.params.deviceId as DeviceId;
+  if (!guardWritable(deviceId, res)) return;
+  const parsed = instanceCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
     return;
   }
-  const deviceId = req.params.deviceId;
-  const body = req.body as Partial<ScreenInstance> | undefined;
-  if (!body?.appId) {
-    res.status(400).json({ error: 'appId required' });
-    return;
-  }
+  const body = parsed.data;
   const instance: ScreenInstance = {
     id: body.id ?? ulid(),
     appId: body.appId,
@@ -118,18 +144,18 @@ router.post('/fleet/:deviceId/instances', async (req, res) => {
   res.json(instance);
 });
 
+const instancePatchSchema = screenInstanceSchema.partial();
+
 router.patch('/fleet/:deviceId/instances/:id', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
-    return;
-  }
-  const deviceId = req.params.deviceId;
+  const deviceId = req.params.deviceId as DeviceId;
+  if (!guardWritable(deviceId, res)) return;
   const id = req.params.id;
-  const patch = req.body as Partial<ScreenInstance> | undefined;
-  if (!patch) {
-    res.status(400).json({ error: 'body required' });
+  const parsed = instancePatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
     return;
   }
+  const patch = parsed.data;
   let nextInstance: ScreenInstance | undefined;
   const updated = await updateDevice(deviceId, (current) => ({
     ...current,
@@ -148,11 +174,8 @@ router.patch('/fleet/:deviceId/instances/:id', async (req, res) => {
 });
 
 router.delete('/fleet/:deviceId/instances/:id', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
-    return;
-  }
-  const deviceId = req.params.deviceId;
+  const deviceId = req.params.deviceId as DeviceId;
+  if (!guardWritable(deviceId, res)) return;
   const id = req.params.id;
   const updated = await updateDevice(deviceId, (current) => ({
     ...current,
@@ -163,18 +186,17 @@ router.delete('/fleet/:deviceId/instances/:id', async (req, res) => {
   res.status(204).end();
 });
 
+const reorderSchema = z.object({ order: z.array(z.string()) });
+
 router.post('/fleet/:deviceId/playlist/reorder', async (req, res) => {
-  if (!isDeviceId(req.params.deviceId)) {
-    res.status(404).json({ error: 'unknown device' });
+  const deviceId = req.params.deviceId as DeviceId;
+  if (!guardWritable(deviceId, res)) return;
+  const parsed = reorderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
     return;
   }
-  const deviceId = req.params.deviceId;
-  const body = req.body as { order?: string[] } | undefined;
-  if (!body?.order || !Array.isArray(body.order)) {
-    res.status(400).json({ error: 'order required' });
-    return;
-  }
-  const order = body.order;
+  const order = parsed.data.order;
   const updated = await updateDevice(deviceId, (current) => ({
     ...current,
     playlist: { ...current.playlist, items: order },

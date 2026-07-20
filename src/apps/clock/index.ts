@@ -9,7 +9,6 @@ registerApp({
     icon: '\u{1F570}',
     description: 'Watch faces with analog and productivity views',
     category: 'utility',
-    supportsInternalSwipe: true,
     faces: FACES,
   },
   component: lazy(() => import('./ClockApp')),
