@@ -5,6 +5,9 @@ import { claudeUsageHandler } from './claude-usage-proxy';
 import { githubContributionsHandler } from './github-proxy';
 import deviceRoutes from './device-routes';
 import adminRoutes from './admin-routes';
+import radarRoutes from './radar/routes';
+import { initRadarService } from './radar/service';
+import { getOccupancySummary, initOccupancyService } from './occupancy/service';
 import { startPushRetryLoop } from './device-push';
 
 interface MountOptions {
@@ -41,6 +44,18 @@ export function buildApiApp(opts: MountOptions): Express {
   app.get('/api/github/contributions', githubContributionsHandler);
 
   app.use('/api/device', deviceRoutes);
+
+  // A121 mmWave radar (presence / breathing). Service self-starts here so
+  // both the dev middleware and the prod server get it without extra wiring;
+  // it no-ops into "unavailable" when no sensor is attached.
+  initRadarService();
+  app.use('/api/radar', radarRoutes);
+
+  // Desk-occupancy log derived from radar presence (Time Tracking app).
+  initOccupancyService();
+  app.get('/api/occupancy', (_req, res) => {
+    res.json(getOccupancySummary());
+  });
 
   if (opts.adminHost) {
     app.use('/api/admin', adminRoutes);

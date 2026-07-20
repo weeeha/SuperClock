@@ -10,3 +10,4 @@ import './habits';
 import './time-tracking';
 import './github';
 import './claude-usage';
+import './breathing';
