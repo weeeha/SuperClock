@@ -7,7 +7,7 @@ import {
   type RadarMode,
   type RadarSnapshot,
 } from '../../src/shared/radar';
-import { MockRadarDriver, SerialRadarDriver, type RadarDriver } from './driver';
+import { ExplorationSidecarDriver, MockRadarDriver, type RadarDriver } from './driver';
 import type { RadarEvent } from './protocol';
 
 const LOG_PREFIX = '[radar]';
@@ -54,7 +54,14 @@ function onDriverEvent(event: RadarEvent): void {
   if (event.present !== undefined && event.present !== snapshot.present) {
     snapshot.present = event.present;
     changed = true;
-    if (event.present) snapshot.lastPresentAt = new Date().toISOString();
+    if (event.present) {
+      snapshot.lastPresentAt = new Date().toISOString();
+    } else {
+      // No target in range — drop the last distance/breathing so an empty room
+      // never keeps rendering a live-looking distance or breathing rate.
+      snapshot.distanceMm = null;
+      snapshot.breathing = null;
+    }
     for (const listener of presenceListeners) listener(event.present);
   } else if (event.present) {
     // Presence re-affirmed without a flip — keep the timestamp fresh.
@@ -110,14 +117,20 @@ function tick(): void {
 function shouldUseMockDriver(): boolean {
   if (process.env.RADAR_MOCK === '1') return true;
   if (process.env.RADAR_MOCK === '0') return false;
-  // Dev servers (vite sets NODE_ENV=development) get the mock by default so
-  // /api/radar and its consumers are demoable without hardware.
-  return process.env.NODE_ENV === 'development';
+  // Dev servers (vite sets NODE_ENV=development) and tests get the mock by
+  // default: /api/radar stays demoable without hardware, and tests don't spawn
+  // the Python sidecar. The Pi runs with NODE_ENV unset, so it uses the real
+  // ExplorationSidecarDriver.
+  return (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.VITEST === 'true'
+  );
 }
 
 export function initRadarService(): void {
   if (driver || process.env.RADAR_DISABLED === '1') return;
-  driver = shouldUseMockDriver() ? new MockRadarDriver() : new SerialRadarDriver();
+  driver = shouldUseMockDriver() ? new MockRadarDriver() : new ExplorationSidecarDriver();
   snapshot.source = driver.source;
   driver.start(onDriverEvent, onDriverStatus);
   tickTimer = setInterval(tick, TICK_MS);

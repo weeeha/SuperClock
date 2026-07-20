@@ -74,7 +74,9 @@ apt-get install -y --no-install-recommends \
   npm \
   curl \
   ca-certificates \
-  git
+  git \
+  python3 \
+  python3-venv
 
 # Chromium is expected to be preinstalled on Pi OS desktop. Warn (don't fail)
 # if it's missing so a Lite image gets a clear pointer.
@@ -130,10 +132,36 @@ if [ "$PAYLOAD_PRESENT" = true ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# 3b. A121 radar sidecar venv (acconeer-exptool)
+#     The A121 mmWave module streams raw radar data over USB; the presence /
+#     breathing DSP runs in scripts/a121_sidecar.py via acconeer-exptool. That
+#     needs its own Python venv, kept OUTSIDE $REPO_DIR so it survives deploys
+#     (deploy.sh only rsyncs into $REPO_DIR). Idempotent: skip if already built.
+#     Harmless on devices with no radar — the sidecar just never finds a port.
+# ---------------------------------------------------------------------------
+RADAR_VENV="${USER_HOME}/radar-venv"
+echo "=== A121 radar sidecar venv ($RADAR_VENV) ==="
+if [ -x "$RADAR_VENV/bin/python" ] && \
+   run_as_user "'$RADAR_VENV/bin/python' -c 'import acconeer.exptool, scipy' 2>/dev/null"; then
+  echo "  already provisioned — left untouched."
+# The whole build is a single `if` condition so a failure (e.g. offline PyPI)
+# only WARNS and continues — set -e must not abort provisioning of the critical
+# systemd/kiosk steps below for an optional radar component.
+elif sudo -u "$SERVICE_USER" -H python3 -m venv "$RADAR_VENV" \
+  && sudo -u "$SERVICE_USER" -H "$RADAR_VENV/bin/pip" install --upgrade pip >/dev/null \
+  && { echo "  installing acconeer-exptool + scipy (this takes a few minutes) ..."; \
+       sudo -u "$SERVICE_USER" -H "$RADAR_VENV/bin/pip" install acconeer-exptool scipy; }; then
+  echo "  done."
+else
+  echo "  WARNING: radar venv provisioning failed — radar stays unavailable, continuing." >&2
+fi
+
+# ---------------------------------------------------------------------------
 # 4. Server environment file
-#    EnvironmentFile=-/etc/default/superclock in the unit. We seed PORT and
-#    ADMIN_HOST. The leading '-' in the unit means it's optional, and we never
-#    clobber an existing operator-edited file (idempotent).
+#    EnvironmentFile=-/etc/default/superclock in the unit. We seed PORT,
+#    ADMIN_HOST and RADAR_PYTHON. The leading '-' in the unit means it's
+#    optional, and we never clobber an existing operator-edited file
+#    (idempotent).
 # ---------------------------------------------------------------------------
 echo "=== Writing /etc/default/superclock ==="
 if [ ! -f /etc/default/superclock ]; then
@@ -143,11 +171,19 @@ if [ ! -f /etc/default/superclock ]; then
 # VITE_* vars are build-time only and belong in .env on the build machine.
 PORT=$PORT
 ADMIN_HOST=$ADMIN_HOST
+# Python interpreter for the A121 radar sidecar (scripts/a121_sidecar.py).
+RADAR_PYTHON=$RADAR_VENV/bin/python
 EOF
   chmod 644 /etc/default/superclock
   echo "  created."
 else
   echo "  already exists — left untouched (edit it by hand to change PORT/ADMIN_HOST)."
+  # Except: converge the RADAR_PYTHON line so re-running after adding radar to
+  # an already-provisioned Pi actually wires the sidecar interpreter.
+  if ! grep -q '^RADAR_PYTHON=' /etc/default/superclock; then
+    printf 'RADAR_PYTHON=%s\n' "$RADAR_VENV/bin/python" >> /etc/default/superclock
+    echo "  added missing RADAR_PYTHON."
+  fi
 fi
 
 # ---------------------------------------------------------------------------
