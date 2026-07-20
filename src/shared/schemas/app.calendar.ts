@@ -3,8 +3,9 @@ import type { FieldMetaMap } from '../types';
 
 export const calendarAppSchema = z.object({
   source: z.string().default('default'),
-  lookaheadHours: z.number().int().min(1).max(168).default(24),
-  maxEvents: z.number().int().min(1).max(6).default(3),
+  weekStart: z.enum(['monday', 'sunday']).default('monday'),
+  defaultView: z.enum(['month', 'week']).default('month'),
+  timeFormat: z.enum(['24h', '12h']).default('24h'),
 });
 
 export const calendarAppMeta: FieldMetaMap = {
@@ -12,8 +13,9 @@ export const calendarAppMeta: FieldMetaMap = {
     description: 'ICS URL or "default" to use the server\'s configured calendar',
     placeholder: 'https://calendar.example.com/feed.ics',
   },
-  lookaheadHours: { min: 1, max: 168, step: 1, description: 'Hours ahead to include' },
-  maxEvents: { min: 1, max: 6, step: 1, description: 'Events visible on the face at once' },
+  weekStart: { description: 'First day of the week' },
+  defaultView: { description: 'View shown when the app opens' },
+  timeFormat: { description: 'Clock format for event times' },
 };
 
 export type CalendarAppConfig = z.infer<typeof calendarAppSchema>;
