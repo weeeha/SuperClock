@@ -3,4 +3,8 @@ export interface CalendarEvent {
   end: string;
   title: string;
   allDay: boolean;
+  uid: string;
+  location?: string;
+  description?: string;
+  category?: string;
 }
