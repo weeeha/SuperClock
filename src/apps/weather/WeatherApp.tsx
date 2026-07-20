@@ -70,9 +70,12 @@ async function fetchWeather(): Promise<WeatherData> {
   };
 
   const forecast: ForecastDay[] = [];
-  const baseDate = new Date(json.daily.time[1]);
   for (let i = 1; i <= 3 && i < json.daily.time.length; i++) {
-    const date = new Date(baseDate.getTime() + (i - 1) * 86400000);
+    // Parse "YYYY-MM-DD" as LOCAL midnight — new Date(string) parses it as
+    // UTC and getDay() then reads local, shifting weekday labels by one in
+    // UTC-negative timezones.
+    const [y, mo, d] = String(json.daily.time[i]).split('-').map(Number);
+    const date = new Date(y, mo - 1, d);
     forecast.push({
       day: DAY_NAMES[date.getDay()],
       icon: codeToIcon(json.daily.weather_code[i]),
@@ -87,11 +90,24 @@ async function fetchWeather(): Promise<WeatherData> {
 /** Weather screen — based on Figma S2 design (489:20881). Live data via Open-Meteo. */
 export default function WeatherApp({ isActive }: AppProps) {
   const [time, setTime] = useState(new Date());
-  const [weather, setWeather] = useState<WeatherData>(FALLBACK);
+  // null = no live data yet; the FALLBACK visuals render with an explicit
+  // "offline" tell instead of masquerading as a real reading for days.
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     if (!isActive) return;
-    const id = setInterval(() => setTime(new Date()), 1000);
+    // Only the HH:MM display consumes `time` — returning the previous state
+    // when the minute hasn't changed skips the re-render, so this ticks the
+    // whole tree once a minute instead of once a second (real heat on a Pi).
+    const id = setInterval(() => {
+      setTime((prev) => {
+        const now = new Date();
+        return now.getMinutes() === prev.getMinutes() && now.getHours() === prev.getHours()
+          ? prev
+          : now;
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [isActive]);
 
@@ -99,10 +115,14 @@ export default function WeatherApp({ isActive }: AppProps) {
     let cancelled = false;
     fetchWeather()
       .then((data) => {
-        if (!cancelled) setWeather(data);
+        if (cancelled) return;
+        setWeather(data);
+        setOffline(false);
       })
       .catch((err) => {
-        console.warn('Weather fetch failed, using fallback:', err.message);
+        if (cancelled) return;
+        console.warn('Weather fetch failed:', err.message);
+        setOffline(true);
       });
     return () => {
       cancelled = true;
@@ -113,40 +133,48 @@ export default function WeatherApp({ isActive }: AppProps) {
     if (!isActive) return;
     const id = setInterval(() => {
       fetchWeather()
-        .then(setWeather)
-        .catch(() => {});
+        .then((data) => {
+          setWeather(data);
+          setOffline(false);
+        })
+        .catch(() => setOffline(true));
     }, 15 * 60 * 1000);
     return () => clearInterval(id);
   }, [isActive]);
+
+  const shown = weather ?? FALLBACK;
 
   const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   const dayStr = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   const dateStr = `${String(time.getDate()).padStart(2, '0')}-${String(time.getMonth() + 1).padStart(2, '0')}`;
 
   return (
-    <div className="flex h-full w-full flex-col items-center bg-black px-[12%] py-[6%]">
+    <div className="relative flex h-full w-full flex-col items-center bg-black px-[12%] py-[6%]">
       <p className="text-[9.6vmin] font-semibold text-white leading-none">{timeStr}</p>
 
       <div className="flex items-baseline gap-2 mt-1">
         <span className="text-[6.4vmin] font-semibold text-[#ff8826]">{dayStr}</span>
         <span className="text-[6.4vmin] font-semibold text-white">{dateStr}</span>
       </div>
+      {offline && (
+        <span className="mt-1 font-mono text-[2.4vmin] text-white/30">offline</span>
+      )}
 
       <div className="flex items-center mt-[4%] w-full">
         <div className="flex-shrink-0 text-[28vmin] leading-none">
-          {weather.icon}
+          {shown.icon}
         </div>
         <div className="flex flex-col items-start ml-auto">
-          <p className="text-[18vmin] font-semibold text-white leading-none">{weather.current}°</p>
+          <p className="text-[18vmin] font-semibold text-white leading-none">{shown.current}°</p>
           <div className="flex items-baseline gap-3">
-            <span className="text-[9.6vmin] font-semibold text-[#eee9bf]">{weather.high}°</span>
-            <span className="text-[9.6vmin] font-semibold text-[#609cc4]">{weather.low}°</span>
+            <span className="text-[9.6vmin] font-semibold text-[#eee9bf]">{shown.high}°</span>
+            <span className="text-[9.6vmin] font-semibold text-[#609cc4]">{shown.low}°</span>
           </div>
         </div>
       </div>
 
       <div className="flex w-full justify-around mt-auto">
-        {weather.forecast.map((f) => (
+        {shown.forecast.map((f) => (
           <div key={f.day} className="flex flex-col items-center gap-1">
             <span className="text-[6.4vmin] font-semibold text-[#6d6d6d]">{f.day}</span>
             <span className="text-[9.6vmin]">{f.icon}</span>

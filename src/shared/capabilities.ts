@@ -16,6 +16,9 @@ interface StaticDeviceInfo {
   supportedAppIds: string[];
 }
 
+// Must match the registrations in src/apps/index.ts — pinned by
+// src/shared/registry-coherence.test.ts so drift fails CI instead of
+// shipping an app the admin can't see.
 const ALL_KIOSK_APP_IDS = [
   'clock',
   'weather',
@@ -27,21 +30,18 @@ const ALL_KIOSK_APP_IDS = [
   'photo-frame',
   'quote',
   'time-tracking',
+  'claude-usage',
 ];
 
-// AppDescriptors built from the registries — no React imports, safe for server-side.
-const APP_DESCRIPTORS: Record<string, AppDescriptor> = {
-  clock: { id: 'clock', faces: FACES },
-  weather: { id: 'weather' },
-  calendar: { id: 'calendar' },
-  fitness: { id: 'fitness' },
-  github: { id: 'github' },
-  habits: { id: 'habits' },
-  fireplace: { id: 'fireplace' },
-  'photo-frame': { id: 'photo-frame' },
-  quote: { id: 'quote' },
-  'time-tracking': { id: 'time-tracking' },
-};
+// AppDescriptors built from the registries — no React imports, safe for
+// server-side. Every app's config schema is `app.<id>` in schema-registry.ts;
+// clock is the exception (its config is face-driven via FACES).
+const APP_DESCRIPTORS: Record<string, AppDescriptor> = Object.fromEntries(
+  ALL_KIOSK_APP_IDS.map((id) => [
+    id,
+    id === 'clock' ? { id, faces: FACES } : { id, configSchemaId: `app.${id}` },
+  ]),
+);
 
 export const STATIC_DEVICE_INFO: Record<DeviceId, StaticDeviceInfo> = {
   'superclock-fast': {

@@ -1,14 +1,23 @@
 import type { AppProps } from '../../core/types';
 import { useClockHands } from '../../core/hooks/useClockHands';
 
+// One formatter per timezone, built once — Intl.DateTimeFormat construction
+// costs milliseconds on a Pi and this used to run 5× per second.
+const tzFormatters = new Map<string, Intl.DateTimeFormat>();
+
 function getTimeInTZ(date: Date, tz: string) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false,
-  }).formatToParts(date);
+  let fmt = tzFormatters.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    });
+    tzFormatters.set(tz, fmt);
+  }
+  const parts = fmt.formatToParts(date);
   const get = (t: string) => parseInt(parts.find((p) => p.type === t)?.value ?? '0');
   return { h: get('hour') % 12, m: get('minute') };
 }

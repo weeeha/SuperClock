@@ -15,7 +15,9 @@ interface NavigationState {
   lastGestureMs: number;
 
   // Actions
-  initApps: () => void;
+  /** (Re)build appOrder from the registry, filtered to `enabledApps` when
+   *  non-empty. Empty/undefined = all registered apps (fresh-device default). */
+  initApps: (enabledApps?: string[]) => void;
   switchToApp: (id: string) => void;
   switchToInstance: (instanceId: string, appId: string) => void;
   swipeToNext: () => void;
@@ -36,9 +38,24 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   verticalSwipeCallback: null,
   lastGestureMs: 0,
 
-  initApps: () => {
-    const ids = getAppIds();
-    set({ appOrder: ids, activeAppId: ids[0] || '' });
+  initApps: (enabledApps) => {
+    const all = getAppIds();
+    const ids =
+      enabledApps && enabledApps.length > 0
+        ? all.filter((id) => enabledApps.includes(id))
+        : all;
+    if (ids.length === 0) {
+      // A config that disables every known app must not blank the kiosk.
+      set({ appOrder: all, activeAppId: get().activeAppId || all[0] || '' });
+      return;
+    }
+    const { activeAppId } = get();
+    set({
+      appOrder: ids,
+      // Keep the current app when it's still enabled; otherwise land on the
+      // first enabled app instead of a now-disabled one.
+      activeAppId: ids.includes(activeAppId) ? activeAppId : ids[0],
+    });
   },
 
   switchToApp: (id: string) => {
@@ -99,7 +116,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),
 }));
 
-// Expose for debugging in dev
-if (import.meta.env.DEV) {
+// Expose for debugging in dev (window-guarded: this module also loads under
+// node in tests).
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as { __nav: typeof useNavigation }).__nav = useNavigation;
 }

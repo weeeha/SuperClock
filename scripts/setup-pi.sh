@@ -11,7 +11,7 @@
 #   - Express server runs as the systemd unit `superclock-server.service`
 #       User                = nickv2026
 #       WorkingDirectory    = /home/nickv2026/SuperClock
-#       ExecStart           = /usr/bin/npm run start   (PORT defaults to 3000)
+#       ExecStart           = /usr/bin/npm run start   (node dist/server.mjs; PORT defaults to 3000)
 #   - The Chromium kiosk is NOT a systemd service. labwc (the default Wayland
 #     compositor on Trixie) runs ~/.config/labwc/autostart on session start;
 #     that script (a copy of scripts/kiosk.sh) waits for the server's
@@ -92,9 +92,10 @@ echo "  npm  : $(npm -v 2>/dev/null || echo 'MISSING')"
 
 # ---------------------------------------------------------------------------
 # 2. Repo directory + ownership
-#    deploy.sh rsyncs dist/, server.ts, server/, package*.json, tsconfig*.json
-#    and scripts/ into $REPO_DIR. Ensure it exists and is owned by the user
-#    before we run `npm ci` as that user.
+#    deploy.sh rsyncs dist/ (client build + bundled server.mjs),
+#    package*.json, config/fleet.example.json and scripts/ into $REPO_DIR.
+#    Ensure it exists and is owned by the user before we run `npm ci` as
+#    that user.
 # ---------------------------------------------------------------------------
 echo "=== Preparing $REPO_DIR ==="
 mkdir -p "$REPO_DIR"
@@ -138,7 +139,8 @@ echo "=== Writing /etc/default/superclock ==="
 if [ ! -f /etc/default/superclock ]; then
   cat > /etc/default/superclock <<EOF
 # SuperClock server environment (sourced by superclock-server.service).
-# Add app secrets here too (CALENDAR_ICS_URL, VITE_* are build-time only).
+# Add server-side app secrets here too (CALENDAR_ICS_URL, GITHUB_TOKEN).
+# VITE_* vars are build-time only and belong in .env on the build machine.
 PORT=$PORT
 ADMIN_HOST=$ADMIN_HOST
 EOF

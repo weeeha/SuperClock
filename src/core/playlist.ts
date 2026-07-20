@@ -19,12 +19,17 @@ export function usePlaylistAutoRotate(): void {
   const instances = config?.instances ?? [];
   const itemsKey = items.join('|');
 
+  // Read instances through a ref so goto() never resolves against a stale
+  // array (instance edits don't change itemsKey, so the effect doesn't rerun).
+  const instancesRef = useRef(instances);
+  instancesRef.current = instances;
+
   useEffect(() => {
     if (!rotationSeconds || items.length === 0) return;
 
     const goto = (index: number) => {
       positionRef.current = index;
-      const instance = instances.find((i) => i.id === items[index]);
+      const instance = instancesRef.current.find((i) => i.id === items[index]);
       if (instance) switchToInstance(instance.id, instance.appId);
     };
 

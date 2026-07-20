@@ -55,6 +55,18 @@ export default function Playlist() {
   const playlistIds = config?.playlist.items ?? [];
   const rotationSeconds = config?.playlist.rotationSeconds ?? null;
 
+  // Draft the seconds field locally and commit on blur/Enter — patching on
+  // every keystroke persisted (and pushed fleet-wide) "1", then "12", then
+  // "120" while typing.
+  const [secondsDraft, setSecondsDraft] = useState<string | null>(null);
+  const commitSecondsDraft = () => {
+    if (secondsDraft === null) return;
+    const n = Number(secondsDraft);
+    const clamped = Number.isFinite(n) && n > 0 ? Math.min(3600, Math.max(5, Math.round(n))) : 30;
+    setSecondsDraft(null);
+    if (clamped !== rotationSeconds) patch.mutate(clamped);
+  };
+
   const playlistInstances = playlistIds
     .map((id) => allInstances.find((i) => i.id === id))
     .filter((i): i is NonNullable<typeof i> => Boolean(i));
@@ -119,8 +131,12 @@ export default function Playlist() {
               min={5}
               max={3600}
               disabled={rotationSeconds === null}
-              value={rotationSeconds ?? 30}
-              onChange={(e) => patch.mutate(Number(e.target.value) || 30)}
+              value={secondsDraft ?? rotationSeconds ?? 30}
+              onChange={(e) => setSecondsDraft(e.target.value)}
+              onBlur={() => commitSecondsDraft()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
               className="w-20 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 py-1 text-sm disabled:opacity-50"
             />
             <span className="text-sm opacity-60">seconds</span>

@@ -1,10 +1,10 @@
 # SuperClock
 
-A round-display smart clock dashboard for a custom Raspberry Pi build. SuperClock bundles a set of mini-apps (clock, weather, calendar, fitness, GitHub stats, habits, fireplace, photo frame, quotes, time tracking) into a single full-screen interface designed for a 1080×1080 circular LCD.
+A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperClock bundles a set of mini-apps (clock, weather, calendar, fitness, GitHub stats, habits, fireplace, photo frame, quotes, time tracking, Claude usage) into a single full-screen interface designed for a 1080×1080 circular LCD, plus a fleet admin panel served at `/admin` on the admin host.
 
 ## Hardware
 
-- **SBC:** Raspberry Pi 4 Model B
+- **SBC:** Raspberry Pi 4/5 (per device — see `superclock-*/device.json`)
 - **Display:** Waveshare 5-inch 1080×1080 round LCD
 - **HAT:** SunFounder Fusion HAT
 - **Form factor:** Round, 1080×1080 — UI is laid out for a circular viewport

@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{23F1}',
     description: 'Pomodoro focus timer',
     category: 'productivity',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.time-tracking',
   },
   component: lazy(() => import('./TimeTrackingApp')),
 });

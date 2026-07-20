@@ -8,8 +8,6 @@ registerApp({
     icon: '\u{1F525}',
     description: 'Ambient fireplace animation',
     category: 'ambient',
-    supportsInternalSwipe: false,
-    configSchemaId: 'app.fireplace',
   },
   component: lazy(() => import('./FireplaceApp')),
 });
