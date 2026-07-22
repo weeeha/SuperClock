@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperClock — System Map</title>
+<meta name="description" content="Concept map, sitemap, app catalog and ranked gap evaluation for the SuperClock Raspberry Pi clock fleet — read from the code, not the docs.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SuperClock — System Map">
+<meta property="og:description" content="Concept map, sitemap, app catalog and ranked gap evaluation for the SuperClock Raspberry Pi clock fleet — read from the code, not the docs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%90%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<style>
+  /* standalone reset — the artifact host supplied one; a plain page does not */
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  section > p { margin: 0 0 1em; }
+
+  :root {
+    --bg: #EFF1F0;
+    --surface: #FFFFFF;
+    --surface-2: #F6F8F7;
+    --ink: #141B1A;
+    --ink-2: #47534F;
+    --ink-3: #7A8683;
+    --line: #D8DEDB;
+    --line-2: #E7ECEA;
+    --accent: #1F7A75;
+    --accent-soft: rgba(31, 122, 117, 0.10);
+    --ok: #2F6D50;
+    --ok-soft: rgba(47, 109, 80, 0.12);
+    --warn: #A2701A;
+    --warn-soft: rgba(162, 112, 26, 0.13);
+    --risk: #A34A38;
+    --risk-soft: rgba(163, 74, 56, 0.12);
+
+    --font-display: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E1413;
+      --surface: #151D1C;
+      --surface-2: #1B2423;
+      --ink: #E4EBE9;
+      --ink-2: #A2B0AD;
+      --ink-3: #74827F;
+      --line: #263230;
+      --line-2: #1F2A29;
+      --accent: #55C2BA;
+      --accent-soft: rgba(85, 194, 186, 0.12);
+      --ok: #5BA57F;
+      --ok-soft: rgba(91, 165, 127, 0.14);
+      --warn: #D0A04A;
+      --warn-soft: rgba(208, 160, 74, 0.14);
+      --risk: #D37963;
+      --risk-soft: rgba(211, 121, 99, 0.14);
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #EFF1F0;
+    --surface: #FFFFFF;
+    --surface-2: #F6F8F7;
+    --ink: #141B1A;
+    --ink-2: #47534F;
+    --ink-3: #7A8683;
+    --line: #D8DEDB;
+    --line-2: #E7ECEA;
+    --accent: #1F7A75;
+    --accent-soft: rgba(31, 122, 117, 0.10);
+    --ok: #2F6D50;
+    --ok-soft: rgba(47, 109, 80, 0.12);
+    --warn: #A2701A;
+    --warn-soft: rgba(162, 112, 26, 0.13);
+    --risk: #A34A38;
+    --risk-soft: rgba(163, 74, 56, 0.12);
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0E1413;
+    --surface: #151D1C;
+    --surface-2: #1B2423;
+    --ink: #E4EBE9;
+    --ink-2: #A2B0AD;
+    --ink-3: #74827F;
+    --line: #263230;
+    --line-2: #1F2A29;
+    --accent: #55C2BA;
+    --accent-soft: rgba(85, 194, 186, 0.12);
+    --ok: #5BA57F;
+    --ok-soft: rgba(91, 165, 127, 0.14);
+    --warn: #D0A04A;
+    --warn-soft: rgba(208, 160, 74, 0.14);
+    --risk: #D37963;
+    --risk-soft: rgba(211, 121, 99, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0 56px;
+  }
+
+  @media (min-width: 1040px) {
+    .page { grid-template-columns: 186px minmax(0, 1fr); }
+    .masthead { grid-column: 1 / -1; }
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 4.4vw, 3.1rem);
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    text-wrap: balance;
+    margin: 0 0 20px;
+  }
+
+  .standfirst {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 60ch;
+    margin: 0 0 36px;
+  }
+
+  .tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .tally > div {
+    flex: 1 1 128px;
+    padding: 16px 18px;
+    border-right: 1px solid var(--line-2);
+  }
+
+  .tally > div:last-child { border-right: 0; }
+
+  .tally b {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .tally span {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ---------- toc ---------- */
+
+  .toc { display: none; }
+
+  @media (min-width: 1040px) {
+    .toc {
+      display: block;
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
+    }
+  }
+
+  .toc p {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 14px;
+  }
+
+  .toc a {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: 6px 0 6px 12px;
+    border-left: 2px solid var(--line);
+  }
+
+  .toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+  .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- sections ---------- */
+
+  section { margin-bottom: 72px; scroll-margin-top: 24px; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.55rem;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.02rem;
+    letter-spacing: -0.005em;
+    margin: 40px 0 12px;
+  }
+
+  .lede {
+    color: var(--ink-2);
+    max-width: 66ch;
+    margin: 0 0 28px;
+  }
+
+  p { max-width: 68ch; }
+
+  a { color: var(--accent); }
+
+  code, .mono {
+    font-family: var(--font-mono);
+    font-size: 0.83em;
+    background: var(--accent-soft);
+    padding: 0.12em 0.38em;
+    border-radius: 3px;
+  }
+
+  /* ---------- diagrams ---------- */
+
+  .figure {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 24px 20px 18px;
+    margin: 0 0 14px;
+  }
+
+  .scroller { overflow-x: auto; }
+  .scroller svg { display: block; min-width: 660px; }
+
+  .caption {
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-3);
+    max-width: 72ch;
+    margin: 0 0 40px;
+  }
+
+  svg .box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; }
+  svg .box-key { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  svg .t { font-family: var(--font-display); font-size: 13px; font-weight: 600; fill: var(--ink); }
+  svg .s { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3); }
+  svg .edge { stroke: var(--ink-3); stroke-width: 1.2; fill: none; }
+  svg .edge-dash { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+  svg .el { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; fill: var(--ink-3); letter-spacing: 0.04em; }
+  svg .lane { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; fill: var(--accent); letter-spacing: 0.13em; }
+
+  /* ---------- trees ---------- */
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  @media (min-width: 800px) {
+    .cols { grid-template-columns: 1fr 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 22px 24px 24px;
+  }
+
+  .panel > h4 {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 16px;
+  }
+
+  .tree {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    margin: 0;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--ink-2);
+  }
+
+  .tree b { color: var(--ink); font-weight: 600; }
+  .tree i { color: var(--ink-3); font-style: normal; }
+
+  /* ---------- tables ---------- */
+
+  .tablewrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 620px;
+  }
+
+  th {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: left;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--line-2);
+    font-size: 14px;
+    line-height: 1.55;
+    vertical-align: top;
+    color: var(--ink-2);
+  }
+
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--ink); }
+  td .mono { background: none; padding: 0; font-size: 12.5px; }
+
+  /* ---------- app cards ---------- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 700px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1040px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 20px 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .card-head h4 {
+    font-family: var(--font-display);
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .card-head .mono {
+    background: none;
+    padding: 0;
+    font-size: 11.5px;
+    color: var(--ink-3);
+  }
+
+  .card p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); max-width: none; }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding-top: 4px;
+    border-top: 1px solid var(--line-2);
+    margin-top: auto;
+  }
+
+  .meta span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    padding-top: 8px;
+  }
+
+  .pill {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.risk { background: var(--risk-soft); color: var(--risk); }
+  .pill.info { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- gaps ---------- */
+
+  .gap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+
+  .gap.sev-1 { border-left-color: var(--risk); }
+  .gap.sev-2 { border-left-color: var(--warn); }
+  .gap.sev-3 { border-left-color: var(--ink-3); }
+
+  .gap-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .gap-num {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    min-width: 18px;
+  }
+
+  .gap-head h4 {
+    font-family: var(--font-display);
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    flex: 1 1 240px;
+  }
+
+  .gap p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+  .gap p.fix { color: var(--ink); }
+  .gap p.fix b {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 8px;
+  }
+
+  /* ---------- next ---------- */
+
+  ol.next { list-style: none; padding: 0; margin: 0; counter-reset: n; }
+
+  ol.next li {
+    counter-increment: n;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+
+  ol.next li:last-child { border-bottom: 0; }
+
+  ol.next li::before {
+    content: counter(n);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ol.next h4 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  ol.next p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    font-size: 13px;
+    color: var(--ink-3);
+    max-width: 72ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Fleet survey · 21 July 2026</p>
+    <h1>SuperClock: what's built, what's wired, what's still missing</h1>
+    <p class="standfirst">
+      A read of the repository as it stands on <span class="mono">main</span> — twelve kiosk apps, nine
+      watch faces, a fleet admin panel, and an mmWave radar that the software is ready for and the
+      firmware isn't. This maps the concepts, the navigable surfaces, and the ten gaps that actually
+      matter.
+    </p>
+    <div class="tally">
+      <div><b>12</b><span>Apps</span></div>
+      <div><b>9</b><span>Faces</span></div>
+      <div><b>4</b><span>Devices</span></div>
+      <div><b>20</b><span>API routes</span></div>
+      <div><b>0/7</b><span>Primitives</span></div>
+      <div><b>4</b><span>Test files</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <a href="#concepts">Concept map</a>
+    <a href="#sitemap">Sitemap</a>
+    <a href="#api">API surface</a>
+    <a href="#apps">The twelve apps</a>
+    <a href="#faces">Faces &amp; complications</a>
+    <a href="#fleet">The fleet</a>
+    <a href="#gaps">Gap evaluation</a>
+    <a href="#next">What I'd do next</a>
+    <a href="#flight">In flight</a>
+  </nav>
+
+  <main>
+
+    <!-- ============ CONCEPT MAP ============ -->
+    <section id="concepts">
+      <h2>Concept map</h2>
+      <p class="lede">
+        Two relationships carry the whole system. The first is what a screen <em>is</em> — a chain from
+        the fleet file down to a single complication. The second is how a change <em>travels</em> — from
+        a phone in the hallway to a Pi on a shelf.
+      </p>
+
+      <div class="figure">
+        <div class="scroller">
+          <svg viewBox="0 0 1030 340" role="img" aria-label="Domain model: fleet.json contains devices, which hold screen instances, which reference an app and a face; faces expose slots that hold complications; a zod schema registry validates instance config; a playlist orders instances.">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+              </marker>
+            </defs>
+            <g color="var(--ink-3)">
+
+              <!-- row 1 -->
+              <rect class="box-key" x="16" y="24" width="150" height="64" rx="3" />
+              <text class="t" x="32" y="50">fleet.json</text>
+              <text class="s" x="32" y="68">source of truth</text>
+              <text class="s" x="32" y="81">admin host only</text>
+
+              <rect class="box" x="216" y="24" width="150" height="64" rx="3" />
+              <text class="t" x="232" y="50">Device</text>
+              <text class="s" x="232" y="68">4 · declares its</text>
+              <text class="s" x="232" y="81">capabilities</text>
+
+              <rect class="box" x="416" y="24" width="150" height="64" rx="3" />
+              <text class="t" x="432" y="50">Screen instance</text>
+              <text class="s" x="432" y="68">appId + config</text>
+              <text class="s" x="432" y="81">one per screen</text>
+
+              <rect class="box" x="656" y="24" width="150" height="64" rx="3" />
+              <text class="t" x="672" y="50">App</text>
+              <text class="s" x="672" y="68">12 registered</text>
+              <text class="s" x="672" y="81">lazy-loaded</text>
+
+              <!-- row 2 -->
+              <rect class="box" x="216" y="150" width="150" height="64" rx="3" />
+              <text class="t" x="232" y="176">Playlist</text>
+              <text class="s" x="232" y="194">rotationSeconds</text>
+              <text class="s" x="232" y="207">ordered ids</text>
+
+              <rect class="box" x="656" y="150" width="150" height="64" rx="3" />
+              <text class="t" x="672" y="176">Face</text>
+              <text class="s" x="672" y="194">9 · clock only</text>
+              <text class="s" x="672" y="207">declares slots</text>
+
+              <rect class="box" x="856" y="150" width="150" height="64" rx="3" />
+              <text class="t" x="872" y="176">Complication</text>
+              <text class="s" x="872" y="194">6 declared</text>
+              <text class="s" x="872" y="207">1 renders live</text>
+
+              <!-- row 3 -->
+              <rect class="box" x="416" y="252" width="190" height="60" rx="3" />
+              <text class="t" x="432" y="278">Schema registry</text>
+              <text class="s" x="432" y="296">zod · app.* and face.*</text>
+
+              <!-- edges -->
+              <path class="edge" d="M 166 56 H 208" marker-end="url(#ar)" />
+              <path class="edge" d="M 366 56 H 408" marker-end="url(#ar)" />
+              <path class="edge" d="M 566 56 H 648" marker-end="url(#ar)" />
+              <text class="el" x="580" y="48">appId</text>
+
+              <path class="edge" d="M 540 88 V 182 H 648" marker-end="url(#ar)" />
+              <text class="el" x="552" y="140">faceId</text>
+
+              <path class="edge" d="M 806 182 H 848" marker-end="url(#ar)" />
+              <text class="el" x="808" y="172">slot</text>
+
+              <path class="edge-dash" d="M 291 150 V 118 H 432 V 96" marker-end="url(#ar)" />
+              <text class="el" x="300" y="112">orders</text>
+
+              <path class="edge-dash" d="M 511 252 V 96" marker-end="url(#ar)" />
+              <text class="el" x="520" y="180">validates</text>
+              <text class="el" x="520" y="194">config</text>
+
+              <!-- cardinality -->
+              <text class="s" x="176" y="48">1:N</text>
+              <text class="s" x="376" y="48">1:N</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <p class="caption">
+        Domain model. Note the two dashed edges — they're where the design outruns the code. The schema
+        registry validates every instance's config, but the <b>Complication</b> node at the far right is
+        almost entirely declaration: six types are registered so the admin's slot picker has something to
+        show, one draws live data, and eight of the nine faces declare no slots at all.
+      </p>
+
+      <div class="figure">
+        <div class="scroller">
+          <svg viewBox="0 0 1040 300" role="img" aria-label="Config pipeline: admin panel posts to the admin API, which writes fleet.json atomically and pushes to the target device; the device config endpoint validates with zod, the kiosk polls every five seconds and caches to localStorage, then renders.">
+            <defs>
+              <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+              </marker>
+            </defs>
+            <g color="var(--ink-3)">
+
+              <text class="lane" x="20" y="30">ADMIN HOST</text>
+
+              <rect class="box" x="20" y="44" width="155" height="62" rx="3" />
+              <text class="t" x="34" y="70">Admin panel</text>
+              <text class="s" x="34" y="90">React SPA at /admin</text>
+
+              <rect class="box" x="190" y="44" width="155" height="62" rx="3" />
+              <text class="t" x="204" y="70">Admin API</text>
+              <text class="s" x="204" y="90">bearer / cookie auth</text>
+
+              <rect class="box-key" x="360" y="44" width="155" height="62" rx="3" />
+              <text class="t" x="374" y="70">fleet.json</text>
+              <text class="s" x="374" y="90">atomic fsync write</text>
+
+              <rect class="box" x="530" y="44" width="155" height="62" rx="3" />
+              <text class="t" x="544" y="70">Device push</text>
+              <text class="s" x="544" y="90">fetch to target Pi</text>
+
+              <text class="lane" x="530" y="172">EVERY KIOSK</text>
+
+              <rect class="box" x="530" y="186" width="155" height="62" rx="3" />
+              <text class="t" x="544" y="212">Config endpoint</text>
+              <text class="s" x="544" y="232">zod · token-gated</text>
+
+              <rect class="box" x="700" y="186" width="155" height="62" rx="3" />
+              <text class="t" x="714" y="212">Kiosk poll</text>
+              <text class="s" x="714" y="232">5s · localStorage</text>
+
+              <rect class="box" x="870" y="186" width="155" height="62" rx="3" />
+              <text class="t" x="884" y="212">Render</text>
+              <text class="s" x="884" y="232">apps · faces · theme</text>
+
+              <path class="edge" d="M 175 75 H 182" marker-end="url(#ar2)" />
+              <path class="edge" d="M 345 75 H 352" marker-end="url(#ar2)" />
+              <path class="edge" d="M 515 75 H 522" marker-end="url(#ar2)" />
+              <path class="edge" d="M 625 106 V 178" marker-end="url(#ar2)" />
+              <text class="el" x="638" y="146">push</text>
+              <path class="edge" d="M 685 217 H 692" marker-end="url(#ar2)" />
+              <path class="edge" d="M 855 217 H 862" marker-end="url(#ar2)" />
+
+              <path class="edge-dash" d="M 590 178 V 114" marker-end="url(#ar2)" />
+              <text class="el" x="466" y="150">retry 60s</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <p class="caption">
+        Config pipeline. Every Pi is standalone-functional by design: the localStorage last-good cache
+        means a kiosk that boots while the admin host is down still shows its configured screens. Failed
+        pushes retry on a 60-second loop rather than failing the admin write.
+      </p>
+    </section>
+
+    <!-- ============ SITEMAP ============ -->
+    <section id="sitemap">
+      <h2>Sitemap</h2>
+      <p class="lede">
+        Two SPAs ship from one Vite build and one Express server. The kiosk has no router at all —
+        navigation is a Zustand store plus a single root gesture handler. The admin is conventional
+        react-router.
+      </p>
+
+      <div class="cols">
+        <div class="panel">
+          <h4>Kiosk — touch only, no router</h4>
+<pre class="tree"><b>Tier 0 · App grid</b>
+├─ <i>swipe down</i>       from an app
+├─ <i>pinch in</i>
+└─ <i>3-finger tap</i>
+
+<b>Tier 1 · Active app</b>
+├─ <i>swipe ← →</i>        through enabled apps
+└─ <i>auto-rotate</i>      playlist tick
+
+<b>Tier 2 · Sub-views</b>  <i>app-owned</i>
+├─ Clock   <i>↕ cycles 9 faces</i>
+└─ Habits  <i>↕ day / month</i>
+
+<b>Tier 3 · Drill-down</b>
+└─ <i>no shell support yet</i>
+
+<b>Overlay</b>
+└─ PresenceShade <i>radar fade</i></pre>
+        </div>
+
+        <div class="panel">
+          <h4>Admin — react-router at /admin</h4>
+<pre class="tree"><b>/</b>                  Dashboard
+<b>/apps</b>              App list
+└─ <b>/apps/:appId</b>    Config form
+   ├─ <b>/gallery</b>     Face gallery
+   └─ <b>/faces/:id</b>   Face config
+                     <i>+ slot grid</i>
+<b>/playlist</b>          Drag reorder
+                     <i>rotation seconds</i>
+<b>/settings</b>          Theme · accent
+                     <i>brightness · night</i>
+                     <i>sleep window</i>
+<b>/setup</b>             ?token= exchange
+                     <i>→ httpOnly cookie</i></pre>
+        </div>
+      </div>
+
+      <h3>Gesture contract</h3>
+      <p>
+        One <code>@use-gesture</code> handler at the root, using pointer events with pointer capture — so
+        child components cannot intercept it by stopping touch-event propagation. Vertical swipe routes to
+        the active app's registered callback when it has one, and opens the grid when it doesn't. There is
+        no metadata flag for this; apps call <code>setVerticalSwipeCallback</code> while active. A
+        long-press replacement for pinch and 3-finger tap sits on an unmerged branch.
+      </p>
+    </section>
+
+    <!-- ============ API ============ -->
+    <section id="api">
+      <h2>API surface</h2>
+      <p class="lede">
+        Express 5. Every third-party secret is server-side — the browser never sees a token. Unmatched
+        <code>/api/*</code> returns JSON 404 before the SPA fallbacks, so a typo never silently renders
+        the kiosk.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Route</th><th>Purpose</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mono">GET /api/health</span></td><td>Liveness</td><td>Kiosk launch script waits on this before starting Chromium</td></tr>
+            <tr><td><span class="mono">GET /api/calendar</span></td><td>Parsed iCal events</td><td>Proxy — <span class="mono">CALENDAR_ICS_URL</span> stays server-side</td></tr>
+            <tr><td><span class="mono">GET /api/photos</span></td><td>Slideshow manifest</td><td>Reads <span class="mono">public/photos/</span></td></tr>
+            <tr><td><span class="mono">GET /api/claude-usage</span></td><td>Rate-limit utilization</td><td>Proxy to the Mac daemon on :47823</td></tr>
+            <tr><td><span class="mono">GET /api/github/contributions</span></td><td>Contribution graph</td><td>Proxy — <span class="mono">GITHUB_TOKEN</span> server-side, rotate without a rebuild</td></tr>
+            <tr><td><span class="mono">GET /api/device/capabilities</span></td><td>What this Pi supports</td><td>Static per device id; drives admin controls</td></tr>
+            <tr><td><span class="mono">GET /api/device/state</span></td><td>Runtime state</td><td></td></tr>
+            <tr><td><span class="mono">GET /api/device/config</span></td><td>Current config</td><td>Kiosk polls every 5s</td></tr>
+            <tr><td><span class="mono">POST /api/device/config</span></td><td>Accept pushed config</td><td>zod-validated, optionally token-gated</td></tr>
+            <tr><td><span class="mono">GET /api/radar</span></td><td>Radar snapshot</td><td rowspan="3">Mock driver in dev; serial otherwise. Mode lease expires after 90s</td></tr>
+            <tr><td><span class="mono">GET /api/radar/stream</span></td><td>SSE snapshot stream</td></tr>
+            <tr><td><span class="mono">POST /api/radar/mode</span></td><td>Lease presence or breathing</td></tr>
+            <tr><td><span class="mono">GET /api/occupancy</span></td><td>Desk-time summary</td><td>Derived from presence transitions; 30 days kept</td></tr>
+            <tr><td><span class="mono">/api/admin/*</span></td><td>Fleet CRUD — 7 routes</td><td>Admin host only; bearer or cookie auth</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ APPS ============ -->
+    <section id="apps">
+      <h2>The twelve apps</h2>
+      <p class="lede">
+        Each is a module under <code>src/apps/</code> that registers itself and lazy-loads. Adding one
+        means touching three lists — the side-import, the capability array, and the schema registry — and
+        a coherence test fails until they agree.
+      </p>
+
+      <div class="grid">
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Clock <span class="mono">clock</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>The most developed surface. A face-cycling shell hosting nine swappable faces; vertical swipe moves between them. Accepts a <code>faceId</code> plus merged face options from device config, so the admin can pin a device to one face.</p>
+          <div class="meta"><span>utility</span><span>config: face-driven</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Weather <span class="mono">weather</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Current conditions and forecast from Open-Meteo — no API key needed. Shows an explicit offline tell rather than stale numbers. An hourly radial view is in design, not built.</p>
+          <div class="meta"><span>utility</span><span>app.weather</span><span>client fetch</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Calendar <span class="mono">calendar</span></h4>
+            <span class="pill info">Expanding</span>
+          </div>
+          <p>Today's date and events from any iCal feed, parsed server-side. PR&nbsp;#28 adds Month, Week and Details views laid out for the round display, plus the repo's first app-level test file.</p>
+          <div class="meta"><span>utility</span><span>app.calendar</span><span>/api/calendar</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Fitness <span class="mono">fitness</span></h4>
+            <span class="pill warn">Thin</span>
+          </div>
+          <p>Today it's an exercise counter with a progress ring. The architecture doc names the <em>real</em> Fitness — groups, sets, active circuit — as the next build, because it's the one app that would force five shared primitives into existence at once.</p>
+          <div class="meta"><span>productivity</span><span>app.fitness</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>GitHub <span class="mono">github</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Contribution heatmap arranged as a radial watch face. Recently hardened: serves a last-good cache when offline, shows an honest empty state, and no longer falls back to mock data.</p>
+          <div class="meta"><span>productivity</span><span>app.github</span><span>server proxy</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Habits <span class="mono">habits</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Daily habit tracking with streaks; vertical swipe switches day and month views — one of only two apps using the tier-2 pattern. A radial-daily / concentric-monthly rewrite is stranded on an unmerged branch.</p>
+          <div class="meta"><span>productivity</span><span>app.habits</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Timer <span class="mono">time-tracking</span></h4>
+            <span class="pill ok">Radar-aware</span>
+          </div>
+          <p>Pomodoro focus timer, and the only app that consumes occupancy: it auto-pauses after 45 seconds of radar absence and resumes when you come back. Reads today's at-desk total and a 7-day history.</p>
+          <div class="meta"><span>productivity</span><span>app.time-tracking</span><span>/api/occupancy</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Claude Usage <span class="mono">claude-usage</span></h4>
+            <span class="pill warn">Needs daemon</span>
+          </div>
+          <p>Session and weekly rate-limit utilization with a mood-aware Clawd character. Depends on a Mac LaunchAgent holding a valid subscription token — when the numbers vanish, that daemon is down, not the app.</p>
+          <div class="meta"><span>productivity</span><span>app.claude-usage</span><span>Mac :47823</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Breathing <span class="mono">breathing</span></h4>
+            <span class="pill risk">Blocked</span>
+          </div>
+          <p>Live respiration rate from the A121 mmWave radar, leasing breathing mode for 90 seconds at a time. The software path works end to end against the mock driver — but on real hardware the mode switch sends nothing. See gap&nbsp;4.</p>
+          <div class="meta"><span>utility</span><span>app.breathing</span><span>/api/radar</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Photos <span class="mono">photo-frame</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Slideshow cycling local photos every eight seconds. The photo directory is gitignored and copied into the build; albums are selectable per device.</p>
+          <div class="meta"><span>ambient</span><span>app.photo-frame</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Fireplace <span class="mono">fireplace</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Ambient fireplace animation. One of the three ambient apps that the architecture doc suspects should collapse into a single scene-picker app.</p>
+          <div class="meta"><span>ambient</span><span>app.fireplace</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h4>Quote <span class="mono">quote</span></h4>
+            <span class="pill ok">Shipped</span>
+          </div>
+          <p>Quote of the day, optionally sourced from a remote JSON feed. The simplest app in the repo, and the closest thing to a template for a new one.</p>
+          <div class="meta"><span>ambient</span><span>app.quote</span></div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ============ FACES ============ -->
+    <section id="faces">
+      <h2>Faces &amp; complications</h2>
+      <p class="lede">
+        Nine faces, all React components, all requiring a deploy to add. Eight carry a zod config schema
+        the admin renders as a form; one is dual-implemented in C.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Face</th><th>Category</th><th>Config schema</th><th>Slots</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Minimalismo</td><td>classic</td><td>—</td><td>Also implemented in LVGL C for the Slow Pi</td></tr>
+            <tr><td>Analog</td><td>classic</td><td><span class="mono">face.analog</span></td><td>Reference consumer for merged face config</td></tr>
+            <tr><td>Productivity</td><td>data-rich</td><td><span class="mono">face.productivity</span></td><td>none</td></tr>
+            <tr><td>Square</td><td>modern</td><td><span class="mono">face.square</span></td><td>none</td></tr>
+            <tr><td>Floral</td><td>artistic</td><td><span class="mono">face.floral</span></td><td>none</td></tr>
+            <tr><td>Complications Light</td><td>data-rich</td><td><span class="mono">face.complications-light</span></td><td>none</td></tr>
+            <tr><td>Complications Dark</td><td>data-rich</td><td><span class="mono">face.complications-dark</span></td><td>4 demo slots — the only face that declares any</td></tr>
+            <tr><td>World Clock</td><td>utility</td><td><span class="mono">face.world</span></td><td>none</td></tr>
+            <tr><td>Flip</td><td>classic</td><td><span class="mono">face.flip</span></td><td>none</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Complications</h3>
+      <p>
+        Six are registered so the admin's slot picker has a catalog: Date, Temperature, Habit Streak, Day
+        Progress, Fitness Ring, Next Event. Only Date and Temperature have renderers, and Temperature
+        renders an em-dash because nothing passes it a value yet. Combined with the slot column above,
+        that means <strong>no complication currently appears on any screen</strong>. This is gap&nbsp;1.
+      </p>
+    </section>
+
+    <!-- ============ FLEET ============ -->
+    <section id="fleet">
+      <h2>The fleet</h2>
+      <p class="lede">
+        Four Pis. Three run Chromium in kiosk mode against the React build; the fourth runs a separate
+        native binary and is read-only from the admin's point of view.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Device</th><th>Runtime</th><th>Apps</th><th>Controllable</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Fast</td><td>Pi 5 · Chromium</td><td>all 12</td><td>brightness · sleep · theme · accent · night mode</td></tr>
+            <tr><td>Small</td><td>Pi 4 · Chromium</td><td>all 12</td><td>brightness · sleep · theme · accent · night mode</td></tr>
+            <tr><td>Square</td><td>Pi 4 · Chromium</td><td>all 12</td><td>brightness · sleep · theme · accent · night mode</td></tr>
+            <tr><td>Slow</td><td>Pi 4 · native LVGL</td><td>clock only</td><td>theme only — declared read-only</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:20px">
+        The Chromium kiosk is deliberately <em>not</em> a systemd service — only the Express server is.
+        The browser is launched from the labwc autostart script, which waits for <code>/api/health</code>
+        first. The server ships as a single esbuild bundle, so deployment has no list of source
+        directories to keep in sync.
+      </p>
+    </section>
+
+    <!-- ============ GAPS ============ -->
+    <section id="gaps">
+      <h2>Gap evaluation</h2>
+      <p class="lede">
+        Ranked by how much each one blocks. The pattern across the top three is the same: the
+        infrastructure for a capability was built before anything consumed it, so the admin now offers
+        controls that don't reach the screen.
+      </p>
+
+      <div class="gap sev-1">
+        <div class="gap-head">
+          <span class="gap-num">01</span>
+          <h4>The complication system is a facade</h4>
+          <span class="pill risk">Promises what it can't deliver</span>
+        </div>
+        <p>Six complications are registered, one draws live data, and eight of nine faces declare <code>slots: []</code>. The admin's slot grid lets you assign a complication to a screen that will never render it — the worst kind of gap, because it looks finished.</p>
+        <p class="fix"><b>Fix</b>Either wire two or three real slots into Complications&nbsp;Dark, which already declares four demo slots and a config schema, or gate unimplemented complications out of the picker so the admin stops promising them.</p>
+      </div>
+
+      <div class="gap sev-1">
+        <div class="gap-head">
+          <span class="gap-num">02</span>
+          <h4>The primitive kit is zero of seven built</h4>
+          <span class="pill risk">Blocks scale</span>
+        </div>
+        <p><code>RingFace</code>, <code>RadialViz</code>, <code>ScenePicker</code>, <code>IntervalTimer</code>, <code>RoundList</code>, <code>WeekRing</code>, <code>AmbientMedia</code> — all named as the foundation for the roughly fifteen apps in design. None exist; <code>src/core/widgets/</code> doesn't exist. Nor do the five shell hooks, so every app re-rolls its own fetch, interval and localStorage handling, and TanStack Query is a dependency the kiosk never adopted.</p>
+        <p class="fix"><b>Fix</b>The doc already answers this: build Fitness for real and extract on the third use. Fitness is the right forcing function precisely because it needs five of the seven at once.</p>
+      </div>
+
+      <div class="gap sev-1">
+        <div class="gap-head">
+          <span class="gap-num">03</span>
+          <h4>Navigation tiers 2 and 3 live in app code, not the shell</h4>
+          <span class="pill risk">Blocks scale</span>
+        </div>
+        <p>Tier 2 is a callback registration each app copies by hand — two apps do it today, eight-plus planned apps want it. Tier 3, the drill-down back stack, has no implementation at all, and the real Fitness app needs three levels.</p>
+        <p class="fix"><b>Fix</b>Lift both into the shell alongside the Fitness build, so the API is validated by a real call site instead of designed in the abstract.</p>
+      </div>
+
+      <div class="gap sev-1">
+        <div class="gap-head">
+          <span class="gap-num">04</span>
+          <h4>Radar mode switching is a no-op on real hardware</h4>
+          <span class="pill risk">Blocks Breathing</span>
+        </div>
+        <p>The serial driver's <code>setMode</code> logs a line and sends nothing — the UART register protocol was never calibrated because the module wasn't in hand. Presence and breathing are mutually exclusive in the flashed firmware, so the Breathing app cannot work on a real sensor today, only against the mock.</p>
+        <p class="fix"><b>Fix</b>PR&nbsp;#29 is exactly this — a 259-line Python exploration-server sidecar that moves the DSP host-side. It's the one open PR with a physical dependency, so it needs the sensor plugged into a Pi to validate.</p>
+      </div>
+
+      <div class="gap sev-2">
+        <div class="gap-head">
+          <span class="gap-num">05</span>
+          <h4>Faces are curated React while the stated direction is JSON config</h4>
+          <span class="pill warn">Blocks horizons 2 &amp; 3</span>
+        </div>
+        <p>Every new face is a pull request and a deploy. The foundation's own lean is option B1 — faces as pure config on top of engines — and the infrastructure is already there: a face registry, per-instance config, and a zod-to-form renderer. What's missing is a face <em>spec</em> that something consumes.</p>
+        <p class="fix"><b>Fix</b>This unblocks the community face library, the visual face builder, and gap 6 simultaneously. It's the highest-leverage mid-term move.</p>
+      </div>
+
+      <div class="gap sev-2">
+        <div class="gap-head">
+          <span class="gap-num">06</span>
+          <h4>React and LVGL parity is maintained by hand</h4>
+          <span class="pill warn">Silent drift risk</span>
+        </div>
+        <p>Only Minimalismo exists on both sides. Any change to a shared face's geometry, palette or night behaviour needs a mirrored edit in C in the same PR — enforced by review discipline alone, with nothing failing if it's forgotten.</p>
+        <p class="fix"><b>Fix</b>Downstream of gap 5. A shared JSON face spec is the stated long-term answer; until then this stays a review checklist item.</p>
+      </div>
+
+      <div class="gap sev-2">
+        <div class="gap-head">
+          <span class="gap-num">07</span>
+          <h4>Four test files, none covering an app or a route</h4>
+          <span class="pill warn">Least-verified code is the newest</span>
+        </div>
+        <p>The four that exist pin the right things — fleet store atomicity, the navigation invariant that would kill every gesture, registry coherence, time windows. But there are no API-route tests and no radar protocol tests, and the radar parser is both the newest and the least verifiable code in the repo.</p>
+        <p class="fix"><b>Fix</b>PR&nbsp;#28 adds the first app-level test. Radar protocol tests should land with the sidecar, using captured serial lines as fixtures.</p>
+      </div>
+
+      <div class="gap sev-2">
+        <div class="gap-head">
+          <span class="gap-num">08</span>
+          <h4>The README is stale and contradicts the security rule</h4>
+          <span class="pill warn">Blocks open-sourcing</span>
+        </div>
+        <p>It documents <code>VITE_GITHUB_TOKEN</code> — a browser-inlined secret — when the token moved server-side to a proxy route. It says eleven apps when twelve are registered, and never mentions the admin panel, the fleet pipeline, or the radar. The project docs are accurate; the README is the file an outside visitor reads first, and horizon 2 is literally "open-source the repo".</p>
+        <p class="fix"><b>Fix</b>A rewrite is an hour of work and a prerequisite for the stated mid-term goal.</p>
+      </div>
+
+      <div class="gap sev-3">
+        <div class="gap-head">
+          <span class="gap-num">09</span>
+          <h4>Sixteen unmerged branches, including a PR that predates the radar</h4>
+          <span class="pill info">Hygiene</span>
+        </div>
+        <p>Two <em>salvage</em> branches carry an in-kiosk Settings panel that doesn't exist on main; others hold a long-press gesture replacement and the Habits rewrite. More urgently, PR&nbsp;#28 branched before the radar merge — its diff against main shows the radar files as deletions, so it will read as a revert unless it's rebased first.</p>
+        <p class="fix"><b>Fix</b>Rebase PR&nbsp;#28 before review. Then decide the salvage branches in or out — they're currently neither.</p>
+      </div>
+
+      <div class="gap sev-3">
+        <div class="gap-head">
+          <span class="gap-num">10</span>
+          <h4>No device-to-device channel</h4>
+          <span class="pill info">Horizon 3, unstarted</span>
+        </div>
+        <p>"Push a scene to the other room" has no transport. Admin-to-device is one-way with a retry loop, and the fleet store already knows every device — so the missing piece is genuinely small, it just hasn't been started.</p>
+        <p class="fix"><b>Fix</b>Not urgent. Worth noting that nothing in the current design forecloses it, which was the point.</p>
+      </div>
+    </section>
+
+    <!-- ============ NEXT ============ -->
+    <section id="next">
+      <h2>What I'd do next</h2>
+      <p class="lede">
+        In order. The first three are small and clear the deck; the fourth is the one that actually
+        changes the trajectory.
+      </p>
+
+      <ol class="next">
+        <li>
+          <div>
+            <h4>Rebase PR #28, then land it</h4>
+            <p>It's eighteen commits of real work sitting behind a stale base. Rebasing first stops the radar files reading as a revert.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Validate PR #29 against the physical sensor</h4>
+            <p>Everything downstream of the protocol parser already works. This is the only item on the list gated on hardware rather than time, so it's the one worth starting early.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Make the complication system honest</h4>
+            <p>Either wire two real slots into Complications Dark or hide the unimplemented ones. Right now the admin can configure something that cannot appear.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Build the real Fitness app and extract as you go</h4>
+            <p>The single highest-leverage move in the repo. It forces <code>RoundList</code>, <code>IntervalTimer</code>, <code>ScenePicker</code>, <code>WeekRing</code> and the tier-3 back stack into existence against a real call site. If Fitness lands small because the kit is right, the model is proven; if the primitives don't fall out naturally, that's worth knowing before fifteen more apps are built on the assumption.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Then: face spec as data, and a README rewrite</h4>
+            <p>These two together are what "open-source the repo" actually requires. Neither is urgent this week; both are prerequisites for the horizon-2 goal.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============ IN FLIGHT ============ -->
+    <section id="flight">
+      <h2>In flight</h2>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Work</th><th>State</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>PR #29 — A121 exploration-server sidecar</td><td><span class="pill risk">Needs hardware</span></td><td>Rewrites the driver and protocol; adds a Python sidecar and setup-pi wiring</td></tr>
+            <tr><td>PR #28 — Calendar Month / Week / Details</td><td><span class="pill warn">Needs rebase</span></td><td>18 commits, branched pre-radar; also touches GitHub and Timer</td></tr>
+            <tr><td>Habits radial rewrite</td><td><span class="pill info">Unmerged branch</span></td><td>Radial daily and concentric monthly views</td></tr>
+            <tr><td>Long-press grid gesture</td><td><span class="pill info">Unmerged branch</span></td><td>Replaces pinch and 3-finger tap with a single-finger long press</td></tr>
+            <tr><td>In-kiosk Settings panel</td><td><span class="pill info">Two salvage branches</span></td><td>Two competing variants; neither on main</td></tr>
+            <tr><td>LVGL night palette</td><td><span class="pill info">Split branches</span></td><td>Scheduled night palette for the native clock</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Compiled from the repository state on <span class="mono">main</span> plus the two open pull
+      requests — the app, face, schema and capability registries; the Express route table; the admin
+      router; and the project's own foundation, architecture and radar docs. Counts are read from code,
+      not from documentation, in the places the two disagree.
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
