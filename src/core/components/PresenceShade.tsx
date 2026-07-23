@@ -22,6 +22,13 @@ export default function PresenceShade() {
     config?.settings.presence?.absentAfterMin ?? DEFAULT_ABSENT_AFTER_MIN;
 
   const [nowMs, setNowMs] = useState(() => Date.now());
+  // Mount time (≈ boot for the always-on kiosk overlay). Used as the absence
+  // floor when nobody has ever been detected yet (lastPresentAt still null),
+  // instead of epoch 0 — otherwise nowMs - 0 instantly exceeds absentAfterMin
+  // and the shade blanks the screen seconds after a boot into an empty room.
+  // Mirrors the server's serviceStartMs boot-grace (getPresenceState in
+  // server/radar/service.ts).
+  const [mountMs] = useState(() => Date.now());
   useEffect(() => {
     if (!enabled) return;
     const timer = window.setInterval(() => setNowMs(Date.now()), ABSENCE_TICK_MS);
@@ -30,7 +37,7 @@ export default function PresenceShade() {
 
   let shaded = false;
   if (enabled && radar && radar.present === false) {
-    const lastSeenMs = radar.lastPresentAt ? Date.parse(radar.lastPresentAt) : 0;
+    const lastSeenMs = radar.lastPresentAt ? Date.parse(radar.lastPresentAt) : mountMs;
     shaded = nowMs - lastSeenMs >= Math.max(1, absentAfterMin) * 60_000;
   }
 

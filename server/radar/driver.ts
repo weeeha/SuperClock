@@ -1,25 +1,21 @@
-// Radar drivers: the serial transport for the real A121 module, and a mock
-// that synthesizes plausible data for development.
+// Radar drivers: the exploration-sidecar bridge for the real A121 module, and a
+// mock that synthesizes plausible data for development.
 //
-// The serial driver is deliberately dependency-free: the module's CH342
-// USB-serial chip enumerates as a plain tty, so we configure it with `stty`
-// and stream it with node:fs — no native serialport bindings to build on the
-// Pi. Mirrors the display-adapter philosophy: never throw, never block
-// startup, log once and retry quietly.
+// The A121's exploration-server firmware streams raw radar data; the presence
+// and breathing DSP runs in a Python sidecar (scripts/a121_sidecar.py, built on
+// acconeer-exptool). This driver owns that child process: it parses its JSON
+// stdout into RadarEvents and switches modes by RESTARTING it in the new mode —
+// switching detectors in-process desyncs the exploration stream, whereas a
+// fresh single-mode process reconnects reliably. Mirrors the display-adapter
+// philosophy: never throw, never block startup, log once and retry quietly.
 
-import { createReadStream, type ReadStream } from 'node:fs';
-import { access, readdir } from 'node:fs/promises';
-import { constants as FS } from 'node:fs';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { resolve } from 'node:path';
 import type { RadarMode } from '../../src/shared/radar';
-import { LineAccumulator, parseRadarLine, type RadarEvent } from './protocol';
-
-const execFileAsync = promisify(execFile);
+import { LineAccumulator, parseSidecarLine, type RadarEvent } from './protocol';
 
 const LOG_PREFIX = '[radar]';
-const RETRY_MS = 5_000;
-const DEFAULT_BAUD = 921_600;
+const RESTART_MS = 5_000;
 
 export type RadarEventHandler = (event: RadarEvent) => void;
 export type RadarStatusHandler = (connected: boolean) => void;
@@ -32,135 +28,168 @@ export interface RadarDriver {
 }
 
 // ---------------------------------------------------------------------------
-// Serial driver
+// Exploration sidecar driver
 // ---------------------------------------------------------------------------
 
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path, FS.R_OK);
-    return true;
-  } catch {
-    return false;
-  }
+// The venv python + sidecar script. On the Pi these come from
+// /etc/default/superclock (RADAR_PYTHON points at the exptool venv); in dev they
+// fall back to python3 and the repo script path.
+function sidecarPython(): string {
+  return process.env.RADAR_PYTHON || 'python3';
+}
+function sidecarScript(): string {
+  return process.env.RADAR_SIDECAR || resolve(process.cwd(), 'scripts/a121_sidecar.py');
 }
 
-// Candidate ports, best guess first. /dev/serial/by-id is stable across
-// re-plugs; the CH342 shows up under QinHeng's USB vendor strings.
-async function findPort(): Promise<string | null> {
-  const explicit = process.env.RADAR_PORT;
-  if (explicit) return (await exists(explicit)) ? explicit : null;
-
-  try {
-    const byId = await readdir('/dev/serial/by-id');
-    const preferred =
-      byId.find((e) => /ch34|qinheng|1a86/i.test(e)) ?? byId[0];
-    if (preferred) return `/dev/serial/by-id/${preferred}`;
-  } catch {
-    // directory absent when no USB serial devices — fall through
-  }
-
-  for (const candidate of ['/dev/ttyACM0', '/dev/ttyACM1', '/dev/ttyUSB0', '/dev/ttyUSB1']) {
-    if (await exists(candidate)) return candidate;
-  }
-  return null;
-}
-
-export class SerialRadarDriver implements RadarDriver {
+export class ExplorationSidecarDriver implements RadarDriver {
   readonly source = 'sensor' as const;
 
-  private stream: ReadStream | null = null;
-  private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private child: ChildProcess | null = null;
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
-  private loggedWaiting = false;
+  private restartPending = false;
+  private mode: RadarMode = 'presence';
+  // True while the sidecar is crash-looping, so we log the degraded state once
+  // instead of two lines every RESTART_MS forever (mirrors display-adapter).
+  private loggedDegraded = false;
   private onEvent: RadarEventHandler = () => {};
   private onStatus: RadarStatusHandler = () => {};
   private readonly debug = process.env.RADAR_DEBUG === '1';
-  private readonly baud = parseInt(process.env.RADAR_BAUD || `${DEFAULT_BAUD}`, 10);
 
   start(onEvent: RadarEventHandler, onStatus: RadarStatusHandler): void {
     this.onEvent = onEvent;
     this.onStatus = onStatus;
     this.stopped = false;
-    void this.connect();
+    this.spawnSidecar();
   }
 
   stop(): void {
     this.stopped = true;
-    if (this.retryTimer) clearTimeout(this.retryTimer);
-    this.retryTimer = null;
-    this.stream?.destroy();
-    this.stream = null;
+    if (this.restartTimer) clearTimeout(this.restartTimer);
+    this.restartTimer = null;
+    this.killChild();
   }
 
   setMode(mode: RadarMode): void {
-    // CALIBRATION PENDING: switching detector modes requires the register
-    // command protocol (see protocol.ts header). Until it's calibrated the
-    // module keeps streaming whatever its flashed firmware produces.
-    console.log(`${LOG_PREFIX} mode '${mode}' requested — protocol calibration pending, no command sent`);
-  }
-
-  private scheduleRetry(): void {
-    if (this.stopped || this.retryTimer) return;
-    this.retryTimer = setTimeout(() => {
-      this.retryTimer = null;
-      void this.connect();
-    }, RETRY_MS);
-    this.retryTimer.unref?.();
-  }
-
-  private async connect(): Promise<void> {
+    if (mode === this.mode) return;
+    this.mode = mode;
     if (this.stopped) return;
-    const port = await findPort();
-    if (!port) {
-      if (!this.loggedWaiting) {
-        this.loggedWaiting = true;
-        console.log(`${LOG_PREFIX} no serial port found — waiting for the A121 module (set RADAR_PORT to override)`);
+    // Restart in the new mode. If a child is running, ask it to exit and let the
+    // exit handler spawn the replacement — so the old process releases the
+    // serial port before the new one opens it.
+    if (this.child) {
+      this.restartPending = true;
+      this.killChild();
+    } else {
+      if (this.restartTimer) {
+        clearTimeout(this.restartTimer);
+        this.restartTimer = null;
       }
+      this.spawnSidecar();
+    }
+  }
+
+  private killChild(): void {
+    const child = this.child;
+    if (!child) return;
+    try {
+      child.kill('SIGTERM');
+    } catch {
+      // already gone
+    }
+  }
+
+  private scheduleRestart(): void {
+    if (this.stopped || this.restartTimer) return;
+    this.restartTimer = setTimeout(() => {
+      this.restartTimer = null;
+      this.spawnSidecar();
+    }, RESTART_MS);
+    this.restartTimer.unref?.();
+  }
+
+  private spawnSidecar(): void {
+    if (this.stopped) return;
+    const python = sidecarPython();
+    const script = sidecarScript();
+
+    let child: ChildProcess;
+    try {
+      child = spawn(python, [script], {
+        env: { ...process.env, RADAR_START_MODE: this.mode },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } catch (err) {
+      console.warn(`${LOG_PREFIX} failed to spawn sidecar: ${(err as Error).message}`);
       this.onStatus(false);
-      this.scheduleRetry();
+      this.scheduleRestart();
       return;
     }
 
-    try {
-      // raw mode: no line editing, no echo, binary-safe.
-      await execFileAsync(
-        'stty',
-        ['-F', port, String(this.baud), 'raw', '-echo', '-echoe', '-echok'],
-        { timeout: 4000 },
-      );
-    } catch (err) {
-      console.warn(`${LOG_PREFIX} stty failed on ${port}: ${(err as Error).message}`);
-      this.onStatus(false);
-      this.scheduleRetry();
-      return;
+    this.child = child;
+    // Quiet during a crash-loop; the recovery is logged once on the next 'ready'.
+    if (!this.loggedDegraded) {
+      console.log(`${LOG_PREFIX} sidecar started (${this.mode}) — ${python} ${script}`);
     }
 
     const lines = new LineAccumulator();
-    const stream = createReadStream(port, { highWaterMark: 4096 });
-    this.stream = stream;
-    console.log(`${LOG_PREFIX} reading ${port} @ ${this.baud} baud`);
-    this.loggedWaiting = false;
-    this.onStatus(true);
-
-    stream.on('data', (chunk) => {
-      for (const line of lines.push(chunk as Buffer)) {
-        if (this.debug) console.log(`${LOG_PREFIX} << ${line}`);
-        const event = parseRadarLine(line);
-        if (event) this.onEvent(event);
-      }
+    child.stdout?.on('data', (chunk: Buffer) => {
+      for (const line of lines.push(chunk)) this.handleLine(line);
     });
-    const drop = (why: string) => {
-      if (this.stream !== stream) return;
-      this.stream = null;
-      stream.destroy();
-      if (!this.stopped) {
-        console.warn(`${LOG_PREFIX} ${port} ${why} — retrying in ${RETRY_MS / 1000}s`);
-        this.onStatus(false);
-        this.scheduleRetry();
+    // The sidecar logs diagnostics to stderr; surface them only in debug mode.
+    child.stderr?.on('data', (chunk: Buffer) => {
+      if (this.debug) process.stderr.write(chunk);
+    });
+
+    // A spawn-level failure (e.g. a bad RADAR_PYTHON path → async ENOENT, which
+    // `spawn` does NOT throw synchronously) surfaces as 'error'. Node still
+    // emits 'close' afterwards, so the retry is driven from 'close' below — the
+    // one handler that fires for BOTH spawn failures and normal exits. Handling
+    // only 'exit' would leave a bad-interpreter config permanently wedged.
+    child.on('error', (err) => {
+      if (this.child !== child) return;
+      console.warn(`${LOG_PREFIX} sidecar spawn error: ${err.message}`);
+    });
+
+    child.on('close', (code, signal) => {
+      if (this.child !== child) return;
+      this.child = null;
+      this.onStatus(false);
+      if (this.stopped) return;
+      if (this.restartPending) {
+        this.restartPending = false;
+        this.spawnSidecar();
+        return;
       }
-    };
-    stream.on('error', (err) => drop(`error: ${err.message}`));
-    stream.on('close', () => drop('closed'));
+      if (!this.loggedDegraded) {
+        this.loggedDegraded = true;
+        console.warn(
+          `${LOG_PREFIX} sidecar exited (code=${code} signal=${signal}) — retrying every ${RESTART_MS / 1000}s until it recovers`,
+        );
+      }
+      this.scheduleRestart();
+    });
+  }
+
+  private handleLine(line: string): void {
+    const msg = parseSidecarLine(line);
+    switch (msg.kind) {
+      case 'ready':
+        if (this.loggedDegraded) {
+          console.log(`${LOG_PREFIX} sidecar recovered (${msg.mode})`);
+          this.loggedDegraded = false;
+        }
+        this.onStatus(true);
+        break;
+      case 'event':
+        this.onEvent(msg.event);
+        break;
+      case 'error':
+        console.warn(`${LOG_PREFIX} sidecar: ${msg.message}`);
+        break;
+      case 'other':
+        break;
+    }
   }
 }
 
