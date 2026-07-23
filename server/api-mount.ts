@@ -29,8 +29,16 @@ export function buildApiApp(opts: MountOptions): Express {
     res.json({ ok: true, uptime: process.uptime() });
   });
 
-  app.get('/api/calendar', async (_req, res) => {
-    const events = await getCalendarEvents(process.env.CALENDAR_ICS_URL ?? '');
+  app.get('/api/calendar', async (req, res) => {
+    const now = new Date();
+    const fromParam = typeof req.query.from === 'string' ? new Date(req.query.from) : null;
+    const toParam = typeof req.query.to === 'string' ? new Date(req.query.to) : null;
+    const from = fromParam && !Number.isNaN(fromParam.getTime()) ? fromParam : now;
+    const to =
+      toParam && !Number.isNaN(toParam.getTime())
+        ? toParam
+        : new Date(now.getTime() + 31 * 24 * 60 * 60 * 1000);
+    const events = await getCalendarEvents(process.env.CALENDAR_ICS_URL ?? '', from, to);
     res.json(events);
   });
 

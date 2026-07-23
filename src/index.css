@@ -54,3 +54,10 @@ html, body, #root {
 *::-webkit-scrollbar {
   display: none;
 }
+
+.calendar-scroll {
+  touch-action: pan-y;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.calendar-scroll::-webkit-scrollbar { display: none; }

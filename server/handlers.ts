@@ -3,7 +3,6 @@ import ical, { type VEvent } from 'node-ical';
 import type { CalendarEvent } from '../src/api/types';
 
 const PHOTO_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function readSummary(value: VEvent['summary']): string {
   if (typeof value === 'string') return value;
@@ -11,59 +10,83 @@ function readSummary(value: VEvent['summary']): string {
   return '';
 }
 
-function toEvent(start: Date, end: Date, title: string, allDay: boolean): CalendarEvent {
+function readText(value: unknown): string | undefined {
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (value && typeof value === 'object' && 'val' in value) {
+    return String((value as { val: unknown }).val).trim() || undefined;
+  }
+  return undefined;
+}
+
+function readCategory(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value.length ? String(value[0]).trim() || undefined : undefined;
+  }
+  return readText(value);
+}
+
+function toEvent(event: VEvent, start: Date, end: Date, title: string, allDay: boolean): CalendarEvent {
   return {
     start: start.toISOString(),
     end: end.toISOString(),
     title,
     allDay,
+    uid: readText(event.uid) ?? `${title}-${start.toISOString()}`,
+    location: readText(event.location),
+    description: readText(event.description),
+    category: readCategory(event.categories),
   };
 }
 
-export async function getCalendarEvents(icsUrl: string): Promise<CalendarEvent[]> {
-  if (!icsUrl) return [];
+/** Pure: turn parsed ICS data into events overlapping [from, to]. Exported for tests. */
+export function eventsFromParsed(
+  data: Record<string, unknown>,
+  from: Date,
+  to: Date,
+): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
 
-  try {
-    const data = await ical.async.fromURL(icsUrl);
-    const now = new Date();
-    const horizon = new Date(now.getTime() + ONE_DAY_MS);
-    const events: CalendarEvent[] = [];
+  for (const key of Object.keys(data)) {
+    const item = data[key] as { type?: string } | undefined;
+    if (!item || item.type !== 'VEVENT') continue;
+    const event = item as unknown as VEvent;
 
-    for (const key of Object.keys(data)) {
-      const item = data[key];
-      if (!item || item.type !== 'VEVENT') continue;
-      const event = item as VEvent;
+    const title = readSummary(event.summary).trim();
+    if (!title) continue;
+    const allDay = event.datetype === 'date';
 
-      const title = readSummary(event.summary).trim();
-      if (!title) continue;
-      const allDay = event.datetype === 'date';
-
-      if (event.rrule) {
-        const occurrences = event.rrule.between(now, horizon, true);
-        const durationMs =
-          event.end && event.start
-            ? new Date(event.end as Date).getTime() - new Date(event.start as Date).getTime()
-            : 0;
-        for (const occurrenceStart of occurrences) {
-          const occurrenceEnd = new Date(occurrenceStart.getTime() + durationMs);
-          events.push(toEvent(occurrenceStart, occurrenceEnd, title, allDay));
-        }
-        continue;
+    if (event.rrule) {
+      const occurrences = event.rrule.between(from, to, true);
+      const durationMs =
+        event.end && event.start
+          ? new Date(event.end as Date).getTime() - new Date(event.start as Date).getTime()
+          : 0;
+      for (const occurrenceStart of occurrences) {
+        const occurrenceEnd = new Date(occurrenceStart.getTime() + durationMs);
+        events.push(toEvent(event, occurrenceStart, occurrenceEnd, title, allDay));
       }
-
-      const start = event.start ? new Date(event.start as Date) : null;
-      const end = event.end ? new Date(event.end as Date) : null;
-      if (!start) continue;
-
-      if (start >= horizon) continue;
-      if (end && end < now) continue;
-      if (!end && start < now) continue;
-
-      events.push(toEvent(start, end ?? start, title, allDay));
+      continue;
     }
 
-    events.sort((a, b) => a.start.localeCompare(b.start));
-    return events;
+    const start = event.start ? new Date(event.start as Date) : null;
+    const end = event.end ? new Date(event.end as Date) : null;
+    if (!start) continue;
+    const effectiveEnd = end ?? start;
+    if (start >= to) continue;
+    if (effectiveEnd <= from) continue;
+
+    events.push(toEvent(event, start, effectiveEnd, title, allDay));
+  }
+
+  events.sort((a, b) => a.start.localeCompare(b.start));
+  return events;
+}
+
+export async function getCalendarEvents(icsUrl: string, from: Date, to: Date): Promise<CalendarEvent[]> {
+  if (!icsUrl) return [];
+  try {
+    const data = await ical.async.fromURL(icsUrl);
+    return eventsFromParsed(data as Record<string, unknown>, from, to);
   } catch (err) {
     console.warn('[api] getCalendarEvents failed:', (err as Error).message);
     return [];
