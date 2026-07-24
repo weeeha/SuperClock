@@ -33,7 +33,9 @@ export const AGENT_IDS = [
   'dating-coach', 'filmmaker', 'lifeos',
 ] as const;
 
-const NAMES: Record<string, string> = {
+export type AgentId = (typeof AGENT_IDS)[number];
+
+const NAMES: Record<AgentId, string> = {
   main: 'Lifey', chat: 'MyAI', health: "Dr. O'Body", selfhelp: 'Selfhelp',
   builder: 'Builder', jobsearcher: 'Jobsearcher', gardener: 'Gardener',
   artist: 'Artist', financeer: 'Financeer', speaker: 'Speaker',
@@ -48,7 +50,7 @@ const T0 = 1753300000000;
 const msg = (id: string, from: 'agent' | 'user', text: string, minAgo: number): AgentMessage =>
   ({ id, from, text, at: T0 - minAgo * 60_000 });
 
-const CONVERSATIONS: Record<string, AgentMessage[]> = {
+const CONVERSATIONS: Record<AgentId, AgentMessage[]> = {
   main: [
     msg('m1', 'agent', 'Morning! Sleep 82. First meeting at 10:00.', 60),
     msg('m2', 'user', 'What else is on today?', 58),
@@ -80,10 +82,10 @@ const CONVERSATIONS: Record<string, AgentMessage[]> = {
 };
 
 // A couple of unread dots so the list row layout is provable; purely mock.
-const UNREAD: Record<string, number> = { main: 2, health: 1 };
+const UNREAD: Partial<Record<AgentId, number>> = { main: 2, health: 1 };
 
 const AGENTS: Agent[] = AGENT_IDS.map((id) => {
-  const conv = CONVERSATIONS[id] ?? [];
+  const conv = CONVERSATIONS[id];
   const last = conv[conv.length - 1];
   return {
     id,
@@ -96,5 +98,6 @@ const AGENTS: Agent[] = AGENT_IDS.map((id) => {
 
 export const mockAgentProvider: AgentProvider = {
   listAgents: () => Promise.resolve(AGENTS),
-  getConversation: (agentId) => Promise.resolve(CONVERSATIONS[agentId] ?? []),
+  getConversation: (agentId) =>
+    Promise.resolve((CONVERSATIONS as Record<string, AgentMessage[] | undefined>)[agentId] ?? []),
 };
