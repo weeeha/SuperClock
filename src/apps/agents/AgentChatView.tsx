@@ -18,6 +18,16 @@ export default function AgentChatView({
 }) {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
 
+  // Reset synchronously during render (not in the effect below) so a switch
+  // to a new agent never paints the previous agent's messages, even for a
+  // frame — the repo's react-hooks ruleset bans setState-in-effect for this
+  // exact reason. See https://react.dev/learn/you-might-not-need-an-effect.
+  const [conversationAgentId, setConversationAgentId] = useState(agent.id);
+  if (conversationAgentId !== agent.id) {
+    setConversationAgentId(agent.id);
+    setMessages([]);
+  }
+
   useEffect(() => {
     let cancelled = false;
     mockAgentProvider.getConversation(agent.id).then((m) => {
@@ -58,8 +68,8 @@ export default function AgentChatView({
             key={m.id}
             className={
               m.from === 'agent'
-                ? 'self-start bg-neutral-800 rounded-3xl px-5 py-3 max-w-[70%] text-lg'
-                : 'self-end bg-sky-900 rounded-3xl px-5 py-3 max-w-[70%] text-lg'
+                ? 'self-start bg-neutral-800 rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
+                : 'self-end bg-sky-900 rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
             }
           >
             {m.text}
@@ -67,7 +77,7 @@ export default function AgentChatView({
         ))}
       </div>
 
-      <div className="pb-14 text-sky-400 text-lg">● listening…</div>
+      <div className="pb-14 text-sky-400 text-lg">●  listening…</div>
     </div>
   );
 }
