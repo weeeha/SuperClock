@@ -67,15 +67,17 @@ export default function AgentsApp({ isActive, config }: AppProps) {
   // the views the static 'idle' ring so no CSS animation runs while inactive.
   const shownMicState: MicState = isActive ? micState : 'idle';
 
-  if (view.kind === 'list') {
-    return (
-      <AgentListView agents={visible} onSelect={(a) => setView(openAgent(a.id))} />
-    );
+  const agent =
+    view.kind === 'list' ? undefined : visible.find((a) => a.id === view.agentId);
+
+  // Viewed agent vanished (disabled via config mid-view): snap back to the
+  // list during render so the swipe effect re-runs and releases the vertical
+  // swipe slot — otherwise swipe-down-to-grid stays dead on the fallback.
+  if (view.kind !== 'list' && agents.length > 0 && !agent) {
+    setView(backToList());
   }
 
-  const agent = agents.find((a) => a.id === view.agentId);
-  if (!agent) {
-    // Config changed under us (agent disabled mid-view) — fall back honestly.
+  if (view.kind === 'list' || !agent) {
     return (
       <AgentListView agents={visible} onSelect={(a) => setView(openAgent(a.id))} />
     );
