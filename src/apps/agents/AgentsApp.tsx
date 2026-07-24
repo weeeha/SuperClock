@@ -1,14 +1,18 @@
-// Intermediate version — chat/avatar views and isActive wiring land in
-// Tasks 6–9; this version only renders the list.
 import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
+import { useNavigation } from '../../core/navigation';
 import { mockAgentProvider, type Agent } from './provider';
-import { openAgent, type AgentsView } from './view-state';
+import { openAgent, backToList, onVerticalSwipe, type AgentsView } from './view-state';
+import { MIC_STATES, nextMicState, type MicState } from './mic-state';
 import AgentListView from './AgentListView';
+import AgentChatView from './AgentChatView';
+import AgentAvatarView from './AgentAvatarView';
 
-export default function AgentsApp({ config }: AppProps) {
+export default function AgentsApp({ isActive, config }: AppProps) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [view, setView] = useState<AgentsView>({ kind: 'list' });
+  const [micState, setMicState] = useState<MicState>(MIC_STATES[0]);
+  const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,6 +23,28 @@ export default function AgentsApp({ config }: AppProps) {
       cancelled = true;
     };
   }, []);
+
+  // Vertical swipe toggles chat ⇅ avatar — registered ONLY while a per-agent
+  // view is active, cleared on deactivate/unmount (navigation invariant; the
+  // Habits pattern). On the list we register nothing, so the shell's
+  // swipe-down → grid keeps working. In-app view changes never touch nav mode.
+  useEffect(() => {
+    if (!isActive || view.kind === 'list') {
+      setVerticalSwipeCallback(null);
+      return;
+    }
+    setVerticalSwipeCallback(() => setView((v) => onVerticalSwipe(v)));
+    return () => setVerticalSwipeCallback(null);
+  }, [isActive, view, setVerticalSwipeCallback]);
+
+  // Mock mic-state machine: cycles every 4s so all four ring states are
+  // reviewable (spec acceptance #4). Gated on isActive — background apps
+  // must not tick. Replaced by the real voice pipeline later.
+  useEffect(() => {
+    if (!isActive || view.kind === 'list') return;
+    const id = setInterval(() => setMicState((s) => nextMicState(s)), 4000);
+    return () => clearInterval(id);
+  }, [isActive, view.kind]);
 
   const visible = useMemo(() => {
     const rawEnabled = config?.enabledAgents;
@@ -37,11 +63,31 @@ export default function AgentsApp({ config }: AppProps) {
     );
   }, [agents, config]);
 
+  // Backgrounded apps stay mounted (grid overlay only deactivates them) — hand
+  // the views the static 'idle' ring so no CSS animation runs while inactive.
+  const shownMicState: MicState = isActive ? micState : 'idle';
+
   if (view.kind === 'list') {
     return (
       <AgentListView agents={visible} onSelect={(a) => setView(openAgent(a.id))} />
     );
   }
-  // chat/avatar arrive in Tasks 7–9; until then any non-list view shows nothing.
-  return null;
+
+  const agent = agents.find((a) => a.id === view.agentId);
+  if (!agent) {
+    // Config changed under us (agent disabled mid-view) — fall back honestly.
+    return (
+      <AgentListView agents={visible} onSelect={(a) => setView(openAgent(a.id))} />
+    );
+  }
+
+  return view.kind === 'chat' ? (
+    <AgentChatView
+      agent={agent}
+      micState={shownMicState}
+      onBack={() => setView(backToList())}
+    />
+  ) : (
+    <AgentAvatarView agent={agent} micState={shownMicState} />
+  );
 }
