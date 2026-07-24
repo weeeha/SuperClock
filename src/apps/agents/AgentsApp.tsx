@@ -21,8 +21,12 @@ export default function AgentsApp({ config }: AppProps) {
   }, []);
 
   const visible = useMemo(() => {
-    const enabledAgents = (config?.enabledAgents as string[] | undefined) ?? [];
-    const defaultAgent = (config?.defaultAgent as string | undefined) ?? 'main';
+    const rawEnabled = config?.enabledAgents;
+    const enabledAgents = Array.isArray(rawEnabled)
+      ? rawEnabled.filter((x): x is string => typeof x === 'string')
+      : [];
+    const defaultAgent =
+      typeof config?.defaultAgent === 'string' ? config.defaultAgent : 'main';
     const filtered =
       enabledAgents.length > 0
         ? agents.filter((a) => enabledAgents.includes(a.id))
