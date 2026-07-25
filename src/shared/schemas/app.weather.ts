@@ -6,7 +6,13 @@ export const WEATHER_PAGE_ENUM = ['now', 'temp', 'conditions', 'precip', 'wind',
 export const weatherAppSchema = z.object({
   location: z.string().default(''),
   unit: z.enum(['celsius', 'fahrenheit']).default('celsius'),
-  pages: z.array(z.enum(WEATHER_PAGE_ENUM)).min(1).default([...WEATHER_PAGE_ENUM]),
+  pages: z
+    .array(z.enum(WEATHER_PAGE_ENUM))
+    .min(1)
+    .refine((p) => new Set(p).size === p.length, {
+      message: 'pages must not contain duplicates',
+    })
+    .default([...WEATHER_PAGE_ENUM]),
   idleReturnSeconds: z.number().int().min(0).max(600).default(60),
 });
 

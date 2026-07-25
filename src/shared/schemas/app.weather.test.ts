@@ -19,6 +19,10 @@ describe('weatherAppSchema', () => {
     expect(weatherAppSchema.safeParse({ pages: ['now', 'moon'] }).success).toBe(false);
   });
 
+  it('rejects duplicate page ids', () => {
+    expect(weatherAppSchema.safeParse({ pages: ['now', 'now', 'temp'] }).success).toBe(false);
+  });
+
   it('drops the retired forecastDays key', () => {
     const cfg = weatherAppSchema.parse({ forecastDays: 4 }) as Record<string, unknown>;
     expect(cfg.forecastDays).toBeUndefined();
