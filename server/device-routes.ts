@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { execFile } from 'node:child_process';
 import { readDevice, updateDevice } from './fleet-store';
 import { buildCapabilities, STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { deviceConfigPatchSchema } from '../src/shared/device-config-schema';
@@ -20,6 +21,16 @@ router.get('/state', (_req, res) => {
     lastConfigAt: null,
   };
   res.json(state);
+});
+
+// Wi-Fi STATUS for the kiosk quick-settings sheet. Read-only by design:
+// a network toggle on a device administered over wifi is a footgun
+// (spec 2026-07-24, decision 3b).
+router.get('/network', (_req, res) => {
+  execFile('iwgetid', ['-r'], { timeout: 2000 }, (err, stdout) => {
+    const ssid = err ? null : stdout.trim() || null;
+    res.json({ ssid, connected: ssid !== null });
+  });
 });
 
 router.get('/config', async (_req, res) => {
