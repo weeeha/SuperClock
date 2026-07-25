@@ -28,9 +28,17 @@ const TONE_MS: Record<BeepTone, number> = {
 export class WorkoutAudio {
   private ctx: AudioContext | null = null;
   private clips = new Map<string, HTMLAudioElement>();
-  private readonly opts: { beeps: boolean; voice: boolean };
+  private opts: { beeps: boolean; voice: boolean };
 
   constructor(opts: { beeps: boolean; voice: boolean }) {
+    this.opts = opts;
+  }
+
+  /** The instance is created once and lives for the app's mount lifetime
+   *  (kiosk apps stay mounted indefinitely), so a live config poll must be
+   *  able to update beeps/voice on an existing instance rather than only
+   *  taking effect for a freshly constructed one. */
+  setOptions(opts: { beeps: boolean; voice: boolean }): void {
     this.opts = opts;
   }
 

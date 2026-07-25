@@ -1,14 +1,13 @@
-// Thin shell. All timing, phase transitions and cue decisions live in
-// circuit.ts; this component feeds it timestamps, renders the result and
-// plays whatever cues it returns.
+// Thin shell: wiring plus JSX. Timing and phase transitions live in
+// circuit.ts, presentation derivation lives in view-model.ts; this
+// component feeds timestamps into the reducer, plays whatever cues it
+// returns, and renders the derived view model through WatchFace.
 //
 // `dispatch` keeps a ref (`stateRef`) as the reducer's source of truth and
 // mirrors it into React state purely for rendering. State updaters must be
 // pure, and StrictMode deliberately double-invokes them, so the cue
-// playback and streak side effect below live in this handler instead of
-// inside `setState`'s updater — a `setState` updater that beeped or called
-// `saveStreak` would do both twice under StrictMode, and nesting a second
-// `setState` inside the first updater is exactly what React warns against.
+// playback below lives in this handler instead of inside `setState`'s
+// updater — an updater that beeped would do so twice under StrictMode.
 // Reading `stateRef.current` (not the closed-over `state`) also means the
 // 10Hz tick callback below always reduces from the current phase, not a
 // stale one captured at render time.
@@ -18,25 +17,18 @@ import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { acquireBrightnessLease, releaseBrightnessLease } from '../../core/brightness-lease';
 import { fitnessAppSchema } from '../../shared/schemas/app.fitness';
-import { getExercise, getWorkout, WORKOUTS } from './exercises';
+import { getWorkout, WORKOUTS } from './exercises';
 import type { Workout } from './exercises';
-import { initialState, reduce, remainingMs, currentExerciseId, nextExerciseId } from './circuit';
+import { initialState, reduce } from './circuit';
 import type { CircuitState, CircuitEvent } from './circuit';
 import { useCircuitTimer } from './useCircuitTimer';
 import { WorkoutAudio } from './audio';
 import { loadStreak, saveStreak, completeWorkout, settleMissedDays, HEARTS_PER_MONTH } from './streak';
-import type { StreakState } from './streak';
+import { deriveViewModel } from './view-model';
 import WatchFace from './WatchFace';
 
 /** Renew well inside the lease TTL so it never lapses mid-workout. */
 const LEASE_RENEW_MS = 30_000;
-
-function formatSeconds(ms: number): string { return String(Math.ceil(ms / 1000)); }
-
-function formatElapsed(ms: number): string {
-  const total = Math.round(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 export default function FitnessApp({ isActive, config }: AppProps) {
   // safeParse, not parse: a zod enum only falls back to its default when the
@@ -50,14 +42,6 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   const [workoutIndex, setWorkoutIndex] = useState(() =>
     Math.max(0, WORKOUTS.findIndex((w) => w.id === cfg.workoutId)),
   );
-  // Mirrors workoutIndex so the vertical-swipe callback below — which is
-  // only rebuilt when isActive/phase/running change, not on every workout
-  // cycle — can read the current index without adding it to that effect's
-  // deps (and without a stale-closure risk if it did).
-  const workoutIndexRef = useRef(workoutIndex);
-  useEffect(() => {
-    workoutIndexRef.current = workoutIndex;
-  }, [workoutIndex]);
 
   // Config overrides the workout's built-in durations so the admin can retune
   // without editing code.
@@ -67,19 +51,25 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   }, [workoutIndex, cfg.workSeconds, cfg.restSeconds, cfg.rounds]);
 
   // Ref and state are seeded independently rather than one from the other
-  // (`useState(stateRef.current)`/`useState(streakRef.current)`) because
-  // reading a ref's `.current` during render — even just to hand it to
-  // useState — trips react-hooks/refs. initialState()/settleMissedDays()
-  // are pure, so computing the same value twice at mount is harmless; every
-  // update after that keeps the two in lockstep by construction (dispatch
-  // and the workout-swipe handler always write both together).
+  // (`useState(stateRef.current)`) because reading a ref's `.current`
+  // during render — even just to hand it to useState — trips
+  // react-hooks/refs. initialState() is pure, so computing the same value
+  // twice at mount is harmless; every update after that keeps the two in
+  // lockstep by construction (dispatch and the workout-swipe handler always
+  // write both together).
   const stateRef = useRef<CircuitState>(initialState(workout.id));
   const [state, setState] = useState<CircuitState>(() => initialState(workout.id));
 
   const [now, setNow] = useState(() => Date.now());
 
-  const streakRef = useRef<StreakState>(settleMissedDays(loadStreak(), new Date()));
-  const [streak, setStreak] = useState<StreakState>(() => settleMissedDays(loadStreak(), new Date()));
+  // No ref mirror here (unlike stateRef above): a functional setState
+  // update gets a guaranteed-fresh `prev` from React itself, so there's no
+  // stale-read hazard to guard against, and persistence moves to its own
+  // effect below instead of running inside the updater.
+  const [streak, setStreak] = useState(() => settleMissedDays(loadStreak(), new Date()));
+  useEffect(() => {
+    saveStreak(streak);
+  }, [streak]);
 
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
   const showGrid = useNavigation((s) => s.showGrid);
@@ -88,6 +78,14 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   if (audio.current === null) {
     audio.current = new WorkoutAudio({ beeps: cfg.beeps, voice: cfg.voiceCues });
   }
+  // The instance above is constructed once and lives for the app's mount
+  // lifetime (kiosk apps stay mounted indefinitely), so a later config poll
+  // that flips beeps/voiceCues has to reach the existing instance — the
+  // constructor args were only ever a snapshot of whatever cfg was at
+  // mount.
+  useEffect(() => {
+    audio.current?.setOptions({ beeps: cfg.beeps, voice: cfg.voiceCues });
+  }, [cfg.beeps, cfg.voiceCues]);
 
   const running = state.phase === 'countdown' || state.phase === 'work' || state.phase === 'rest';
 
@@ -100,10 +98,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     }
     for (const cue of cues) audio.current?.play(cue);
     if (prev.phase !== 'complete' && next.phase === 'complete') {
-      const updated = completeWorkout(streakRef.current, new Date());
-      streakRef.current = updated;
-      setStreak(updated);
-      saveStreak(updated);
+      setStreak((prevStreak) => completeWorkout(prevStreak, new Date()));
     }
   }, [workout]);
 
@@ -145,7 +140,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
         // admin pushed a config update mid-workout. Doing the reset only in
         // response to the explicit "swipe while ready" gesture keeps it
         // scoped to the one case that should reset.
-        const nextIndex = (workoutIndexRef.current + 1) % WORKOUTS.length;
+        const nextIndex = (workoutIndex + 1) % WORKOUTS.length;
         setWorkoutIndex(nextIndex);
         const fresh = initialState(WORKOUTS[nextIndex].id);
         stateRef.current = fresh;
@@ -157,7 +152,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
       }
     });
     return () => setVerticalSwipeCallback(null);
-  }, [isActive, state.phase, running, setVerticalSwipeCallback, showGrid, dispatch]);
+  }, [isActive, state.phase, running, workoutIndex, setVerticalSwipeCallback, showGrid, dispatch]);
 
   function handleTap(): void {
     const t = Date.now();
@@ -169,54 +164,18 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     else dispatch({ type: 'PAUSE', now: t });
   }
 
-  const left = remainingMs(state, now);
-  const currentId = currentExerciseId(state, workout);
-  const nextId = nextExerciseId(state, workout);
-
-  let headline = workout.name.toUpperCase();
-  let caption: string | undefined = 'tap to start';
-  let progress = 0;
-  let artId: string | null = currentId;
-  let artPhase: 'work' | 'rest' = 'work';
-
-  if (state.phase === 'countdown') {
-    headline = formatSeconds(left);
-    caption = `get ready · ${getExercise(currentId).name}`;
-    artId = null;
-  } else if (state.phase === 'work') {
-    headline = formatSeconds(left);
-    caption = getExercise(currentId).name;
-    progress = 1 - left / (workout.workSeconds * 1000);
-  } else if (state.phase === 'rest') {
-    headline = formatSeconds(left);
-    caption = nextId ? `next · ${getExercise(nextId).name}` : 'rest';
-    // workout.restSeconds is guaranteed > 0 here: afterWork() in circuit.ts
-    // short-circuits straight past `rest` into the next work phase whenever
-    // restSeconds === 0, so this phase is only ever entered with a positive
-    // denominator.
-    progress = 1 - left / (workout.restSeconds * 1000);
-    artPhase = 'rest';
-  } else if (state.phase === 'paused') {
-    headline = '❚❚';
-    caption = `${state.index + 1} of ${workout.exerciseIds.length} · ${getExercise(currentId).name}`;
-    artPhase = state.resumePhase === 'rest' ? 'rest' : 'work';
-  } else if (state.phase === 'complete') {
-    headline = formatElapsed((state.finishedAt ?? 0) - (state.startedAt ?? 0));
-    caption = 'well done';
-    progress = 1;
-    artPhase = 'rest';
-  }
+  const vm = deriveViewModel(state, workout, now);
 
   return (
     <div className="h-full w-full" onClick={handleTap}>
       <WatchFace
-        progress={progress}
-        headline={headline}
-        caption={caption}
+        progress={vm.progress}
+        headline={vm.headline}
+        caption={vm.caption}
         heartsTotal={HEARTS_PER_MONTH}
         heartsLeft={streak.hearts}
-        exerciseId={artId}
-        artPhase={artPhase}
+        exerciseId={vm.artId}
+        artPhase={vm.artPhase}
         playing={state.phase !== 'paused'}
         inverted={state.phase === 'rest'}
       />
