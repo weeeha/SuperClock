@@ -43,7 +43,11 @@ export function dayProgress(nowMin: number, sunriseMin: number, sunsetMin: numbe
 export type ColorStop = [number, string];
 
 function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.slice(1), 16);
+  let h = hex.slice(1);
+  // Expand #abc shorthand to #aabbcc — parseInt on 3 digits would otherwise
+  // be bit-shifted as if it were a 24-bit value and silently yield garbage.
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  const n = parseInt(h, 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 

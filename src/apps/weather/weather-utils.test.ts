@@ -40,6 +40,11 @@ describe('clockSlot', () => {
     expect(clockSlot(17)).toBe(5);  // 17:00 sits on the 5 mark
     expect(clockSlot(23)).toBe(11);
   });
+
+  it('handles negative hours', () => {
+    expect(clockSlot(-1)).toBe(11);
+    expect(clockSlot(-13)).toBe(11);
+  });
 });
 
 describe('ringSlots', () => {
@@ -58,6 +63,14 @@ describe('ringSlots', () => {
     expect(slots[5]!.hour).toBe(17);
     expect(slots[6]!.hour).toBe(18);
     expect(slots[0]).toBeNull();
+  });
+
+  it('overwrites with the later hour when more than 12 hours collide on a slot', () => {
+    const hours = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((hour) => ({ hour }));
+    const slots = ringSlots(hours);
+    expect(slots).toHaveLength(12);
+    expect(slots[0]!.hour).toBe(12);
+    expect(slots[1]!.hour).toBe(13);
   });
 });
 
@@ -105,5 +118,13 @@ describe('rampColor', () => {
 
   it('interpolates in between', () => {
     expect(rampColor(stops, 5)).toBe('#808080');
+  });
+
+  it('expands 3-digit shorthand hex before interpolating', () => {
+    const shorthand: Array<[number, string]> = [
+      [0, '#000'],
+      [10, '#fff'],
+    ];
+    expect(rampColor(shorthand, 5)).toBe('#808080');
   });
 });
