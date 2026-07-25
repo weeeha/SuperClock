@@ -9,11 +9,19 @@ export const weatherAppSchema = z.object({
 
 export const weatherAppMeta: FieldMetaMap = {
   location: {
-    description: 'City name or "lat,lon" (e.g. "37.78,-122.42"). Falls back to env if blank.',
+    description:
+      'City name (geocoded via Open-Meteo) or "lat,lon" (e.g. "37.78,-122.42"). Falls back to env if blank.',
     placeholder: 'San Francisco',
   },
-  unit: {},
-  forecastDays: { min: 1, max: 7, step: 1, description: 'How many days to show in the forecast strip' },
+  unit: { description: 'Temperature scale. Falls back to env if never set.' },
+  forecastDays: {
+    min: 1,
+    max: 7,
+    step: 1,
+    // Matches Open-Meteo's `forecast_days`: today is the big reading up top,
+    // so the strip below shows forecastDays - 1 tiles.
+    description: 'Days of forecast including today; the strip shows the rest (4 = a 3-day strip)',
+  },
 };
 
 export type WeatherAppConfig = z.infer<typeof weatherAppSchema>;

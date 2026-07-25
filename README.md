@@ -64,9 +64,9 @@ All config lives in `.env` (see `.env.example`). Variables prefixed `VITE_` are 
 | Variable | Used by | Notes |
 |---|---|---|
 | `VITE_GITHUB_TOKEN` | GitHub app | PAT with `read:user`. Falls back to mock data when unset. |
-| `VITE_WEATHER_LAT`, `VITE_WEATHER_LON` | Weather app | Open-Meteo lat/lon. No API key needed. Falls back to mock when unset. |
+| `VITE_WEATHER_LAT`, `VITE_WEATHER_LON` | Weather app | Open-Meteo lat/lon. No API key needed. Used only when the instance's `location` is blank; falls back to mock when both are unset. |
 | `VITE_WEATHER_TZ` | Weather app | IANA tz, defaults to `auto`. |
-| `VITE_WEATHER_UNIT` | Weather app | `fahrenheit` to switch units; anything else = celsius. |
+| `VITE_WEATHER_UNIT` | Weather app | `fahrenheit` to switch units; anything else = celsius. Used only when the instance's `unit` was never set. |
 | `CALENDAR_ICS_URL` | Calendar app | Any iCal URL (Google Calendar secret address, iCloud, Outlook). Read server-side; the browser only sees the parsed event list. |
 
 ### Photos
