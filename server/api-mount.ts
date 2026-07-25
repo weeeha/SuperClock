@@ -38,8 +38,22 @@ export function buildApiApp(opts: MountOptions): Express {
       toParam && !Number.isNaN(toParam.getTime())
         ? toParam
         : new Date(now.getTime() + 31 * 24 * 60 * 60 * 1000);
-    const events = await getCalendarEvents(process.env.CALENDAR_ICS_URL ?? '', from, to);
-    res.json(events);
+    // Distinct failure statuses so the kiosk renders honest tells: a missing
+    // ICS URL is "not configured" (503), an unreachable/unparseable upstream
+    // is "offline · cached" (502) — neither may masquerade as an empty
+    // calendar (200 []).
+    const icsUrl = process.env.CALENDAR_ICS_URL;
+    if (!icsUrl) {
+      res.status(503).json({ error: 'calendar_not_configured' });
+      return;
+    }
+    try {
+      const events = await getCalendarEvents(icsUrl, from, to);
+      res.json(events);
+    } catch (err) {
+      console.warn('[api] calendar upstream failed:', (err as Error).message);
+      res.status(502).json({ error: 'calendar_upstream_failed' });
+    }
   });
 
   app.get('/api/photos', async (_req, res) => {

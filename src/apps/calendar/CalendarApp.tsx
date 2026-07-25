@@ -82,7 +82,7 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     return [from.toISOString(), to.toISOString()];
   }, [view, focusDate, now, cfg.weekStart]);
 
-  const { events, offline } = useCalendarEvents(fromIso, toIso, isActive);
+  const { events, offline, notConfigured } = useCalendarEvents(fromIso, toIso, isActive);
   const todayEvents = useMemo(() => eventsForDay(events, now), [events, now]);
 
   // Vertical swipe: climbs/descends the zoom ladder; while drilled, swipe down
@@ -210,9 +210,11 @@ export default function CalendarApp({ isActive, config }: AppProps) {
   return (
     <div className="relative h-full w-full bg-black overflow-hidden">
       {content}
-      {offline && (
+      {/* Honest tells: config state beats network state — "not configured"
+          is actionable (set CALENDAR_ICS_URL), "offline · cached" is not. */}
+      {(notConfigured || offline) && (
         <p className="absolute bottom-[7.5%] left-0 right-0 text-center text-white/40 text-[2.2vmin] pointer-events-none">
-          offline · cached
+          {notConfigured ? 'calendar not configured' : 'offline · cached'}
         </p>
       )}
       {!drill && (
