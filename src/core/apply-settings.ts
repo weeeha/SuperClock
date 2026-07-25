@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useDeviceConfig } from './device-config';
 import { isWithinWindow } from '../shared/time-window';
+import { useBrightnessLease } from './brightness-lease';
 
 // Re-evaluate the night window this often. Boundary lag budget: ≤5s config
 // poll + ≤30s tick — same cadence as the server's display-adapter evaluator.
@@ -44,6 +45,7 @@ export function useApplySettings(): void {
       isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
     getServerSnapshot,
   );
+  const brightnessLeased = useBrightnessLease();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -67,8 +69,13 @@ export function useApplySettings(): void {
   useEffect(() => {
     const root = document.documentElement;
     root.style.transition = 'filter 1s ease';
-    const effective =
-      isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
+    // A leased screen (an in-progress workout) renders unfiltered regardless
+    // of the night window — you cannot read a dimmed timer mid-exercise.
+    const effective = brightnessLeased
+      ? undefined
+      : isNight && typeof nightBrightness === 'number'
+        ? nightBrightness
+        : dayBrightness;
     // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
     // filter that still costs a stacking context.
     if (typeof effective === 'number' && effective < 100) {
@@ -81,5 +88,5 @@ export function useApplySettings(): void {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [isNight, nightBrightness, dayBrightness]);
+  }, [isNight, nightBrightness, dayBrightness, brightnessLeased]);
 }
