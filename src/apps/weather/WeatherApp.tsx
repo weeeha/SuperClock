@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { AppProps } from '../../core/types';
+import { resolveWeatherQuery, type Coords, type WeatherQuery } from './weather-config';
 
 interface ForecastDay {
   day: string;
@@ -42,20 +43,41 @@ function codeToIcon(code: number): string {
   return '⛅';
 }
 
-async function fetchWeather(): Promise<WeatherData> {
-  const lat = import.meta.env.VITE_WEATHER_LAT;
-  const lon = import.meta.env.VITE_WEATHER_LON;
-  const tz = import.meta.env.VITE_WEATHER_TZ || 'auto';
-  if (!lat || !lon) throw new Error('No weather coordinates configured');
+// A place name resolves to the same point forever, so geocode once per boot.
+// Not worth persisting: a cache hit is useless without a network for the
+// forecast call itself.
+const geocodeCache = new Map<string, Coords>();
+
+async function geocode(place: string): Promise<Coords> {
+  const cached = geocodeCache.get(place.toLowerCase());
+  if (cached) return cached;
+
+  const params = new URLSearchParams({ name: place, count: '1', format: 'json' });
+  const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params.toString()}`);
+  if (!res.ok) throw new Error(`Open-Meteo geocoding error: ${res.status}`);
+  const json = await res.json();
+  const hit = json?.results?.[0];
+  if (typeof hit?.latitude !== 'number' || typeof hit?.longitude !== 'number') {
+    throw new Error(`No place matches "${place}"`);
+  }
+
+  const coords: Coords = { latitude: hit.latitude, longitude: hit.longitude };
+  geocodeCache.set(place.toLowerCase(), coords);
+  return coords;
+}
+
+async function fetchWeather(query: WeatherQuery): Promise<WeatherData> {
+  const coords = query.coords ?? (query.place ? await geocode(query.place) : null);
+  if (!coords) throw new Error('No weather location configured');
 
   const params = new URLSearchParams({
-    latitude: String(lat),
-    longitude: String(lon),
+    latitude: String(coords.latitude),
+    longitude: String(coords.longitude),
     current: 'temperature_2m,weather_code',
     daily: 'temperature_2m_max,temperature_2m_min,weather_code',
-    timezone: String(tz),
-    forecast_days: '4',
-    temperature_unit: import.meta.env.VITE_WEATHER_UNIT === 'fahrenheit' ? 'fahrenheit' : 'celsius',
+    timezone: query.timezone,
+    forecast_days: String(query.forecastDays),
+    temperature_unit: query.unit,
   });
   const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
   const res = await fetch(url);
@@ -69,8 +91,10 @@ async function fetchWeather(): Promise<WeatherData> {
     icon: codeToIcon(json.current.weather_code),
   };
 
+  // Day 0 is today, already shown as the big current reading — the strip gets
+  // whatever `forecast_days` returned beyond it.
   const forecast: ForecastDay[] = [];
-  for (let i = 1; i <= 3 && i < json.daily.time.length; i++) {
+  for (let i = 1; i < json.daily.time.length; i++) {
     // Parse "YYYY-MM-DD" as LOCAL midnight — new Date(string) parses it as
     // UTC and getDay() then reads local, shifting weekday labels by one in
     // UTC-negative timezones.
@@ -88,7 +112,22 @@ async function fetchWeather(): Promise<WeatherData> {
 }
 
 /** Weather screen — based on Figma S2 design (489:20881). Live data via Open-Meteo. */
-export default function WeatherApp({ isActive }: AppProps) {
+export default function WeatherApp({ isActive, config }: AppProps) {
+  // The pushed device config wins; the VITE_ vars are only a fallback, since
+  // they're baked into the bundle and can't be changed without a redeploy.
+  // `config`'s identity is stable between polls (see local-config.ts), so this
+  // re-runs — and refetches below — only when the fleet config actually moves.
+  const query = useMemo(
+    () =>
+      resolveWeatherQuery(config, {
+        lat: import.meta.env.VITE_WEATHER_LAT,
+        lon: import.meta.env.VITE_WEATHER_LON,
+        tz: import.meta.env.VITE_WEATHER_TZ,
+        unit: import.meta.env.VITE_WEATHER_UNIT,
+      }),
+    [config],
+  );
+
   const [time, setTime] = useState(new Date());
   // null = no live data yet; the FALLBACK visuals render with an explicit
   // "offline" tell instead of masquerading as a real reading for days.
@@ -113,7 +152,7 @@ export default function WeatherApp({ isActive }: AppProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchWeather()
+    fetchWeather(query)
       .then((data) => {
         if (cancelled) return;
         setWeather(data);
@@ -127,20 +166,28 @@ export default function WeatherApp({ isActive }: AppProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     if (!isActive) return;
+    let cancelled = false;
     const id = setInterval(() => {
-      fetchWeather()
+      fetchWeather(query)
         .then((data) => {
+          if (cancelled) return;
           setWeather(data);
           setOffline(false);
         })
-        .catch(() => setOffline(true));
+        .catch(() => {
+          if (cancelled) return;
+          setOffline(true);
+        });
     }, 15 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [isActive, query]);
 
   const shown = weather ?? FALLBACK;
 
