@@ -1113,15 +1113,41 @@ export const fitnessAppMeta: FieldMetaMap = {
 export type FitnessAppConfig = z.infer<typeof fitnessAppSchema>;
 ```
 
-- [ ] **Step 2: Verify the registry still agrees**
+- [ ] **Step 2: Pin the enum to the workout list**
 
-Run: `npx vitest run src/shared/registry-coherence.test.ts`
-Expected: PASS — the app id is unchanged, so no registry edits are needed.
+The `workoutId` enum and `WORKOUTS` must not drift: Task 1's accessors throw
+on an unknown id precisely because the config boundary is supposed to have
+already normalised it. If someone adds a workout and forgets the enum, that
+guarantee silently breaks. This is the same coherence-test pattern
+`registry-coherence.test.ts` already uses for apps/faces/schemas.
 
-- [ ] **Step 3: Commit**
+Append to `src/apps/fitness/exercises.test.ts`:
+
+```ts
+import { fitnessAppSchema } from '../../shared/schemas/app.fitness';
+
+describe('config coherence', () => {
+  // getWorkout throws on unknown ids, which is only safe because config is
+  // validated against this enum first. Drift here reintroduces the crash.
+  it('workoutId enum lists exactly the defined workouts', () => {
+    const options = fitnessAppSchema.shape.workoutId.unwrap().options;
+    expect([...options].sort()).toEqual(WORKOUTS.map((w) => w.id).sort());
+  });
+});
+```
+
+If `.unwrap().options` is not the right accessor on this zod version, find the
+correct one — do not weaken the assertion to make it pass.
+
+- [ ] **Step 3: Verify**
+
+Run: `npx vitest run src/shared/registry-coherence.test.ts src/apps/fitness/exercises.test.ts`
+Expected: PASS. The app id is unchanged, so no registry edits are needed.
+
+- [ ] **Step 4: Commit**
 
 ```bash
-git add src/shared/schemas/app.fitness.ts
+git add src/shared/schemas/app.fitness.ts src/apps/fitness/exercises.test.ts
 git commit -m "feat(fitness): replace rep-counter config with workout config"
 ```
 
