@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { emptyStreak, toDateKey, toMonthKey, recordCompletion, settleMissedDays, HEARTS_PER_MONTH } from './streak';
+import type { StreakState } from './streak';
 
 const d = (y: number, m: number, day: number, h = 12) => new Date(y, m - 1, day, h);
 
@@ -66,5 +67,52 @@ describe('settleMissedDays', () => {
     s = settleMissedDays(s, d(2026, 8, 1));
     expect(s.hearts).toBe(HEARTS_PER_MONTH);
     expect(s.monthKey).toBe('2026-08');
+  });
+
+  // settleMissedDays runs at mount and on every day-rollover tick, so a
+  // second call for the same `now` must not re-charge a gap it already
+  // accounted for.
+  it('is idempotent when re-run for the same day', () => {
+    const s = recordCompletion(emptyStreak(), d(2026, 7, 20));
+    const now = d(2026, 7, 25);
+    const once = settleMissedDays(s, now);
+    const twice = settleMissedDays(once, now);
+    const thrice = settleMissedDays(twice, now);
+    expect(once.hearts).toBe(twice.hearts);
+    expect(twice.hearts).toBe(thrice.hearts);
+  });
+
+  it('month rollover does not self-undo when re-settled the same day', () => {
+    const s = recordCompletion(emptyStreak(), d(2026, 7, 30));
+    const now = d(2026, 8, 10);
+    const first = settleMissedDays(s, now);
+    expect(first.hearts).toBe(HEARTS_PER_MONTH);
+    const second = settleMissedDays(first, now);
+    expect(second.hearts).toBe(HEARTS_PER_MONTH);
+  });
+
+  it('charges each day exactly once across successive settle calls', () => {
+    let s = recordCompletion(emptyStreak(), d(2026, 7, 1));
+    s = settleMissedDays(s, d(2026, 7, 3)); // charges day 2 only
+    expect(s.hearts).toBe(HEARTS_PER_MONTH - 1);
+    s = settleMissedDays(s, d(2026, 7, 4)); // charges day 3 only
+    expect(s.hearts).toBe(HEARTS_PER_MONTH - 2);
+  });
+
+  it('does not charge for days that were actually completed', () => {
+    // Constructed directly: reaching this via recordCompletion would require
+    // two completions with no settle between them, which the day-rollover
+    // tick makes unreachable.
+    const s: StreakState = {
+      completions: { '2026-07-01': true, '2026-07-03': true },
+      lastCompletedKey: '2026-07-03',
+      settledThroughKey: '2026-07-01',
+      hearts: HEARTS_PER_MONTH,
+      monthKey: '2026-07',
+    };
+    // Window [2026-07-01, 2026-07-05): days 1 and 3 completed, days 2 and 4 missed.
+    const settled = settleMissedDays(s, d(2026, 7, 5));
+    expect(settled.hearts).toBe(HEARTS_PER_MONTH - 2);
+    expect(settled.settledThroughKey).toBe('2026-07-05');
   });
 });
