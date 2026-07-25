@@ -94,7 +94,7 @@ describe('workouts', () => {
   // is core exercises by definition.
   it('full-body never repeats a target group twice in a row', () => {
     const workout = getWorkout('full-body');
-    const targets = workout.exerciseIds.map((id) => getExercise(id).targets);
+    const targets = workout.exerciseIds.map((id) => getExercise(id).target);
     for (let i = 1; i < targets.length; i++) {
       expect(targets[i], `position ${i} repeats ${targets[i]}`).not.toBe(targets[i - 1]);
     }
@@ -132,7 +132,7 @@ export interface Exercise {
   id: string;
   name: string;
   /** Drives the full-body alternation invariant. Never displayed. */
-  targets: Target;
+  target: Target;
 }
 
 export interface Workout {
@@ -146,22 +146,22 @@ export interface Workout {
 
 // Ordered upper → lower → core, repeated four times.
 export const EXERCISES: Exercise[] = [
-  { id: 'push-ups',          name: 'Push-ups',          targets: 'upper' },
-  { id: 'squats',            name: 'Squats',            targets: 'lower' },
-  { id: 'crunches',          name: 'Crunches',          targets: 'core'  },
-  { id: 'bench-dips',        name: 'Bench Dips',        targets: 'upper' },
-  { id: 'lunges',            name: 'Lunges',            targets: 'lower' },
-  { id: 'plank',             name: 'Plank',             targets: 'core'  },
-  { id: 'shoulder-taps',     name: 'Shoulder Taps',     targets: 'upper' },
-  { id: 'jumping-jacks',     name: 'Jumping Jacks',     targets: 'lower' },
-  { id: 'mountain-climbers', name: 'Mountain Climbers', targets: 'core'  },
-  { id: 'push-up-rotation',  name: 'Push-up & Rotation', targets: 'upper' },
-  { id: 'high-knees',        name: 'High Knees',        targets: 'lower' },
-  { id: 'side-plank',        name: 'Side Plank',        targets: 'core'  },
+  { id: 'push-ups',          name: 'Push-ups',          target: 'upper' },
+  { id: 'squats',            name: 'Squats',            target: 'lower' },
+  { id: 'crunches',          name: 'Crunches',          target: 'core'  },
+  { id: 'bench-dips',        name: 'Bench Dips',        target: 'upper' },
+  { id: 'lunges',            name: 'Lunges',            target: 'lower' },
+  { id: 'plank',             name: 'Plank',             target: 'core'  },
+  { id: 'shoulder-taps',     name: 'Shoulder Taps',     target: 'upper' },
+  { id: 'jumping-jacks',     name: 'Jumping Jacks',     target: 'lower' },
+  { id: 'mountain-climbers', name: 'Mountain Climbers', target: 'core'  },
+  { id: 'push-up-rotation',  name: 'Push-up & Rotation', target: 'upper' },
+  { id: 'high-knees',        name: 'High Knees',        target: 'lower' },
+  { id: 'side-plank',        name: 'Side Plank',        target: 'core'  },
 ];
 
 function idsFor(target: Target): string[] {
-  return EXERCISES.filter((e) => e.targets === target).map((e) => e.id);
+  return EXERCISES.filter((e) => e.target === target).map((e) => e.id);
 }
 
 export const WORKOUTS: Workout[] = [
@@ -1629,7 +1629,14 @@ function formatElapsed(ms: number): string {
 }
 
 export default function FitnessApp({ isActive, config }: AppProps) {
-  const cfg = useMemo(() => fitnessAppSchema.parse(config ?? {}), [config]);
+  // safeParse, not parse: a zod enum only falls back to its default when the
+  // key is ABSENT. A stale or hand-edited `workoutId` that isn't in the enum
+  // would throw and white-screen the kiosk, so bad config degrades to
+  // defaults instead.
+  const cfg = useMemo(() => {
+    const parsed = fitnessAppSchema.safeParse(config ?? {});
+    return parsed.success ? parsed.data : fitnessAppSchema.parse({});
+  }, [config]);
 
   // Config overrides the workout's built-in durations so the admin can retune
   // without editing code.

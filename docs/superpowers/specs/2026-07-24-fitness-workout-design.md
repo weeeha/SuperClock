@@ -94,7 +94,7 @@ regardless.
 interface Exercise {
   id: string;                           // 'push-ups' — also the art + voice asset key
   name: string;                         // 'Push-ups' — caption and voice-clip label
-  targets: 'upper' | 'lower' | 'core';  // validated for alternation, not displayed
+  target: 'upper' | 'lower' | 'core';   // validated for alternation, not displayed
 }
 
 interface Workout {
@@ -107,7 +107,7 @@ interface Workout {
 }
 ```
 
-`targets` exists solely so a test can assert Seven's alternation property,
+`target` exists solely so a test can assert Seven's alternation property,
 preventing a future edit from silently producing three core exercises in a row.
 
 **Three workouts, one 12-exercise pool.** `exercises.ts` defines exactly 12
@@ -333,7 +333,7 @@ deferring work.
   next-exercise announcement lands in `rest`, not `work`; zero drift across a
   simulated 7 minutes.
 - **`exercises.test.ts`** — exactly 12 entries in the pool; the `full-body`
-  workout uses all 12 with no three consecutive exercises sharing a `targets`
+  workout uses all 12 with no three consecutive exercises sharing a `target`
   value; every workout references only ids that exist in the pool; every id
   has a corresponding art asset and voice clip.
 - **`streak.test.ts`** — a heart is lost on a missed day; month rollover
