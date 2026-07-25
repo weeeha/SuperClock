@@ -1,0 +1,10 @@
+/* StateRing keyframes. Pure CSS: one element, opacity/transform only, cheap
+   on a Pi. Night mode dims globally via apply-settings; no special-casing. */
+@keyframes agents-ring-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@keyframes agents-ring-shimmer {
+  0% { opacity: 0.55; transform: rotate(0deg); }
+  100% { opacity: 0.55; transform: rotate(360deg); }
+}

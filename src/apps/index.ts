@@ -11,3 +11,4 @@ import './time-tracking';
 import './github';
 import './claude-usage';
 import './breathing';
+import './agents';

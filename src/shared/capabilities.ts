@@ -20,6 +20,7 @@ interface StaticDeviceInfo {
 // src/shared/registry-coherence.test.ts so drift fails CI instead of
 // shipping an app the admin can't see.
 const ALL_KIOSK_APP_IDS = [
+  'agents',
   'clock',
   'weather',
   'calendar',
