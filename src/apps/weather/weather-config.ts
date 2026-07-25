@@ -21,8 +21,6 @@ export interface WeatherQuery {
   /** IANA tz name, or `auto` to let Open-Meteo infer it from the coordinates. */
   timezone: string;
   unit: 'celsius' | 'fahrenheit';
-  /** Days requested from Open-Meteo, **today included** (its `forecast_days` param). */
-  forecastDays: number;
 }
 
 // Deliberately strict: two finite decimals separated by a comma. Anything else
@@ -79,6 +77,5 @@ export function resolveWeatherQuery(
     place,
     timezone: env.tz?.trim() || 'auto',
     unit,
-    forecastDays: cfg.forecastDays,
   };
 }

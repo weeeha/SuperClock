@@ -93,15 +93,7 @@ describe('resolveWeatherQuery — unit', () => {
   });
 });
 
-describe('resolveWeatherQuery — forecastDays and timezone', () => {
-  it('takes the configured day count', () => {
-    expect(resolveWeatherQuery({ forecastDays: 7 }, NO_ENV).forecastDays).toBe(7);
-  });
-
-  it('defaults to 4 days (today + a 3-day strip)', () => {
-    expect(resolveWeatherQuery({}, NO_ENV).forecastDays).toBe(4);
-  });
-
+describe('resolveWeatherQuery — timezone', () => {
   it('takes the env timezone, defaulting to auto', () => {
     expect(resolveWeatherQuery({}, ENV).timezone).toBe('Europe/Berlin');
     expect(resolveWeatherQuery({}, NO_ENV).timezone).toBe('auto');
@@ -111,8 +103,8 @@ describe('resolveWeatherQuery — forecastDays and timezone', () => {
 
 describe('resolveWeatherQuery — malformed config', () => {
   it('falls back to schema defaults instead of throwing', () => {
-    const q = resolveWeatherQuery({ forecastDays: 99, unit: 'kelvin' }, NO_ENV);
-    expect(q.forecastDays).toBe(4);
+    const q = resolveWeatherQuery({ pages: ['moon'], unit: 'kelvin' }, NO_ENV);
     expect(q.unit).toBe('celsius');
+    expect(q.coords).toBeNull();
   });
 });
