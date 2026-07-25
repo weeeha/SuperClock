@@ -116,8 +116,8 @@ preventing a future edit from silently producing three core exercises in a row.
 | Workout | Exercises | Alternation enforced? |
 | --- | --- | --- |
 | `full-body` | all 12, ordered upper → lower → core | **Yes** |
-| `core` | the core-targeting subset, ~6 | No |
-| `lower` | the lower-targeting subset, ~6 | No |
+| `core` | the 4 core-targeting exercises | No |
+| `lower` | the 4 lower-targeting exercises | No |
 
 The alternation invariant applies **only to `full-body`**. It is meaningless
 for the targeted workouts — a core workout is core exercises by definition —
