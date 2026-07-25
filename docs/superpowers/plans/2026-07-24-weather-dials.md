@@ -37,8 +37,10 @@ Confirmed live against Open-Meteo on 2026-07-24. **Do not re-derive these; they 
 
 | File | Responsibility |
 |---|---|
-| `src/apps/weather/weather-utils.ts` | **Create.** Pure functions: local-ISO parsing, ring slot math, polar coords, day progress, colour ramps, Open-Meteo → `WeatherModel`. No React, no fetch. |
+| `src/apps/weather/weather-utils.ts` | **Create.** Pure functions: local-ISO parsing, ring slot math, polar coords, day progress, colour ramps, glyphs, Open-Meteo → `WeatherModel`. No React, no fetch, no URLs. |
 | `src/apps/weather/weather-utils.test.ts` | **Create.** Vitest coverage for every exported util. |
+| `src/apps/weather/weather-api.ts` | **Create.** Network *shape* only: coordinate parsing and URL builders. Split out of `weather-utils.ts` after a Task 3 review flagged that file drifting toward an "everything module" — network concerns and pure math are separate responsibilities. |
+| `src/apps/weather/weather-api.test.ts` | **Create.** Vitest coverage for coord parsing and URL construction. |
 | `src/apps/weather/useWeather.ts` | **Create.** Fetch + refresh + offline state + location resolution. |
 | `src/apps/weather/Dial.tsx` | **Create.** The one radial component all five metric pages use. |
 | `src/apps/weather/NowPage.tsx` | **Create.** Ambient resting page. |
@@ -727,16 +729,19 @@ git commit -m "feat(weather): replace forecastDays with pages and idleReturnSeco
 ### Task 5: Location resolution and the data hook
 
 **Files:**
+- Create: `src/apps/weather/weather-api.ts`
+- Create: `src/apps/weather/weather-api.test.ts`
 - Create: `src/apps/weather/useWeather.ts`
-- Modify: `src/apps/weather/weather-utils.ts`
-- Test: `src/apps/weather/weather-utils.test.ts`
+
+> **Revised during execution.** These functions were originally planned as an append to `weather-utils.ts`. A Task 3 domain review flagged that file drifting toward an "everything module" (time parsing + geometry + colour + domain models + presentation), and URL building is a network-shape concern rather than pure math. Splitting here costs less than splitting later.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `src/apps/weather/weather-utils.test.ts`:
+Create `src/apps/weather/weather-api.test.ts`:
 
 ```ts
-import { parseCoords, buildForecastUrl } from './weather-utils';
+import { describe, it, expect } from 'vitest';
+import { parseCoords, buildForecastUrl } from './weather-api';
 
 describe('parseCoords', () => {
   it('reads a "lat,lon" pair', () => {
@@ -792,7 +797,7 @@ Expected: FAIL — `parseCoords is not a function`.
 
 - [ ] **Step 3: Write the implementation**
 
-Append to `src/apps/weather/weather-utils.ts`:
+Create `src/apps/weather/weather-api.ts`:
 
 ```ts
 export interface Coords { lat: number; lon: number }
@@ -845,8 +850,8 @@ export function buildGeocodeUrl(name: string): string {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `npm test -- weather-utils`
-Expected: PASS — 28 tests.
+Run: `npm test -- weather-api`
+Expected: PASS — 7 tests in the new file. Then run the full `npm test` and confirm the total rose by 7 with no existing suite broken.
 
 - [ ] **Step 5: Write the hook**
 
@@ -854,14 +859,8 @@ Create `src/apps/weather/useWeather.ts`:
 
 ```ts
 import { useEffect, useState } from 'react';
-import {
-  buildForecastUrl,
-  buildGeocodeUrl,
-  parseCoords,
-  parseForecast,
-  type Coords,
-  type WeatherModel,
-} from './weather-utils';
+import { buildForecastUrl, buildGeocodeUrl, parseCoords, type Coords } from './weather-api';
+import { parseForecast, type WeatherModel } from './weather-utils';
 
 const GEO_CACHE_KEY = 'superclock.weather.geo';
 const REFRESH_MS = 15 * 60 * 1000;
@@ -959,7 +958,7 @@ Expected: build succeeds (`tsc -b` clean).
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/apps/weather/useWeather.ts src/apps/weather/weather-utils.ts src/apps/weather/weather-utils.test.ts
+git add src/apps/weather/useWeather.ts src/apps/weather/weather-api.ts src/apps/weather/weather-api.test.ts
 git commit -m "feat(weather): add location resolution and the single-request data hook"
 ```
 
