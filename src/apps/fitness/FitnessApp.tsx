@@ -128,8 +128,17 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     dispatch({ type: 'TICK', now: t });
   });
 
-  // Swiping to another app must pause, not abandon — position is preserved
-  // so swiping back resumes mid-exercise.
+  // Pauses a running circuit when the app grid opens over it.
+  //
+  // That is the ONLY case this covers. SwipeContainer passes
+  // `isActive={mode !== 'grid'}` and keys its child on the active app id, so
+  // swiping to a DIFFERENT app changes the key and unmounts this component
+  // outright — it never re-renders with isActive:false, and the circuit is
+  // discarded rather than paused. Playlist auto-rotation (core/playlist.ts)
+  // does the same thing, so a rotating kiosk can never finish a workout.
+  //
+  // Making swipe-away resumable requires circuit state to outlive the mount;
+  // see "Known limitation" in the design doc.
   useEffect(() => {
     if (!isActive && running) dispatch({ type: 'PAUSE', now: Date.now() });
   }, [isActive, running, dispatch]);

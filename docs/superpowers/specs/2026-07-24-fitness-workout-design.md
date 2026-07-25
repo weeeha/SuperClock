@@ -196,12 +196,36 @@ Registered through `setVerticalSwipeCallback` while active, following the
 | `paused` | resume | abandon → `ready` | grid |
 | `complete` | → `ready` | — | grid |
 
-**Deactivation pauses; it does not abort.** Horizontal swipe is handled at the
-root with pointer capture and cannot be intercepted by an app, so swiping away
-mid-workout sets `isActive: false`. That pauses the circuit and preserves
-position, so swiping back resumes at second 27 of exercise 4. This satisfies
-CLAUDE.md's "background apps must not tick" honestly — the alternative,
-continuing to run while invisible, is worse than either pausing or aborting.
+**Opening the grid pauses; switching apps discards.**
+
+`SwipeContainer` passes `isActive={mode !== 'grid'}` and keys its child on the
+active app id. So opening the app grid over a running circuit sets
+`isActive: false` and pauses it — close the grid and it resumes at the same
+second. But swiping to a *different* app changes the key, which unmounts the
+component: it never re-renders with `isActive: false`, and the circuit is
+**discarded, not paused**.
+
+### Known limitation
+
+An earlier draft of this spec claimed swipe-away paused and swipe-back
+resumed. It does not, and the code comment asserting it was wrong too — both
+were corrected after a whole-branch review traced the actual mechanism.
+
+Two consequences worth weighing before this is considered finished:
+
+- An accidental horizontal swipe mid-circuit loses the workout with no
+  confirmation.
+- **Playlist auto-rotation destroys in-progress workouts.** `core/playlist.ts`
+  rotates via `switchToInstance` on an interval, which is the same unmount
+  path. A kiosk with rotation enabled could never complete a circuit.
+  (`rotationSeconds` is currently `null` on `superclock-fast`, so this is
+  latent rather than live.)
+
+Making resume real requires circuit state to outlive the mount — either a
+module-level store (the `brightness-lease.ts` pattern) or `localStorage`,
+plus pausing on unmount so a workout resumed an hour later doesn't jump
+straight to `complete`. Suppressing playlist rotation while a circuit runs
+would be a separate, smaller fix.
 
 ### Kiosk integration
 
