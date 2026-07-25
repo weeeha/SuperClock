@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useDeviceConfig } from './device-config';
 import { isWithinWindow } from '../shared/time-window';
+import { useLocalOverrides, effectiveBrightness, effectiveNight } from './local-overrides';
 
 // Re-evaluate the night window this often. Boundary lag budget: ≤5s config
 // poll + ≤30s tick — same cadence as the server's display-adapter evaluator.
@@ -36,7 +37,11 @@ export function useApplySettings(): void {
   const nightEnd = config?.settings.night?.end;
   const nightBrightness = config?.settings.night?.brightness;
 
-  const isNight = useSyncExternalStore(
+  // re-render when overrides change (values consumed via effective* below)
+  useLocalOverrides((s) => s.brightness);
+  useLocalOverrides((s) => s.night);
+
+  const scheduledNight = useSyncExternalStore(
     subscribeToNightTick,
     () =>
       nightStart !== undefined &&
@@ -44,6 +49,10 @@ export function useApplySettings(): void {
       isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
     getServerSnapshot,
   );
+  // A local night override wins until the schedule next flips (resolver drops a
+  // spent override on that boundary). Recomputed each render — including on the
+  // NIGHT_TICK_MS ticks that re-run this hook via useSyncExternalStore.
+  const isNight = effectiveNight(scheduledNight);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -64,16 +73,23 @@ export function useApplySettings(): void {
     root.classList.toggle('light', !dark);
   }, [theme, isNight]);
 
+  // Night wins the baseline; then a local brightness override wins until config
+  // moves off its base. Resolved in render (not the effect) so a quick-settings
+  // slider change — which re-renders this hook via the subscription above but
+  // touches none of isNight/nightBrightness/dayBrightness — still reaches the
+  // effect via the `pct` dep.
+  const basePct =
+    isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
+  const pct = effectiveBrightness(basePct);
+
   useEffect(() => {
     const root = document.documentElement;
     root.style.transition = 'filter 1s ease';
-    const effective =
-      isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
     // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
     // filter that still costs a stacking context.
-    if (typeof effective === 'number' && effective < 100) {
-      const pct = Math.max(0, effective);
-      root.style.filter = `brightness(${pct / 100})`;
+    if (typeof pct === 'number' && pct < 100) {
+      const clamped = Math.max(0, pct);
+      root.style.filter = `brightness(${clamped / 100})`;
     } else {
       root.style.filter = '';
     }
@@ -81,5 +97,5 @@ export function useApplySettings(): void {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [isNight, nightBrightness, dayBrightness]);
+  }, [pct]);
 }
