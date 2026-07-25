@@ -792,8 +792,8 @@ describe('buildForecastUrl', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npm test -- weather-utils`
-Expected: FAIL — `parseCoords is not a function`.
+Run: `npm test -- weather-api`
+Expected: FAIL — `Failed to resolve import "./weather-api"`.
 
 - [ ] **Step 3: Write the implementation**
 
