@@ -37,9 +37,10 @@ export function useApplySettings(): void {
   const nightEnd = config?.settings.night?.end;
   const nightBrightness = config?.settings.night?.brightness;
 
-  // re-render when overrides change (values consumed via effective* below)
-  useLocalOverrides((s) => s.brightness);
-  useLocalOverrides((s) => s.night);
+  // Subscribe to the override slices so the hook re-runs when the quick-settings
+  // sheet writes one; the values feed the pure resolvers below.
+  const brightnessOverride = useLocalOverrides((s) => s.brightness);
+  const nightOverride = useLocalOverrides((s) => s.night);
 
   const scheduledNight = useSyncExternalStore(
     subscribeToNightTick,
@@ -49,10 +50,10 @@ export function useApplySettings(): void {
       isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
     getServerSnapshot,
   );
-  // A local night override wins until the schedule next flips (resolver drops a
-  // spent override on that boundary). Recomputed each render — including on the
-  // NIGHT_TICK_MS ticks that re-run this hook via useSyncExternalStore.
-  const isNight = effectiveNight(scheduledNight);
+  // A local night override wins until the schedule next flips. The resolver is
+  // pure — on a boundary flip it returns the schedule immediately (DOM correct),
+  // and the dropSpent effect below tidies the now-spent override.
+  const isNight = effectiveNight(scheduledNight, nightOverride);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -80,7 +81,15 @@ export function useApplySettings(): void {
   // effect via the `pct` dep.
   const basePct =
     isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
-  const pct = effectiveBrightness(basePct);
+  const pct = effectiveBrightness(basePct, brightnessOverride);
+
+  // Tidy spent overrides in an effect, not during render (React 19 forbids
+  // updating a store other components read while rendering). The resolvers
+  // already returned the base on a mismatch, so the DOM is correct before this
+  // runs; a night-override drop that shifts basePct converges next render.
+  useEffect(() => {
+    useLocalOverrides.getState().dropSpent(basePct, scheduledNight);
+  }, [basePct, scheduledNight]);
 
   useEffect(() => {
     const root = document.documentElement;

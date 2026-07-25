@@ -19,7 +19,7 @@ const noopStorage: StateStorage = {
   removeItem: () => {},
 };
 
-interface Override<T> {
+export interface Override<T> {
   value: T;
   /** The base (config/scheduled) value at the moment the user overrode it. */
   base: T;
@@ -30,15 +30,29 @@ interface LocalOverridesState {
   night: Override<boolean> | null;
   setBrightness: (value: number, base: number) => void;
   setNight: (value: boolean, base: boolean) => void;
+  /** Clear any override whose stored `base` no longer matches the current
+   *  base (admin push moved brightness, or the night schedule flipped). One
+   *  setState covering both slices; a no-op (no store write) when nothing is
+   *  spent, so it is safe to call from an effect on every base change. */
+  dropSpent: (brightnessBase: number | undefined, nightBase: boolean) => void;
 }
 
 export const useLocalOverrides = create<LocalOverridesState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       brightness: null,
       night: null,
       setBrightness: (value, base) => set({ brightness: { value, base } }),
       setNight: (value, base) => set({ night: { value, base } }),
+      dropSpent: (brightnessBase, nightBase) => {
+        const { brightness, night } = get();
+        const patch: Partial<Pick<LocalOverridesState, 'brightness' | 'night'>> = {};
+        if (brightness && brightness.base !== brightnessBase) patch.brightness = null;
+        if (night && night.base !== nightBase) patch.night = null;
+        // Only write when something actually clears — avoids needless store
+        // notifications (and re-renders) when both bases still match.
+        if ('brightness' in patch || 'night' in patch) set(patch);
+      },
     }),
     {
       name: 'kiosk:local-overrides',
@@ -56,28 +70,23 @@ export const useLocalOverrides = create<LocalOverridesState>()(
   ),
 );
 
-/** Resolve brightness: override wins until config moves off its base.
+/** Resolve brightness: override wins until config moves off its base. Pure —
+ *  on a base mismatch it just returns the base (the DOM is correct immediately);
+ *  clearing the spent override is the caller's job via `dropSpent`.
  *  `configValue` is `number | undefined` because callers (e.g.
  *  `apply-settings.ts`) pass `config?.settings.brightness` — undefined means
- *  "no baseline / unfiltered" and must drop a stale override rather than
- *  being coerced to a sentinel number. */
-export function effectiveBrightness(configValue: number | undefined): number | undefined {
-  const o = useLocalOverrides.getState().brightness;
-  if (!o) return configValue;
-  if (configValue !== o.base) {
-    useLocalOverrides.setState({ brightness: null });
-    return configValue;
-  }
-  return o.value;
+ *  "no baseline / unfiltered" and yields the base rather than a sentinel. */
+export function effectiveBrightness(
+  configValue: number | undefined,
+  override: Override<number> | null,
+): number | undefined {
+  if (!override || configValue !== override.base) return configValue;
+  return override.value;
 }
 
-/** Resolve night: override wins until the schedule next changes. */
-export function effectiveNight(scheduled: boolean): boolean {
-  const o = useLocalOverrides.getState().night;
-  if (!o) return scheduled;
-  if (scheduled !== o.base) {
-    useLocalOverrides.setState({ night: null });
-    return scheduled;
-  }
-  return o.value;
+/** Resolve night: override wins until the schedule next changes. Pure — same
+ *  clear-is-the-caller's-job contract as `effectiveBrightness`. */
+export function effectiveNight(scheduled: boolean, override: Override<boolean> | null): boolean {
+  if (!override || scheduled !== override.base) return scheduled;
+  return override.value;
 }
