@@ -15,12 +15,21 @@ html.light {
   --face-ink: #000000;
   --face-ink-muted: #52525b;
   --face-tick: #444444;
+  /* Three-faces set (see docs/superpowers/specs/2026-07-24-three-faces-design.md):
+     plate = aperture's cut-into surface, dusk = daylight's night arc,
+     spent = depletion's elapsed area. */
+  --face-plate: #f1f1ef;
+  --face-dusk: #8fa9c4;
+  --face-spent: #e4e4e1;
 }
 html.dark {
   --face-bg: #000000;
   --face-ink: #ffffff;
   --face-ink-muted: #a1a1aa;
   --face-tick: #8a8a8a;
+  --face-plate: #15171a;
+  --face-dusk: #2b3d52;
+  --face-spent: #111316;
 }
 
 /* Soft cross-fade for the theme flip. Applied per themed element. */
