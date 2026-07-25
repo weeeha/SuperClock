@@ -1,51 +1,30 @@
-import { useCallback, useEffect, useState } from 'react';
-import { buildForecastUrl, buildGeocodeUrl, parseCoords, type Coords } from './weather-api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { buildForecastUrl, buildGeocodeUrl } from './weather-api';
+import { resolveWeatherQuery, type Coords, type WeatherQuery } from './weather-config';
 import { parseForecast, type WeatherModel } from './weather-utils';
 
-const GEO_CACHE_KEY = 'superclock.weather.geo';
 const REFRESH_MS = 15 * 60 * 1000;
 
-async function resolveLocation(location: string): Promise<{ coords: Coords; label: string }> {
-  const trimmed = location.trim();
+/** In-memory only, per PR #36: a persisted geocode would only help when the
+ *  network is down, and the forecast call needs the network anyway. */
+const geoCache = new Map<string, { coords: Coords; label: string }>();
 
-  if (trimmed) {
-    const direct = parseCoords(trimmed);
-    if (direct) return { coords: direct, label: '' };
+async function geocode(place: string): Promise<{ coords: Coords; label: string }> {
+  const cached = geoCache.get(place);
+  if (cached) return cached;
 
-    const cachedRaw = localStorage.getItem(GEO_CACHE_KEY);
-    if (cachedRaw) {
-      try {
-        const cached = JSON.parse(cachedRaw);
-        if (cached.query === trimmed) return { coords: cached.coords, label: cached.label };
-      } catch {
-        localStorage.removeItem(GEO_CACHE_KEY);
-      }
-    }
+  const res = await fetch(buildGeocodeUrl(place));
+  if (!res.ok) throw new Error(`Geocoding failed: ${res.status}`);
+  const json = await res.json();
+  const hit = json.results?.[0];
+  if (!hit) throw new Error(`No location matched "${place}"`);
 
-    const res = await fetch(buildGeocodeUrl(trimmed));
-    if (!res.ok) throw new Error(`Geocoding failed: ${res.status}`);
-    const json = await res.json();
-    const hit = json.results?.[0];
-    if (!hit) throw new Error(`No location matched "${trimmed}"`);
-    const resolved = {
-      coords: { lat: hit.latitude, lon: hit.longitude },
-      label: String(hit.name),
-    };
-    try {
-      localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ query: trimmed, ...resolved }));
-    } catch {
-      // Cache write is best-effort — a full or disabled localStorage must not
-      // discard a location we already resolved successfully.
-    }
-    return resolved;
-  }
-
-  // Legacy fallback so devices still on env vars keep working until their
-  // fleet config carries a location. Removed in Task 9.
-  const lat = import.meta.env.VITE_WEATHER_LAT;
-  const lon = import.meta.env.VITE_WEATHER_LON;
-  if (!lat || !lon) throw new Error('No weather location configured');
-  return { coords: { lat: Number(lat), lon: Number(lon) }, label: '' };
+  const resolved = {
+    coords: { latitude: hit.latitude, longitude: hit.longitude },
+    label: String(hit.name),
+  };
+  geoCache.set(place, resolved);
+  return resolved;
 }
 
 export interface WeatherState {
@@ -54,39 +33,63 @@ export interface WeatherState {
   offline: boolean;
 }
 
-/** Fetches once on mount (and whenever location/unit change), then refreshes
- *  every 15 minutes while the app is active. Background apps must not tick —
- *  a kiosk runs for weeks, and leaked timers are real heat on a Pi. */
+/** Fetches once on mount (and whenever the resolved query changes), then
+ *  refreshes every 15 minutes while the app is active. Background apps must not
+ *  tick — a kiosk runs for weeks, and leaked timers are real heat on a Pi. */
 export function useWeather(
-  location: string,
-  unit: 'celsius' | 'fahrenheit',
+  config: Record<string, unknown> | undefined,
   isActive: boolean,
 ): WeatherState {
   const [model, setModel] = useState<WeatherModel | null>(null);
   const [label, setLabel] = useState('');
   const [offline, setOffline] = useState(false);
 
-  const load = useCallback(async (isCancelled: () => boolean) => {
-    try {
-      const { coords, label: resolved } = await resolveLocation(location);
-      const res = await fetch(buildForecastUrl(coords, unit));
-      if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
-      const json = await res.json();
-      if (isCancelled()) return;
-      setModel(parseForecast(json, new Date()));
-      setLabel(resolved);
-      setOffline(false);
-    } catch (err) {
-      if (isCancelled()) return;
-      console.warn('Weather fetch failed:', (err as Error).message);
-      setOffline(true);
-    }
-  }, [location, unit]);
+  // The pushed device config wins; the VITE_ vars are only a fallback.
+  // `config`'s identity is stable between polls (see local-config.ts), so this
+  // re-runs — and refetches below — only when the fleet config actually moves.
+  const query: WeatherQuery = useMemo(
+    () =>
+      resolveWeatherQuery(config, {
+        lat: import.meta.env.VITE_WEATHER_LAT,
+        lon: import.meta.env.VITE_WEATHER_LON,
+        tz: import.meta.env.VITE_WEATHER_TZ,
+        unit: import.meta.env.VITE_WEATHER_UNIT,
+      }),
+    [config],
+  );
 
-  // Initial load, and again whenever the configured location or unit changes.
-  // Deliberately NOT gated on isActive: the app grid deactivates this app
-  // without unmounting it, so re-running here on every toggle would fire a
-  // request each time the grid opens or closes.
+  const load = useCallback(
+    async (isCancelled: () => boolean) => {
+      try {
+        let coords = query.coords;
+        let resolvedLabel = '';
+
+        if (!coords) {
+          if (!query.place) throw new Error('No weather location configured');
+          const hit = await geocode(query.place);
+          coords = hit.coords;
+          resolvedLabel = hit.label;
+        }
+
+        const res = await fetch(buildForecastUrl(coords, query.unit, query.timezone));
+        if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
+        const json = await res.json();
+        if (isCancelled()) return;
+        setModel(parseForecast(json, new Date()));
+        setLabel(resolvedLabel);
+        setOffline(false);
+      } catch (err) {
+        if (isCancelled()) return;
+        console.warn('Weather fetch failed:', (err as Error).message);
+        setOffline(true);
+      }
+    },
+    [query],
+  );
+
+  // Initial load, and again whenever the resolved query changes. Deliberately
+  // NOT gated on isActive: the app grid deactivates this app without unmounting
+  // it, so re-running here would fire a request every time the grid opens.
   useEffect(() => {
     let cancelled = false;
     load(() => cancelled);

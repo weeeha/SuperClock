@@ -1,14 +1,8 @@
-export interface Coords { lat: number; lon: number }
+import type { Coords } from './weather-config';
 
-export function parseCoords(raw: string): Coords | null {
-  const parts = raw.split(',');
-  if (parts.length !== 2) return null;
-  const lat = Number(parts[0].trim());
-  const lon = Number(parts[1].trim());
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-  return { lat, lon };
-}
+// Coordinate parsing lives in weather-config.ts (PR #36): its regex is stricter
+// than a comma split, so a typo like "Paris, France" geocodes and visibly fails
+// rather than resolving near 0,0 and rendering plausible-looking weather.
 
 const HOURLY_FIELDS = [
   'temperature_2m', 'apparent_temperature', 'relative_humidity_2m',
@@ -24,17 +18,27 @@ const CURRENT_FIELDS = [
 
 const DAILY_FIELDS = 'temperature_2m_max,temperature_2m_min,sunrise,sunset';
 
+/** Two days, always. The dials show a rolling 12-hour window, so any window
+ *  starting after noon runs past midnight into the next forecast day. This is
+ *  a property of the ring, not an operator preference — which is why the old
+ *  `forecastDays` config field no longer exists. */
+const FORECAST_DAYS = '2';
+
 /** One request covers all five dials plus the Now page. Open-Meteo is keyless,
  *  so this runs from the kiosk with no server proxy. */
-export function buildForecastUrl(c: Coords, unit: 'celsius' | 'fahrenheit'): string {
+export function buildForecastUrl(
+  c: Coords,
+  unit: 'celsius' | 'fahrenheit',
+  timezone = 'auto',
+): string {
   const params = new URLSearchParams({
-    latitude: String(c.lat),
-    longitude: String(c.lon),
+    latitude: String(c.latitude),
+    longitude: String(c.longitude),
     current: CURRENT_FIELDS,
     hourly: HOURLY_FIELDS,
     daily: DAILY_FIELDS,
-    timezone: 'auto',
-    forecast_days: '2',
+    timezone,
+    forecast_days: FORECAST_DAYS,
     temperature_unit: unit,
   });
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;

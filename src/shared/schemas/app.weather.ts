@@ -18,18 +18,22 @@ export const weatherAppSchema = z.object({
 
 export const weatherAppMeta: FieldMetaMap = {
   location: {
-    description: 'City name (e.g. "Montreal") or "lat,lon". Falls back to env if blank.',
+    // Wording kept from #36 — it names the geocoder, which is the part an
+    // operator needs to know when a city name silently fails to resolve.
+    description:
+      'City name (geocoded via Open-Meteo) or "lat,lon" (e.g. "37.78,-122.42"). Falls back to env if blank.',
     placeholder: 'Montreal',
   },
-  unit: {},
+  unit: { description: 'Temperature scale. Falls back to env if never set.' },
   pages: {
-    description: 'Which pages the vertical swipe cycles through, in order. "now" is the resting page.',
+    description:
+      'Which pages the vertical swipe cycles through, in order. "now" is the ambient resting page.',
   },
   idleReturnSeconds: {
     min: 0,
     max: 600,
     step: 10,
-    description: 'Seconds of no touch before returning to the Now page. 0 disables.',
+    description: 'Seconds of no touch before returning to the first page. 0 disables.',
   },
 };
 

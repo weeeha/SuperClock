@@ -24,7 +24,10 @@ export default function WeatherApp({ isActive, config }: AppProps) {
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
   const showGrid = useNavigation((s) => s.showGrid);
 
-  const { model, label, offline } = useWeather(cfg.location, cfg.unit, isActive);
+  // The raw config goes in, not `cfg`: resolveWeatherQuery has to distinguish
+  // "operator chose celsius" from "operator chose nothing", and zod's
+  // `.default()` erases that difference (see weather-config.ts).
+  const { model, label, offline } = useWeather(config, isActive);
 
   // A trimmed page list (config pushed mid-session) can strand `page` past
   // the new end — clamp on read rather than syncing it back via an effect
