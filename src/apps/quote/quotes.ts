@@ -69,4 +69,14 @@ export const quotes: Quote[] = [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Albert_Einstein_Head_cleaned.jpg/330px-Albert_Einstein_Head_cleaned.jpg',
     wiki: 'https://en.wikipedia.org/wiki/Albert_Einstein',
   },
+  {
+    text: 'Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less.',
+    author: 'Marie Curie',
+    wiki: 'https://en.wikipedia.org/wiki/Marie_Curie',
+  },
+  {
+    text: 'It is not the critic who counts; not the man who points out how the strong man stumbles, or where the doer of deeds could have done them better. The credit belongs to the man who is actually in the arena.',
+    author: 'Theodore Roosevelt',
+    wiki: 'https://en.wikipedia.org/wiki/Theodore_Roosevelt',
+  },
 ];
