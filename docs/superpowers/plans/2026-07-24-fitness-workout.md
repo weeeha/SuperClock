@@ -1668,7 +1668,7 @@ import { initialState, reduce, remainingMs, currentExerciseId, nextExerciseId } 
 import type { CircuitState } from './circuit';
 import { useCircuitTimer } from './useCircuitTimer';
 import { WorkoutAudio } from './audio';
-import { loadStreak, saveStreak, recordCompletion, settleMissedDays, HEARTS_PER_MONTH } from './streak';
+import { loadStreak, saveStreak, completeWorkout, settleMissedDays, HEARTS_PER_MONTH } from './streak';
 import WatchFace from './WatchFace';
 
 /** Renew well inside the lease TTL so it never lapses mid-workout. */
@@ -1724,7 +1724,11 @@ export default function FitnessApp({ isActive, config }: AppProps) {
       for (const cue of cues) audio.current?.play(cue);
       if (prev.phase !== 'complete' && next.phase === 'complete') {
         setStreak((s) => {
-          const updated = recordCompletion(s, new Date());
+          // completeWorkout, not recordCompletion: settling must happen
+          // before recording, or a day-spanning gap is silently forgiven.
+          // Composing them into one exported function means the ordering
+          // cannot be forgotten by a future caller.
+          const updated = completeWorkout(s, new Date());
           saveStreak(updated);
           return updated;
         });
