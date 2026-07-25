@@ -1,188 +1,111 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
+import { useNavigation } from '../../core/navigation';
+import { weatherAppSchema } from '../../shared/schemas/app.weather';
+import { useWeather } from './useWeather';
+import { dialFor } from './dials';
+import Dial from './Dial';
+import NowPage from './NowPage';
 
-interface ForecastDay {
-  day: string;
-  icon: string;
-  high: number;
-  low: number;
-}
+export default function WeatherApp({ isActive, config }: AppProps) {
+  // safeParse, not parse: a malformed fleet config must not white-screen a
+  // wall-mounted kiosk. Fall back to schema defaults and keep rendering.
+  const cfg = useMemo(() => {
+    const result = weatherAppSchema.safeParse(config ?? {});
+    if (result.success) return result.data;
+    console.warn('Invalid weather config, using defaults:', result.error.message);
+    return weatherAppSchema.parse({});
+  }, [config]);
 
-interface WeatherData {
-  current: number;
-  high: number;
-  low: number;
-  icon: string;
-  forecast: ForecastDay[];
-}
+  const pages = cfg.pages;
 
-const FALLBACK: WeatherData = {
-  current: 30,
-  high: 31,
-  low: 26,
-  icon: '☀️',
-  forecast: [
-    { day: 'MO', icon: '☀️', high: 31, low: 26 },
-    { day: 'TU', icon: '⛅', high: 29, low: 20 },
-    { day: 'WE', icon: '🌧️', high: 31, low: 22 },
-  ],
-};
+  const [page, setPage] = useState(0);
+  const [now, setNow] = useState(new Date());
+  const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
+  const showGrid = useNavigation((s) => s.showGrid);
 
-const DAY_NAMES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const { model, label, offline } = useWeather(cfg.location, cfg.unit, isActive);
 
-function codeToIcon(code: number): string {
-  if (code === 0) return '☀️';
-  if (code <= 3) return '⛅';
-  if (code === 45 || code === 48) return '🌫️';
-  if (code >= 51 && code <= 67) return '🌧️';
-  if (code >= 71 && code <= 77) return '❄️';
-  if (code >= 80 && code <= 82) return '🌧️';
-  if (code === 85 || code === 86) return '🌨️';
-  if (code >= 95) return '⛈️';
-  return '⛅';
-}
+  // A trimmed page list (config pushed mid-session) can strand `page` past
+  // the new end — clamp on read rather than syncing it back via an effect
+  // (the react-hooks Compiler ruleset flags setState-in-effect for values
+  // that are just a derivation of existing state/props).
+  const safePage = Math.min(page, pages.length - 1);
 
-async function fetchWeather(): Promise<WeatherData> {
-  const lat = import.meta.env.VITE_WEATHER_LAT;
-  const lon = import.meta.env.VITE_WEATHER_LON;
-  const tz = import.meta.env.VITE_WEATHER_TZ || 'auto';
-  if (!lat || !lon) throw new Error('No weather coordinates configured');
-
-  const params = new URLSearchParams({
-    latitude: String(lat),
-    longitude: String(lon),
-    current: 'temperature_2m,weather_code',
-    daily: 'temperature_2m_max,temperature_2m_min,weather_code',
-    timezone: String(tz),
-    forecast_days: '4',
-    temperature_unit: import.meta.env.VITE_WEATHER_UNIT === 'fahrenheit' ? 'fahrenheit' : 'celsius',
-  });
-  const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
-  const json = await res.json();
-
-  const current = Math.round(json.current.temperature_2m);
-  const today = {
-    high: Math.round(json.daily.temperature_2m_max[0]),
-    low: Math.round(json.daily.temperature_2m_min[0]),
-    icon: codeToIcon(json.current.weather_code),
-  };
-
-  const forecast: ForecastDay[] = [];
-  for (let i = 1; i <= 3 && i < json.daily.time.length; i++) {
-    // Parse "YYYY-MM-DD" as LOCAL midnight — new Date(string) parses it as
-    // UTC and getDay() then reads local, shifting weekday labels by one in
-    // UTC-negative timezones.
-    const [y, mo, d] = String(json.daily.time[i]).split('-').map(Number);
-    const date = new Date(y, mo - 1, d);
-    forecast.push({
-      day: DAY_NAMES[date.getDay()],
-      icon: codeToIcon(json.daily.weather_code[i]),
-      high: Math.round(json.daily.temperature_2m_max[i]),
-      low: Math.round(json.daily.temperature_2m_min[i]),
-    });
-  }
-
-  return { current, high: today.high, low: today.low, icon: today.icon, forecast };
-}
-
-/** Weather screen — based on Figma S2 design (489:20881). Live data via Open-Meteo. */
-export default function WeatherApp({ isActive }: AppProps) {
-  const [time, setTime] = useState(new Date());
-  // null = no live data yet; the FALLBACK visuals render with an explicit
-  // "offline" tell instead of masquerading as a real reading for days.
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [offline, setOffline] = useState(false);
-
+  // Only HH:MM is rendered — returning the previous state when the minute is
+  // unchanged skips the re-render, so this ticks the tree once a minute
+  // instead of once a second (real heat on a Pi).
   useEffect(() => {
     if (!isActive) return;
-    // Only the HH:MM display consumes `time` — returning the previous state
-    // when the minute hasn't changed skips the re-render, so this ticks the
-    // whole tree once a minute instead of once a second (real heat on a Pi).
     const id = setInterval(() => {
-      setTime((prev) => {
-        const now = new Date();
-        return now.getMinutes() === prev.getMinutes() && now.getHours() === prev.getHours()
+      setNow((prev) => {
+        const n = new Date();
+        return n.getMinutes() === prev.getMinutes() && n.getHours() === prev.getHours()
           ? prev
-          : now;
+          : n;
       });
     }, 1000);
     return () => clearInterval(id);
   }, [isActive]);
 
+  // Vertical swipe cycles pages; swipe-down on page 0 falls through to the
+  // shell's default gesture. Same mechanism as HabitsApp.
   useEffect(() => {
-    let cancelled = false;
-    fetchWeather()
-      .then((data) => {
-        if (cancelled) return;
-        setWeather(data);
-        setOffline(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.warn('Weather fetch failed:', err.message);
-        setOffline(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (!isActive) {
+      setVerticalSwipeCallback(null);
+      return;
+    }
+    setVerticalSwipeCallback((dir) => {
+      if (dir === 'up') {
+        setPage((p) => Math.min(p + 1, pages.length - 1));
+      } else if (safePage > 0) {
+        setPage((p) => Math.max(p - 1, 0));
+      } else {
+        showGrid();
+      }
+    });
+    return () => setVerticalSwipeCallback(null);
+  }, [isActive, safePage, pages.length, setVerticalSwipeCallback, showGrid]);
 
+  // A kiosk never swipes itself home. Without this, checking the UV dial on
+  // Tuesday leaves UV on screen until Friday.
   useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => {
-      fetchWeather()
-        .then((data) => {
-          setWeather(data);
-          setOffline(false);
-        })
-        .catch(() => setOffline(true));
-    }, 15 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [isActive]);
+    if (!isActive || safePage === 0 || cfg.idleReturnSeconds === 0) return;
+    const id = setTimeout(() => setPage(0), cfg.idleReturnSeconds * 1000);
+    return () => clearTimeout(id);
+  }, [isActive, safePage, cfg.idleReturnSeconds]);
 
-  const shown = weather ?? FALLBACK;
+  if (!model) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-black">
+        <span className="font-mono text-[3vmin] text-white/40">
+          {offline ? 'weather offline' : 'loading…'}
+        </span>
+      </div>
+    );
+  }
 
-  const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const dayStr = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-  const dateStr = `${String(time.getDate()).padStart(2, '0')}-${String(time.getMonth() + 1).padStart(2, '0')}`;
+  const current = pages[safePage];
+  const dial = current === 'now' ? null : dialFor(current, model);
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center bg-black px-[12%] py-[6%]">
-      <p className="text-[9.6vmin] font-semibold text-white leading-none">{timeStr}</p>
+    <div className="relative h-full w-full overflow-hidden bg-black">
+      {current === 'now'
+        ? <NowPage model={model} label={label} now={now} />
+        : dial && <Dial {...dial} />}
 
-      <div className="flex items-baseline gap-2 mt-1">
-        <span className="text-[6.4vmin] font-semibold text-[#ff8826]">{dayStr}</span>
-        <span className="text-[6.4vmin] font-semibold text-white">{dateStr}</span>
-      </div>
       {offline && (
-        <span className="mt-1 font-mono text-[2.4vmin] text-white/30">offline</span>
+        <span className="absolute left-1/2 top-[12%] -translate-x-1/2 font-mono text-[2.4vmin] text-white/30">
+          offline
+        </span>
       )}
 
-      <div className="flex items-center mt-[4%] w-full">
-        <div className="flex-shrink-0 text-[28vmin] leading-none">
-          {shown.icon}
-        </div>
-        <div className="flex flex-col items-start ml-auto">
-          <p className="text-[18vmin] font-semibold text-white leading-none">{shown.current}°</p>
-          <div className="flex items-baseline gap-3">
-            <span className="text-[9.6vmin] font-semibold text-[#eee9bf]">{shown.high}°</span>
-            <span className="text-[9.6vmin] font-semibold text-[#609cc4]">{shown.low}°</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex w-full justify-around mt-auto">
-        {shown.forecast.map((f) => (
-          <div key={f.day} className="flex flex-col items-center gap-1">
-            <span className="text-[6.4vmin] font-semibold text-[#6d6d6d]">{f.day}</span>
-            <span className="text-[9.6vmin]">{f.icon}</span>
-            <div className="flex gap-1">
-              <span className="text-[4.8vmin] font-semibold text-white">{f.high}°</span>
-              <span className="text-[4.8vmin] font-semibold text-[#eee9bf]">{f.low}°</span>
-            </div>
-          </div>
+      <div className="pointer-events-none absolute bottom-[3.5%] left-1/2 flex -translate-x-1/2 gap-2">
+        {pages.map((id, i) => (
+          <div
+            key={id}
+            className={`h-1.5 w-1.5 rounded-full transition-colors ${i === safePage ? 'bg-white' : 'bg-white/25'}`}
+          />
         ))}
       </div>
     </div>
