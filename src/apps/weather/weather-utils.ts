@@ -187,3 +187,55 @@ export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel 
     hours,
   };
 }
+
+/** WMO weather code → glyph. Night variants only differ where the sun appears. */
+export function codeGlyph(code: number, isDay: boolean): string {
+  if (code === 0) return isDay ? '☀' : '☾';
+  if (code <= 2) return isDay ? '⛅' : '☾';
+  if (code === 3) return '☁';
+  if (code === 45 || code === 48) return '🌫';
+  if (code >= 51 && code <= 67) return '🌧';
+  if (code >= 71 && code <= 77) return '❄';
+  if (code >= 80 && code <= 82) return '🌧';
+  if (code === 85 || code === 86) return '🌨';
+  if (code >= 95) return '⛈';
+  return '☁';
+}
+
+export function conditionLabel(code: number): string {
+  if (code === 0) return 'Clear';
+  if (code === 1) return 'Mostly Clear';
+  if (code === 2) return 'Partly Cloudy';
+  if (code === 3) return 'Overcast';
+  if (code === 45 || code === 48) return 'Fog';
+  if (code >= 51 && code <= 57) return 'Drizzle';
+  if (code >= 61 && code <= 67) return 'Rain';
+  if (code >= 71 && code <= 77) return 'Snow';
+  if (code >= 80 && code <= 82) return 'Showers';
+  if (code === 85 || code === 86) return 'Snow Showers';
+  if (code >= 95) return 'Thunderstorm';
+  return 'Cloudy';
+}
+
+const COMPASS_POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+export function compass(bearing: number): string {
+  const i = Math.round((((bearing % 360) + 360) % 360) / 45) % 8;
+  return COMPASS_POINTS[i];
+}
+
+/** The canonical page-id list lives in `src/shared/schemas/app.weather.ts`
+ *  (Task 4) because zod needs it to build the enum, and `src/shared` must not
+ *  import from `src/apps`. Do not redeclare it here — import `WeatherPageId`
+ *  from the schema instead. */
+
+/** Value→colour ramps, one per metric dial. */
+export const RAMPS: Record<string, ColorStop[]> = {
+  temp: [
+    [-20, '#4a7fd4'], [0, '#6fa8dc'], [10, '#8fd3c7'],
+    [20, '#f0d264'], [28, '#f0913c'], [36, '#e05a3c'],
+  ],
+  precip: [[0, '#3a3f4a'], [30, '#4d8fd1'], [70, '#3a6fd8'], [100, '#2b4fc4']],
+  wind: [[0, '#4a5560'], [15, '#6fbfa8'], [35, '#f0c04a'], [60, '#e0693c']],
+  uv: [[0, '#4a5560'], [3, '#5fbf5f'], [6, '#f0c04a'], [8, '#e0693c'], [11, '#a05ad0']],
+};

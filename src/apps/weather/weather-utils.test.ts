@@ -8,6 +8,9 @@ import {
   dayProgress,
   rampColor,
   parseForecast,
+  codeGlyph,
+  conditionLabel,
+  compass,
 } from './weather-utils';
 
 describe('parseLocalISO', () => {
@@ -239,5 +242,36 @@ describe('parseForecast', () => {
     parseForecast(f, new Date(2026, 0, 1, 3, 0, 0));
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('codeGlyph', () => {
+  it('uses day and night variants for clear skies', () => {
+    expect(codeGlyph(0, true)).toBe('☀');
+    expect(codeGlyph(0, false)).toBe('☾');
+  });
+
+  it('maps WMO ranges to glyph families', () => {
+    expect(codeGlyph(3, true)).toBe('☁');
+    expect(codeGlyph(61, true)).toBe('🌧');
+    expect(codeGlyph(71, true)).toBe('❄');
+    expect(codeGlyph(95, true)).toBe('⛈');
+  });
+});
+
+describe('conditionLabel', () => {
+  it('names the common codes', () => {
+    expect(conditionLabel(0)).toBe('Clear');
+    expect(conditionLabel(2)).toBe('Partly Cloudy');
+    expect(conditionLabel(95)).toBe('Thunderstorm');
+  });
+});
+
+describe('compass', () => {
+  it('converts bearings to 8-point names', () => {
+    expect(compass(0)).toBe('N');
+    expect(compass(90)).toBe('E');
+    expect(compass(234)).toBe('SW');
+    expect(compass(359)).toBe('N');
   });
 });
