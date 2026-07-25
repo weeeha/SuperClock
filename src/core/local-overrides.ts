@@ -41,8 +41,12 @@ export const useLocalOverrides = create<LocalOverridesState>()(
   ),
 );
 
-/** Resolve brightness: override wins until config moves off its base. */
-export function effectiveBrightness(configValue: number): number {
+/** Resolve brightness: override wins until config moves off its base.
+ *  `configValue` is `number | undefined` because callers (e.g.
+ *  `apply-settings.ts`) pass `config?.settings.brightness` — undefined means
+ *  "no baseline / unfiltered" and must drop a stale override rather than
+ *  being coerced to a sentinel number. */
+export function effectiveBrightness(configValue: number | undefined): number | undefined {
   const o = useLocalOverrides.getState().brightness;
   if (!o) return configValue;
   if (configValue !== o.base) {

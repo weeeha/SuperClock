@@ -20,6 +20,12 @@ describe('brightness override', () => {
     expect(effectiveBrightness(60)).toBe(60); // config changed 80→60 → override dropped
     expect(useLocalOverrides.getState().brightness).toBeNull();
   });
+
+  it('config becoming undefined (no baseline) drops the override', () => {
+    useLocalOverrides.getState().setBrightness(40, 80);
+    expect(effectiveBrightness(undefined)).toBeUndefined();
+    expect(useLocalOverrides.getState().brightness).toBeNull();
+  });
 });
 
 describe('night override', () => {
