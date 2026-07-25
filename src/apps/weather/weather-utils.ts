@@ -188,18 +188,36 @@ export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel 
   };
 }
 
-/** WMO weather code → glyph. Night variants only differ where the sun appears. */
+/** WMO weather code → glyph. Night variants only differ where the sun appears.
+ *  Freezing drizzle/rain (56, 57, 66, 67) deliberately share the plain rain
+ *  glyph: the distinction doesn't survive being read from across a room, and
+ *  `conditionLabel` collapses them the same way for consistency. */
+
+// Explicit escapes, not pasted characters: the U+FE0F variation selector is
+// invisible in source and does not survive copy-paste reliably. Emoji
+// presentation is deliberate and uniform — colour emoji ignore SVG `fill`,
+// so the conditions ring renders these as-is rather than tinting them.
+const GLYPH_SUN = '☀️';
+const GLYPH_MOON = '\u{1F319}';
+const GLYPH_PARTLY = '⛅️';
+const GLYPH_CLOUD = '☁️';
+const GLYPH_FOG = '\u{1F32B}️';
+const GLYPH_RAIN = '\u{1F327}️';
+const GLYPH_SNOW = '❄️';
+const GLYPH_SNOW_SHOWER = '\u{1F328}️';
+const GLYPH_STORM = '⛈️';
+
 export function codeGlyph(code: number, isDay: boolean): string {
-  if (code === 0) return isDay ? '☀' : '☾';
-  if (code <= 2) return isDay ? '⛅' : '☾';
-  if (code === 3) return '☁';
-  if (code === 45 || code === 48) return '🌫';
-  if (code >= 51 && code <= 67) return '🌧';
-  if (code >= 71 && code <= 77) return '❄';
-  if (code >= 80 && code <= 82) return '🌧';
-  if (code === 85 || code === 86) return '🌨';
-  if (code >= 95) return '⛈';
-  return '☁';
+  if (code === 0) return isDay ? GLYPH_SUN : GLYPH_MOON;
+  if (code <= 2) return isDay ? GLYPH_PARTLY : GLYPH_MOON;
+  if (code === 3) return GLYPH_CLOUD;
+  if (code === 45 || code === 48) return GLYPH_FOG;
+  if (code >= 51 && code <= 67) return GLYPH_RAIN;
+  if (code >= 71 && code <= 77) return GLYPH_SNOW;
+  if (code >= 80 && code <= 82) return GLYPH_RAIN;
+  if (code === 85 || code === 86) return GLYPH_SNOW_SHOWER;
+  if (code >= 95) return GLYPH_STORM;
+  return GLYPH_CLOUD;
 }
 
 export function conditionLabel(code: number): string {
@@ -235,7 +253,13 @@ export const RAMPS: Record<string, ColorStop[]> = {
     [-20, '#4a7fd4'], [0, '#6fa8dc'], [10, '#8fd3c7'],
     [20, '#f0d264'], [28, '#f0913c'], [36, '#e05a3c'],
   ],
-  precip: [[0, '#3a3f4a'], [30, '#4d8fd1'], [70, '#3a6fd8'], [100, '#2b4fc4']],
+  precip: [
+    [0, '#3a3f4a'], [25, '#3866bf'], [50, '#4d8fd1'],
+    [75, '#56b4e0'], [100, '#7ad8f0'],
+  ],
   wind: [[0, '#4a5560'], [15, '#6fbfa8'], [35, '#f0c04a'], [60, '#e0693c']],
-  uv: [[0, '#4a5560'], [3, '#5fbf5f'], [6, '#f0c04a'], [8, '#e0693c'], [11, '#a05ad0']],
+  uv: [
+    [0, '#4a5560'], [3, '#5fbf5f'], [6, '#f0c04a'],
+    [8, '#e0693c'], [10, '#d13c3c'], [11, '#a05ad0'],
+  ],
 };

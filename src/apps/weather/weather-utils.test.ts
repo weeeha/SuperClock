@@ -246,16 +246,34 @@ describe('parseForecast', () => {
 });
 
 describe('codeGlyph', () => {
+  // Escaped rather than pasted, to match the GLYPH_* constants in
+  // weather-utils.ts — see the comment there on why raw/pasted emoji are
+  // avoided (invisible, copy-paste-fragile variation selectors).
+  const SUN = '\u2600\uFE0F';
+  const MOON = '\u{1F319}';
+  const CLOUD = '\u2601\uFE0F';
+  const RAIN = '\u{1F327}\uFE0F';
+  const SNOW = '\u2744\uFE0F';
+  const STORM = '\u26C8\uFE0F';
+
   it('uses day and night variants for clear skies', () => {
-    expect(codeGlyph(0, true)).toBe('☀');
-    expect(codeGlyph(0, false)).toBe('☾');
+    expect(codeGlyph(0, true)).toBe(SUN);
+    expect(codeGlyph(0, false)).toBe(MOON);
   });
 
   it('maps WMO ranges to glyph families', () => {
-    expect(codeGlyph(3, true)).toBe('☁');
-    expect(codeGlyph(61, true)).toBe('🌧');
-    expect(codeGlyph(71, true)).toBe('❄');
-    expect(codeGlyph(95, true)).toBe('⛈');
+    expect(codeGlyph(3, true)).toBe(CLOUD);
+    expect(codeGlyph(61, true)).toBe(RAIN);
+    expect(codeGlyph(71, true)).toBe(SNOW);
+    expect(codeGlyph(95, true)).toBe(STORM);
+  });
+
+  it('resolves boundary and hazard codes', () => {
+    expect(codeGlyph(56, true)).toBe(RAIN); // freezing drizzle shares the plain rain glyph
+    expect(codeGlyph(66, true)).toBe(RAIN); // freezing rain shares the plain rain glyph
+    expect(codeGlyph(77, true)).toBe(SNOW);
+    expect(codeGlyph(96, true)).toBe(STORM);
+    expect(codeGlyph(99, true)).toBe(STORM);
   });
 });
 
@@ -264,6 +282,13 @@ describe('conditionLabel', () => {
     expect(conditionLabel(0)).toBe('Clear');
     expect(conditionLabel(2)).toBe('Partly Cloudy');
     expect(conditionLabel(95)).toBe('Thunderstorm');
+  });
+
+  it('names boundary and hazard codes', () => {
+    expect(conditionLabel(57)).toBe('Drizzle');
+    expect(conditionLabel(67)).toBe('Rain');
+    expect(conditionLabel(77)).toBe('Snow');
+    expect(conditionLabel(99)).toBe('Thunderstorm');
   });
 });
 
