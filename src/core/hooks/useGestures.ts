@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { useNavigation } from '../navigation';
-import { classifyTouchStart, ARC_MIN_TRAVEL, COMMIT_PROGRESS } from '../gesture-zones';
+import { classifyTouchStart } from '../gesture-zones';
 import type { TouchZone } from '../gesture-zones';
+import { resolveDragEnd } from '../gesture-resolve';
 
-const SWIPE_THRESHOLD = 50;
-const SWIPE_VELOCITY = 0.3;
 const PINCH_IN_THRESHOLD = 0.9;
 
 export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | null>) {
@@ -83,47 +82,24 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         zoneRef.current = 'inner';
         nav.setPeek(null);
 
-        // ---- Settings open: only dismissal gestures exist ----
-        if (nav.settingsOpen) {
-          if (my > SWIPE_THRESHOLD) nav.hideSettings(); // swipe down dismisses
-          return;
+        // Origin zone + live nav state decide exactly one action (pure, tested
+        // in gesture-resolve.test.ts). Assigned-arc origins never fall through
+        // to app gestures; unclaimed inner vertical is a strict no-op.
+        const action = resolveDragEnd(zone, nav.mode, nav.settingsOpen, mx, my, vx, vy, sheetHeight());
+        switch (action.type) {
+          case 'hideSettings': nav.hideSettings(); break;
+          case 'showSettings': nav.showSettings(); break;
+          case 'showGrid': nav.showGrid(); break;
+          case 'hideGrid': nav.hideGrid(); break;
+          case 'back': nav.goBack(); break; // strict no-op when no back callback
+          case 'vertical':
+            // App-owned; strict no-op when the active app registered nothing.
+            if (nav.verticalSwipeCallback) nav.verticalSwipeCallback(action.dir);
+            break;
+          case 'next': nav.swipeToNext(); break;
+          case 'prev': nav.swipeToPrev(); break;
+          case 'none': break;
         }
-
-        // ---- Arc gestures (system) — origin-in-arc + inward travel >= 80px ----
-        if (nav.mode === 'app' && zone === 'bottom-arc' && -my >= ARC_MIN_TRAVEL) {
-          if (-my / sheetHeight() >= COMMIT_PROGRESS) nav.showSettings();
-          return; // sub-threshold = snap back (peek already cleared)
-        }
-        if (nav.mode === 'app' && zone === 'top-arc' && my >= ARC_MIN_TRAVEL) {
-          nav.showGrid();
-          return;
-        }
-        if (nav.mode === 'app' && zone === 'left-arc' && mx >= ARC_MIN_TRAVEL) {
-          nav.goBack(); // strict no-op when no app registered a back callback
-          return;
-        }
-        // right-arc: unassigned — falls through to inner behavior below.
-
-        const absX = Math.abs(mx);
-        const absY = Math.abs(my);
-
-        // ---- Inner vertical: app-owned or STRICT NO-OP (spec decision 2a) ----
-        if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
-          if (nav.mode === 'app' && nav.verticalSwipeCallback) {
-            nav.verticalSwipeCallback(my > 0 ? 'down' : 'up');
-          } else if (my < 0 && nav.mode === 'grid') {
-            nav.hideGrid(); // grid dismissal keeps its swipe-up
-          }
-          // NO else-showGrid: unclaimed vertical is a no-op now. The grid is
-          // reachable via top arc, 3-finger tap, and (kept) pinch-in.
-          return;
-        }
-
-        // ---- Inner horizontal: switch apps (unchanged) ----
-        if (nav.mode !== 'app') return;
-        if (absX < SWIPE_THRESHOLD || Math.abs(vx) < SWIPE_VELOCITY) return;
-        if (mx < 0) nav.swipeToNext();
-        else nav.swipeToPrev();
       },
       onPinchStart: () => {
         pinchFired.current = false;
