@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseLocalISO,
   minutesSinceMidnight,
@@ -213,9 +213,31 @@ describe('parseForecast', () => {
   });
 
   it('falls back to the first hour when the current hour is missing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const f = fixture();
     const m = parseForecast(f, new Date(2026, 0, 1, 3, 0, 0));
     expect(m.hours).toHaveLength(12);
     expect(m.hours[0].hour).toBe(0);
+    warn.mockRestore();
+  });
+
+  it('throws on a missing current field', () => {
+    const f = fixture();
+    delete (f.current as Record<string, unknown>).uv_index;
+    expect(() => parseForecast(f, now)).toThrow(/uv_index/);
+  });
+
+  it('throws on a missing hourly field', () => {
+    const f = fixture();
+    delete (f.hourly as Record<string, unknown>).wind_speed_10m;
+    expect(() => parseForecast(f, now)).toThrow(/wind_speed_10m/);
+  });
+
+  it('warns when the current hour is absent', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const f = fixture();
+    parseForecast(f, new Date(2026, 0, 1, 3, 0, 0));
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

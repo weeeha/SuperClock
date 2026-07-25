@@ -125,13 +125,25 @@ export interface OpenMeteoResponse {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+function requireNumber(value: unknown, field: string): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    throw new Error(`Open-Meteo field "${field}" missing or not numeric (got ${JSON.stringify(value)})`);
+  }
+  return n;
+}
+
 export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel {
   const times = json.hourly.time;
   const key = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
   const found = times.indexOf(key);
-  const start = found >= 0 ? found : 0;
+  let start = found;
+  if (start < 0) {
+    console.warn(`[weather] current hour ${key} not found in hourly.time; anchoring to index 0`);
+    start = 0;
+  }
 
-  const num = (field: string, i: number) => Number((json.hourly[field] as number[])[i]);
+  const num = (field: string, i: number) => requireNumber((json.hourly[field] as number[] | undefined)?.[i], field);
 
   const hours: HourSample[] = [];
   for (let i = start; i < Math.min(start + 12, times.length); i++) {
@@ -150,7 +162,7 @@ export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel 
   }
 
   const c = json.current;
-  const cnum = (field: string) => Number(c[field]);
+  const cnum = (field: string) => requireNumber(c[field], field);
 
   return {
     current: {
