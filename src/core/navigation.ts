@@ -32,6 +32,8 @@ interface NavigationState {
   swipeToPrev: () => void;
   showGrid: () => void;
   hideGrid: () => void;
+  /** 3-finger tap: panic/home — default clock, from any state (spec 2026-07-24). */
+  panicHome: () => void;
   finishTransition: () => void;
   setVerticalSwipeCallback: (fn: ((dir: 'up' | 'down') => void) | null) => void;
   noteUserGesture: () => void;
@@ -127,6 +129,12 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   showGrid: () => set({ mode: 'grid', settingsOpen: false, peek: null, lastGestureMs: Date.now() }),
   hideGrid: () => set({ mode: 'app', lastGestureMs: Date.now() }),
+  panicHome: () => {
+    set({ settingsOpen: false, peek: null, lastGestureMs: Date.now() });
+    // Reuse switchToApp so the transition contract (mode:'transitioning' <=>
+    // key change) holds from every state — app/grid/transitioning alike.
+    get().switchToApp(get().appOrder[0] ?? get().activeAppId);
+  },
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
   setVerticalSwipeCallback: (fn) => set({ verticalSwipeCallback: fn }),
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),

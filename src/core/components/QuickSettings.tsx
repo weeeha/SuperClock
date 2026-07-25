@@ -31,6 +31,7 @@ export default function QuickSettings() {
     s.peek?.target === 'settings' && !s.settingsOpen ? s.peek.progress : 0,
   );
   const hideSettings = useNavigation((s) => s.hideSettings);
+  const noteUserGesture = useNavigation((s) => s.noteUserGesture);
   const setBrightness = useLocalOverrides((s) => s.setBrightness);
   const setNight = useLocalOverrides((s) => s.setNight);
   const brightnessOverride = useLocalOverrides((s) => s.brightness);
@@ -101,7 +102,10 @@ export default function QuickSettings() {
                 min={20}
                 max={100}
                 value={brightness}
-                onChange={(e) => setBrightness(Number(e.target.value), bases.brightness)}
+                onChange={(e) => {
+                  setBrightness(Number(e.target.value), bases.brightness);
+                  noteUserGesture();
+                }}
                 className="mt-2 w-full accent-white"
               />
             </label>
@@ -113,7 +117,10 @@ export default function QuickSettings() {
               <button
                 type="button"
                 aria-pressed={nightOn}
-                onClick={() => setNight(!nightOn, bases.night)}
+                onClick={() => {
+                  setNight(!nightOn, bases.night);
+                  noteUserGesture();
+                }}
                 className={`h-11 w-20 rounded-full transition-colors ${
                   nightOn ? 'bg-white/80' : 'bg-white/15'
                 }`}

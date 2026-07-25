@@ -25,9 +25,9 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
     const updateDebug = (label: string) => {
       if (debug) debug.textContent = `${label}: ptr=${active.size}`;
     };
+    // Panic/home per spec: unconditional, from any state — not gated on mode.
     const trigger = () => {
-      const { mode, showGrid } = useNavigation.getState();
-      if (mode === 'app') showGrid();
+      useNavigation.getState().panicHome();
     };
     const onPointerDown = (e: PointerEvent) => {
       active.add(e.pointerId);
