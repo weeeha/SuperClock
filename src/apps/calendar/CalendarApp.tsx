@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppProps } from '../../core/types';
-import type { CalendarEvent } from '../../api/types';
 import { useNavigation } from '../../core/navigation';
 import { calendarAppSchema } from '../../shared/schemas/app.calendar';
 import { useCalendarEvents } from './useCalendarEvents';
-import { addDays, addMonths, eventsForDay, monthWeeks } from './calendar-utils';
+import type { Drill } from './calendar-utils';
+import { addDays, addMonths, eventsForDay, monthWeeks, popDrill } from './calendar-utils';
 import CoverView from './CoverView';
 import WeekView from './WeekView';
 import MonthView from './MonthView';
@@ -15,10 +15,6 @@ import DetailsView from './DetailsView';
 type LadderView = 'cover' | 'week' | 'month' | 'year';
 const LADDER: readonly LadderView[] = ['cover', 'week', 'month', 'year'];
 
-type Drill =
-  | { kind: 'day'; day: Date }
-  | { kind: 'details'; day: Date; event: CalendarEvent };
-
 const IDLE_RESET_MS = 60_000;
 const IDLE_CHECK_MS = 7_000;
 
@@ -28,6 +24,7 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     return parsed.success ? parsed.data : calendarAppSchema.parse({});
   }, [config]);
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
+  const setBackCallback = useNavigation((s) => s.setBackCallback);
   const showGrid = useNavigation((s) => s.showGrid);
 
   const [now, setNow] = useState(() => new Date());
@@ -99,9 +96,7 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     const cb = (dir: 'up' | 'down') => {
       lastInteractionRef.current = Date.now();
       if (drill) {
-        if (dir === 'down') {
-          setDrill(drill.kind === 'details' ? { kind: 'day', day: drill.day } : null);
-        }
+        if (dir === 'down') setDrill(popDrill(drill)); // same walk as the back gesture
         return; // swipe up ignored while drilled
       }
       const idx = LADDER.indexOf(view);
@@ -121,19 +116,29 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     };
   }, [isActive, view, drill, setVerticalSwipeCallback, showGrid]);
 
+  // System back (left-arc rim swipe): pop one drill level per fire — the same
+  // "go up one level" walk the removed back chevron drove (details → day →
+  // resting). Registered only while drilled and active; re-registers as `drill`
+  // changes so the closure always pops from the current level. Guarded cleanup,
+  // same ownership contract as the vertical-swipe slot above (popLayout keeps us
+  // mounted after the next app registers, so an unconditional null would stomp
+  // an incoming registration). When not drilled the previous cleanup has already
+  // released the slot, so there is nothing to register.
+  useEffect(() => {
+    if (!isActive || !drill) return;
+    const cb = () => {
+      lastInteractionRef.current = Date.now();
+      setDrill(popDrill(drill)); // idempotent no-op if already at surface
+    };
+    setBackCallback(cb);
+    return () => {
+      if (useNavigation.getState().backCallback === cb) setBackCallback(null);
+    };
+  }, [isActive, drill, setBackCallback]);
+
   let content;
   if (drill?.kind === 'details') {
-    content = (
-      <DetailsView
-        event={drill.event}
-        now={now}
-        timeFormat={cfg.timeFormat}
-        onBack={() => {
-          bump();
-          setDrill({ kind: 'day', day: drill.day });
-        }}
-      />
-    );
+    content = <DetailsView event={drill.event} now={now} timeFormat={cfg.timeFormat} />;
   } else if (drill?.kind === 'day') {
     content = (
       <DayView

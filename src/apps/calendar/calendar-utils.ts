@@ -2,6 +2,20 @@ import type { CalendarEvent } from '../../api/types';
 
 export type WeekStart = 'monday' | 'sunday';
 
+/** The calendar drill stack above the zoom ladder: a day agenda, or a single
+ *  event's details opened from that day. `null` = resting on the ladder. */
+export type Drill =
+  | { kind: 'day'; day: Date }
+  | { kind: 'details'; day: Date; event: CalendarEvent };
+
+/** Pop one level of the drill stack: details → day → resting (null).
+ *  Idempotent at the surface — a no-op when already resting. Single source of
+ *  the "go up one level" walk shared by swipe-down and the system back gesture. */
+export function popDrill(drill: Drill | null): Drill | null {
+  if (!drill) return null;
+  return drill.kind === 'details' ? { kind: 'day', day: drill.day } : null;
+}
+
 /** Midnight of the given date, local time. */
 function atMidnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());

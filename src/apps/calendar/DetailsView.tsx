@@ -1,12 +1,10 @@
 import type { CalendarEvent } from '../../api/types';
 import { countdownLabel, sameDay } from './calendar-utils';
-import BackChevron from './BackChevron';
 
 interface DetailsViewProps {
   event: CalendarEvent;
   now: Date;
   timeFormat: '24h' | '12h';
-  onBack: () => void;
 }
 
 const RED = '#E0342B';
@@ -19,7 +17,7 @@ function fmtTime(iso: string, timeFormat: '24h' | '12h'): string {
 }
 
 /** Drill view: single event. Time range flips to a countdown inside 12h. */
-export default function DetailsView({ event, now, timeFormat, onBack }: DetailsViewProps) {
+export default function DetailsView({ event, now, timeFormat }: DetailsViewProps) {
   const start = new Date(event.start);
   const isToday = sameDay(start, now);
   const dateLine = isToday
@@ -32,7 +30,6 @@ export default function DetailsView({ event, now, timeFormat, onBack }: DetailsV
 
   return (
     <div className="relative h-full w-full bg-black overflow-hidden">
-      <BackChevron onBack={onBack} />
       <div className="absolute inset-0 left-[16%] right-[16%] flex flex-col items-center justify-center text-center gap-[2.6vmin]">
         <div className="text-white font-semibold text-[5.4vmin] leading-tight">{event.title}</div>
         {countdown ? (
