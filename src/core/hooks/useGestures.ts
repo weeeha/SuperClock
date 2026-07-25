@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { useNavigation } from '../navigation';
+import { classifyTouchStart, ARC_MIN_TRAVEL, COMMIT_PROGRESS } from '../gesture-zones';
+import type { TouchZone } from '../gesture-zones';
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VELOCITY = 0.3;
@@ -56,30 +58,72 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
   // Fires once per pinch gesture so we don't re-trigger while fingers are still down
   const pinchFired = useRef(false);
 
+  // Zone is decided at drag START (spec: origin owns the gesture) and
+  // consumed at drag end. Ref, not state — gestures must not re-render.
+  const zoneRef = useRef<TouchZone>('inner');
+  // Sheet height the peek progress is measured against (half the disc).
+  const sheetHeight = () => window.innerHeight / 2;
+
   useGesture(
     {
+      onDragStart: ({ xy: [x, y] }) => {
+        zoneRef.current = classifyTouchStart(x, y, window.innerWidth, window.innerHeight);
+      },
+      onDrag: ({ movement: [, my] }) => {
+        const { mode, settingsOpen, setPeek } = useNavigation.getState();
+        if (mode !== 'app' || settingsOpen) return;
+        // Peek-follow: bottom arc drags the settings sheet up with the finger.
+        if (zoneRef.current === 'bottom-arc' && my < 0) {
+          setPeek({ target: 'settings', progress: Math.min(1, -my / sheetHeight()) });
+        }
+      },
       onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
-        const { mode, swipeToNext, swipeToPrev, showGrid, hideGrid, verticalSwipeCallback } = useNavigation.getState();
-        const absX = Math.abs(mx);
-        const absY = Math.abs(my);
+        const nav = useNavigation.getState();
+        const zone = zoneRef.current;
+        zoneRef.current = 'inner';
+        nav.setPeek(null);
 
-        // Vertical swipe — delegate to active app or toggle grid
-        if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
-          if (mode === 'app' && verticalSwipeCallback) {
-            verticalSwipeCallback(my > 0 ? 'down' : 'up');
-          } else if (my > 0 && mode === 'app') {
-            showGrid();
-          } else if (my < 0 && mode === 'grid') {
-            hideGrid();
-          }
+        // ---- Settings open: only dismissal gestures exist ----
+        if (nav.settingsOpen) {
+          if (my > SWIPE_THRESHOLD) nav.hideSettings(); // swipe down dismisses
           return;
         }
 
-        // Horizontal swipe — switch apps
-        if (mode !== 'app') return;
+        // ---- Arc gestures (system) — origin-in-arc + inward travel >= 80px ----
+        if (nav.mode === 'app' && zone === 'bottom-arc' && -my >= ARC_MIN_TRAVEL) {
+          if (-my / sheetHeight() >= COMMIT_PROGRESS) nav.showSettings();
+          return; // sub-threshold = snap back (peek already cleared)
+        }
+        if (nav.mode === 'app' && zone === 'top-arc' && my >= ARC_MIN_TRAVEL) {
+          nav.showGrid();
+          return;
+        }
+        if (nav.mode === 'app' && zone === 'left-arc' && mx >= ARC_MIN_TRAVEL) {
+          nav.goBack(); // strict no-op when no app registered a back callback
+          return;
+        }
+        // right-arc: unassigned — falls through to inner behavior below.
+
+        const absX = Math.abs(mx);
+        const absY = Math.abs(my);
+
+        // ---- Inner vertical: app-owned or STRICT NO-OP (spec decision 2a) ----
+        if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
+          if (nav.mode === 'app' && nav.verticalSwipeCallback) {
+            nav.verticalSwipeCallback(my > 0 ? 'down' : 'up');
+          } else if (my < 0 && nav.mode === 'grid') {
+            nav.hideGrid(); // grid dismissal keeps its swipe-up
+          }
+          // NO else-showGrid: unclaimed vertical is a no-op now. The grid is
+          // reachable via top arc, 3-finger tap, and (kept) pinch-in.
+          return;
+        }
+
+        // ---- Inner horizontal: switch apps (unchanged) ----
+        if (nav.mode !== 'app') return;
         if (absX < SWIPE_THRESHOLD || Math.abs(vx) < SWIPE_VELOCITY) return;
-        if (mx < 0) swipeToNext();
-        else swipeToPrev();
+        if (mx < 0) nav.swipeToNext();
+        else nav.swipeToPrev();
       },
       onPinchStart: () => {
         pinchFired.current = false;

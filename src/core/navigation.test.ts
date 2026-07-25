@@ -125,4 +125,10 @@ describe('quick-settings overlay + back gesture (spec 2026-07-24)', () => {
     useNavigation.getState().showSettings();
     expect(useNavigation.getState().lastGestureMs).toBeGreaterThan(0);
   });
+
+  it('opening the grid clears an in-flight peek', () => {
+    useNavigation.getState().setPeek({ target: 'settings', progress: 0.2 });
+    useNavigation.getState().showGrid();
+    expect(useNavigation.getState().peek).toBeNull();
+  });
 });
