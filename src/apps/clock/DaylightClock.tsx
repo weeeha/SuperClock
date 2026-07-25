@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { daylightFaceSchema } from '../../shared/schemas/face.daylight';
-import { sunTimes } from './solar';
+import { sunTimes, type SunTimes } from './solar';
 import type { FaceProps } from './face-components';
 
 const BAND_R = 400;
@@ -24,9 +24,16 @@ export default function DaylightClock({ isActive, faceConfig }: FaceProps) {
     : daylightFaceSchema.parse({});
 
   // Sun times change once a day; key the memo on the calendar date.
+  // The schema default (0,0) means "location not set", not Null Island:
+  // real solar times there land shifted by the device's whole UTC offset —
+  // plausible-looking and wrong everywhere. Until coordinates are set the
+  // band is schematic 06:00–18:00 local, which is what the default promises.
   const dateKey = `${time.getFullYear()}-${time.getMonth()}-${time.getDate()}`;
-  const sun = useMemo(
-    () => sunTimes(time, latitude, longitude),
+  const sun = useMemo<SunTimes>(
+    () =>
+      latitude === 0 && longitude === 0
+        ? { kind: 'normal', sunriseMin: 360, sunsetMin: 1080 }
+        : sunTimes(time, latitude, longitude),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- time is folded into dateKey on purpose
     [dateKey, latitude, longitude],
   );
