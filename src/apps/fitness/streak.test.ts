@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { emptyStreak, toDateKey, toMonthKey, recordCompletion, settleMissedDays, HEARTS_PER_MONTH } from './streak';
+import {
+  emptyStreak,
+  toDateKey,
+  toMonthKey,
+  recordCompletion,
+  settleMissedDays,
+  completeWorkout,
+  HEARTS_PER_MONTH,
+} from './streak';
 import type { StreakState } from './streak';
 
 const d = (y: number, m: number, day: number, h = 12) => new Date(y, m - 1, day, h);
@@ -114,5 +122,28 @@ describe('settleMissedDays', () => {
     const settled = settleMissedDays(s, d(2026, 7, 5));
     expect(settled.hearts).toBe(HEARTS_PER_MONTH - 2);
     expect(settled.settledThroughKey).toBe('2026-07-05');
+  });
+});
+
+describe('completeWorkout', () => {
+  // The bug this guards against: recording today's completion before
+  // settling would set lastCompletedKey to today, so a first-ever settle
+  // call would compute its window as starting the day *after* today —
+  // silently forgiving every day of the real gap. completeWorkout must
+  // settle against the pre-existing history first.
+  it('charges a pre-existing gap before marking today complete', () => {
+    const s = recordCompletion(emptyStreak(), d(2026, 7, 20));
+    const result = completeWorkout(s, d(2026, 7, 24)); // missed 21st, 22nd, 23rd
+
+    expect(result.hearts).toBe(HEARTS_PER_MONTH - 3);
+    expect(result.completions['2026-07-24']).toBe(true);
+    expect(result.lastCompletedKey).toBe('2026-07-24');
+    expect(result.settledThroughKey).toBe('2026-07-24');
+  });
+
+  it('does not charge today itself even though it is now complete', () => {
+    const result = completeWorkout(emptyStreak(), d(2026, 7, 24));
+    expect(result.hearts).toBe(HEARTS_PER_MONTH);
+    expect(result.completions['2026-07-24']).toBe(true);
   });
 });

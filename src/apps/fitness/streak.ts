@@ -106,6 +106,13 @@ export function settleMissedDays(state: StreakState, now: Date): StreakState {
   };
 }
 
+/** Settle first, then record. Exported as one operation because doing these
+ *  in the wrong order silently forgives a day-spanning gap, and a caller has
+ *  no way to know that from the individual signatures. */
+export function completeWorkout(state: StreakState, now: Date): StreakState {
+  return recordCompletion(settleMissedDays(state, now), now);
+}
+
 export function loadStreak(): StreakState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
