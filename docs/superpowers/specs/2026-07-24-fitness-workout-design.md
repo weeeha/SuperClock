@@ -272,7 +272,19 @@ Seven's 7-month challenge and 30 bankable pause days are real mechanics but
 are meaningless until hearts have been accumulating for a while, so they are
 deferred rather than designed-in-and-unbuilt.
 
-Stored in `localStorage` under `superclock-fitness-streak-v1`. Two
+**Settling missed days must be idempotent.** The function that charges hearts
+for missed days runs on every day-rollover tick, and on a kiosk that sits on
+this screen for weeks it will be called repeatedly with its own previous
+output. If it charges for a gap without recording that it charged, it
+re-charges the same gap every call and hearts collapse to zero. It therefore
+carries a `settledThroughKey` watermark: days strictly before that key have
+already been accounted for, and the month-reset path must advance the
+watermark too, or the forgiven gap is re-charged on the very next call.
+
+(This was found by review, not by design — the original model tracked only
+`lastCompletedKey`, which made the whole function non-idempotent.)
+
+Stored in `localStorage` under `superclock-fitness-streak-v1`. Two further
 requirements, both bugs this repo has hit before:
 
 - **Local calendar dates, never `toISOString()`.** The UTC-vs-local trap is
