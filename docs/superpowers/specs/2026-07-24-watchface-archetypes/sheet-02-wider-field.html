@@ -1,0 +1,723 @@
+<title>SuperClock &#x2014; Sheet 02, The Wider Field</title>
+
+<style>
+  :root {
+    --paper:      #E8E8E3;
+    --paper-2:    #DEDED8;
+    --ink:        #17191C;
+    --graphite:   #6C7176;
+    --hairline:   rgba(23, 25, 28, 0.16);
+    --hairline-2: rgba(23, 25, 28, 0.30);
+    --lume:       #7E8C1C;
+    --lume-ink:   #17191C;
+    --lume-field: rgba(154, 172, 40, 0.20);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #101215;
+      --paper-2:    #171A1E;
+      --ink:        #E2E5E0;
+      --graphite:   #878E93;
+      --hairline:   rgba(226, 229, 224, 0.16);
+      --hairline-2: rgba(226, 229, 224, 0.32);
+      --lume:       #C3D64A;
+      --lume-ink:   #101215;
+      --lume-field: rgba(195, 214, 74, 0.14);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper:      #E8E8E3;
+    --paper-2:    #DEDED8;
+    --ink:        #17191C;
+    --graphite:   #6C7176;
+    --hairline:   rgba(23, 25, 28, 0.16);
+    --hairline-2: rgba(23, 25, 28, 0.30);
+    --lume:       #7E8C1C;
+    --lume-ink:   #17191C;
+    --lume-field: rgba(154, 172, 40, 0.20);
+  }
+  :root[data-theme="dark"] {
+    --paper:      #101215;
+    --paper-2:    #171A1E;
+    --ink:        #E2E5E0;
+    --graphite:   #878E93;
+    --hairline:   rgba(226, 229, 224, 0.16);
+    --hairline-2: rgba(226, 229, 224, 0.32);
+    --lume:       #C3D64A;
+    --lume-ink:   #101215;
+    --lume-field: rgba(195, 214, 74, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 20px 88px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sheet { max-width: 1180px; margin: 0 auto; }
+  .mono {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* -- Title block ------------------------------------------- */
+  .titleblock { border: 1px solid var(--hairline-2); margin-top: 40px; }
+  .titleblock-main { padding: 26px 24px 22px; }
+  .titleblock h1 {
+    font-size: clamp(28px, 5vw, 44px); font-weight: 700;
+    letter-spacing: -0.022em; line-height: 1.05; margin: 0; text-wrap: balance;
+  }
+  .titleblock p { color: var(--graphite); margin: 12px 0 0; max-width: 62ch; }
+  .stamp {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--graphite);
+  }
+  .titleblock-meta { border-top: 1px solid var(--hairline); display: grid; grid-template-columns: repeat(4, 1fr); }
+  .titleblock-meta div {
+    padding: 11px 24px; border-left: 1px solid var(--hairline);
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--graphite); font-variant-numeric: tabular-nums;
+  }
+  .titleblock-meta div:first-child { border-left: 0; }
+  .titleblock-meta b { color: var(--ink); font-weight: 600; }
+  @media (max-width: 620px) {
+    .titleblock-meta { grid-template-columns: repeat(2, 1fr); }
+    .titleblock-meta div:nth-child(3) { border-left: 0; }
+    .titleblock-meta div:nth-child(n+3) { border-top: 1px solid var(--hairline); }
+  }
+
+  /* -- Callout ----------------------------------------------- */
+  .callout {
+    margin-top: 26px; border: 1px solid var(--hairline-2);
+    border-left: 3px solid var(--lume); padding: 22px 24px; background: var(--paper-2);
+  }
+  .callout h2 {
+    font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; font-weight: 600;
+  }
+  .callout p { margin: 0 0 12px; max-width: 68ch; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout em { font-style: normal; border-bottom: 1px solid var(--lume); padding-bottom: 1px; }
+
+  /* -- Section rule ------------------------------------------ */
+  .section-rule { display: flex; align-items: center; gap: 16px; margin: 52px 0 20px; }
+  .section-rule::after { content: ""; flex: 1; height: 1px; background: var(--hairline-2); }
+  .section-rule span {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .lede { color: var(--graphite); max-width: 68ch; margin: 0 0 24px; }
+
+  /* -- Family matrix ----------------------------------------- */
+  .matrix-wrap { overflow-x: auto; border: 1px solid var(--hairline-2); }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 780px; font-size: 13.5px; }
+  table.matrix th, table.matrix td {
+    text-align: left; vertical-align: top; padding: 13px 16px; border-bottom: 1px solid var(--hairline);
+  }
+  table.matrix thead th {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--graphite); font-weight: 600; border-bottom: 1px solid var(--hairline-2);
+  }
+  table.matrix tbody tr:last-child td { border-bottom: 0; }
+  table.matrix td.fam { font-weight: 650; white-space: nowrap; }
+  table.matrix td.fam small {
+    display: block; font-weight: 400; color: var(--graphite);
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px;
+  }
+  table.matrix td.mem { color: var(--graphite); font-size: 12.5px; }
+  .yn {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
+  }
+  .yn-y { color: var(--ink); }
+  .yn-y::before { content: "\25CF  "; color: var(--lume); }
+  .yn-m::before { content: "\25D0  "; color: var(--graphite); }
+  .yn-n::before { content: "\25CB  "; color: var(--graphite); }
+  .yn-m, .yn-n { color: var(--graphite); }
+
+  /* -- Plate grid -------------------------------------------- */
+  .plates {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(322px, 1fr));
+    gap: 1px; background: var(--hairline); border: 1px solid var(--hairline);
+  }
+  .plate { background: var(--paper); padding: 22px 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .plate-head { display: flex; align-items: baseline; gap: 10px; }
+  .plate-idx {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; color: var(--graphite); font-variant-numeric: tabular-nums;
+  }
+  .plate-name { font-size: 17px; font-weight: 650; letter-spacing: -0.012em; margin: 0; }
+  .plate figure { margin: 0; display: flex; justify-content: center; }
+  .plate svg { width: 100%; max-width: 258px; height: auto; display: block; }
+  .plate dl { margin: 0; display: grid; gap: 11px; }
+  .plate dt {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--graphite); margin-bottom: 3px;
+  }
+  .plate dd { margin: 0; font-size: 13.5px; line-height: 1.5; }
+  .plate dd.angle { border-left: 2px solid var(--lume); padding-left: 11px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.05em; color: var(--graphite);
+    border: 1px solid var(--hairline-2); padding: 2px 6px; white-space: nowrap;
+  }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; padding-top: 4px; }
+  .tag {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase; padding: 3px 8px;
+  }
+  .tag-new { background: var(--lume); color: var(--lume-ink); font-weight: 600; }
+  .tag-adj { border: 1px solid var(--hairline-2); color: var(--graphite); }
+
+  /* -- Wireframe conventions --------------------------------- */
+  .w-edge   { fill: none; stroke: var(--ink); stroke-width: 1.4; opacity: 0.85; }
+  .w-line   { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.55; }
+  .w-faint  { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.28; }
+  .w-tick   { fill: none; stroke: var(--ink); opacity: 0.45; }
+  .w-zone   { fill: none; stroke: var(--ink); stroke-width: 1; opacity: 0.4; stroke-dasharray: 3 3; }
+  .w-hand   { fill: none; stroke: var(--ink); stroke-width: 3.4; stroke-linecap: round; }
+  .w-hair   { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; opacity: 0.7; }
+  .w-fill   { fill: var(--lume-field); stroke: none; }
+  .w-solid  { fill: var(--ink); stroke: none; opacity: 0.85; }
+  .w-dim    { fill: var(--ink); stroke: none; opacity: 0.16; }
+  .w-lume   { fill: var(--lume); stroke: none; }
+  .w-label {
+    fill: var(--graphite);
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 8px; letter-spacing: 0.08em;
+  }
+
+  /* -- Findings ---------------------------------------------- */
+  .findings { display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); }
+  .finding { background: var(--paper); padding: 20px 22px; display: grid; gap: 7px; }
+  .finding h3 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.008em; }
+  .finding p { margin: 0; font-size: 13.5px; color: var(--graphite); max-width: 74ch; }
+  .finding p strong { color: var(--ink); font-weight: 600; }
+  .finding .src {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--graphite);
+  }
+
+  .decide { margin-top: 52px; border: 1px solid var(--hairline-2); padding: 26px 24px; }
+  .decide h2 { font-size: 19px; margin: 0 0 6px; letter-spacing: -0.012em; }
+  .decide p { color: var(--graphite); margin: 0 0 20px; max-width: 66ch; }
+  .decide ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+  .decide li { padding-left: 4px; }
+  .decide strong { font-weight: 650; }
+</style>
+
+<div class="sheet">
+
+  <header class="titleblock">
+    <div class="titleblock-main">
+      <div class="stamp">Structural study &middot; sheet 02 of the archetype set</div>
+      <h1>The wider field</h1>
+      <p>
+        Roughly a hundred time-display structures pulled from four traditions &#x2014; mechanical horology,
+        smartwatch platform documentation, industrial clock design, and experimental &amp; ambient
+        interaction design &#x2014; reduced to eight families and nine drawable candidates.
+      </p>
+    </div>
+    <div class="titleblock-meta">
+      <div>Project<br><b>SuperClock</b></div>
+      <div>Sheet<br><b>02 / Wider field</b></div>
+      <div>Panel<br><b>5&Prime; round, 8.5&nbsp;px/mm</b></div>
+      <div>Date<br><b>2026&#8209;07&#8209;24</b></div>
+    </div>
+  </header>
+
+  <section class="callout">
+    <h2>What the research changed</h2>
+    <p>
+      Every plate on Sheet 01 &#x2014; and every one of the nine faces we already ship &#x2014; encodes time as
+      <em>angle</em>. A hand, a pointer, a rotation. That is one family out of eight, and it happens
+      to be the one the mood board sampled almost exclusively.
+    </p>
+    <p>
+      The other seven encode time as an aperture, a length, a count, a colour, a sentence, a cell in a
+      lattice, or a form composed from parts that are not clock parts at all. Several of them get
+      <em>more</em> legible at three metres, not less &#x2014; which is the opposite of how subdials behave,
+      and the single most useful thing this research produced.
+    </p>
+  </section>
+
+  <div class="section-rule"><span>A &middot; The eight encoding families</span></div>
+  <p class="lede">
+    Sorted by what physically varies. The distance column assumes our own panel: 5&Prime; round,
+    1080&nbsp;px, viewed at three metres, where a legible glyph needs about 120&nbsp;px of cap height.
+  </p>
+
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th scope="col">Family</th>
+          <th scope="col">What varies</th>
+          <th scope="col">At 3&nbsp;m</th>
+          <th scope="col">Learned code</th>
+          <th scope="col">Members found</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fam">Angle<small>Sheet 01 lives here</small></td>
+          <td>Rotation of a pointer about a pivot</td>
+          <td><span class="yn yn-m">Depends on hand mass</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">Regulator &#x00B7; single-hand &#x00B7; 24-hour &#x00B7; GMT &#x00B7; retrograde &#x00B7; decimal &#x00B7; mystery hands &#x00B7; deadbeat seconds &#x00B7; Mondaine stop-to-go</td>
+        </tr>
+        <tr>
+          <td class="fam">Aperture<small>Window over a disc</small></td>
+          <td>Which part of a hidden disc is visible</td>
+          <td><span class="yn yn-y">Best in class</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">Jump hour (Pallweber 1883) &#x00B7; wandering hours &#x00B7; big date &#x00B7; moonphase &#x00B7; tourbillon aperture &#x00B7; Chromachron</td>
+        </tr>
+        <tr>
+          <td class="fam">Length &amp; area<small>Quantity, not position</small></td>
+          <td>How much of a bar, arc or disc is filled</td>
+          <td><span class="yn yn-y">Yes</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">Power reserve &#x00B7; progress ring &#x00B7; day-elapsed disc &#x00B7; solar daylight band &#x00B7; year progress &#x00B7; clepsydra &#x00B7; Gitton water columns</td>
+        </tr>
+        <tr>
+          <td class="fam">Count<small>Sum the lit elements</small></td>
+          <td>Number of discrete cells switched on</td>
+          <td><span class="yn yn-y">Optically yes</span></td>
+          <td><span class="yn yn-y">Yes</span></td>
+          <td class="mem">Berlin-Uhr (1975) &#x00B7; binary &amp; BCD &#x00B7; Fibonacci &#x00B7; ternary &#x00B7; Gitton spheres</td>
+        </tr>
+        <tr>
+          <td class="fam">Colour<small>Hue or lightness</small></td>
+          <td>Chromaticity of a field, no marks at all</td>
+          <td><span class="yn yn-y">Yes, coarsely</span></td>
+          <td><span class="yn yn-y">Yes</span></td>
+          <td class="mem">Chromachron (1972) &#x00B7; The Present &#x00B7; Today &#x00B7; Colour Clock &#x00B7; Kelvin/circadian curve &#x00B7; Ambient Orb</td>
+        </tr>
+        <tr>
+          <td class="fam">Language<small>Words, not geometry</small></td>
+          <td>Which words are set or illuminated</td>
+          <td><span class="yn yn-m">Only if few words</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">Qlocktwo &#x00B7; fuzzy / approximate time &#x00B7; spelled-out time</td>
+        </tr>
+        <tr>
+          <td class="fam">Lattice<small>A cell in a grid</small></td>
+          <td>Position of a marker within a fixed matrix</td>
+          <td><span class="yn yn-m">Marker yes, cells no</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">Month grid &#x00B7; year spiral &#x00B7; week strip &#x00B7; contribution grid &#x00B7; life-in-weeks &#x00B7; Long Now nested rings</td>
+        </tr>
+        <tr>
+          <td class="fam">Composed form<small>Time drawn from non-clock parts</small></td>
+          <td>An emergent shape assembled each minute</td>
+          <td><span class="yn yn-y">Yes &#x2014; full-canvas</span></td>
+          <td><span class="yn yn-n">No</span></td>
+          <td class="mem">ClockClock&nbsp;24 &#x00B7; split-flap (Cifra 3) &#x00B7; flip-disc matrix &#x00B7; Baas Real Time &#x00B7; generative decay</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-rule"><span>B &middot; Plates 10&#x2013;18, drawn from the new families</span></div>
+  <p class="lede">
+    Nine candidates that survive the three-metre test, run on a Pi&nbsp;4 budget, and need only data
+    we already have. Numbering continues from Sheet 01.
+  </p>
+
+  <div class="plates">
+
+    <!-- 10 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">10</span><h3 class="plate-name">Regulator</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: minutes on a full-radius central hand, hours on a subdial above centre, seconds on a subdial below">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <circle cx="120" cy="120" r="107" class="w-tick" stroke-width="9" stroke-dasharray="1.6 9.6"/>
+          <circle cx="120" cy="120" r="98" class="w-faint"/>
+          <circle cx="120" cy="68" r="36" class="w-line"/>
+          <circle cx="120" cy="68" r="28" class="w-tick" stroke-width="6" stroke-dasharray="2.4 12.3"/>
+          <line x1="120" y1="68" x2="142" y2="52" class="w-hand"/>
+          <text x="120" y="112" class="w-label" text-anchor="middle">HOURS</text>
+          <circle cx="120" cy="176" r="26" class="w-line"/>
+          <circle cx="120" cy="176" r="20" class="w-tick" stroke-width="5" stroke-dasharray="1.2 9.4"/>
+          <line x1="120" y1="176" x2="106" y2="158" class="w-hair"/>
+          <text x="120" y="214" class="w-label" text-anchor="middle">SECONDS</text>
+          <line x1="120" y1="120" x2="52" y2="150" class="w-hand" stroke-width="4.6"/>
+          <circle cx="120" cy="120" r="5" class="w-solid"/>
+          <text x="66" y="118" class="w-label">MINUTES</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>Three units, three pivots, none concentric. Minutes get the whole dial on a central hand; hours shrink to a subdial above centre, seconds to one below. Precision is inverted &#x2014; the unit you'd normally read first is the smallest.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Bench r&#x00E9;gulateur, 18th c.</span><span class="chip">Chronoswiss 1987</span><span class="chip">Apple Exactograph</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">A wall clock is glanced at for <strong>"roughly when"</strong>, which is exactly what a regulator is bad at &#x2014; unless we invert it and give the <em>hours</em> the full radius. That inversion is the design.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: angle</span></div>
+    </article>
+
+    <!-- 11 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">11</span><h3 class="plate-name">Aperture plate</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: a solid dial plate cut with two large windows revealing rotating number discs beneath">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <circle cx="120" cy="120" r="106" class="w-fill"/>
+          <circle cx="120" cy="120" r="106" class="w-faint"/>
+          <circle cx="120" cy="66" r="52" class="w-zone"/>
+          <circle cx="120" cy="168" r="46" class="w-zone"/>
+          <rect x="76" y="42" width="88" height="52" class="w-line" stroke-width="1.6"/>
+          <rect x="82" y="146" width="76" height="46" class="w-line" stroke-width="1.6"/>
+          <line x1="120" y1="42" x2="120" y2="94" class="w-faint"/>
+          <line x1="120" y1="146" x2="120" y2="192" class="w-faint"/>
+          <text x="120" y="26" class="w-label" text-anchor="middle">HOUR WINDOW</text>
+          <text x="120" y="212" class="w-label" text-anchor="middle">MINUTE WINDOW</text>
+          <text x="46" y="122" class="w-label">PLATE</text>
+          <text x="168" y="122" class="w-label">DISC &#x21BB;</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>No hands. A solid plate is cut with two windows; printed discs rotate behind it and step discretely on the hour and the minute. The dial's job is to hide, not to display.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Pallweber 1883</span><span class="chip">IWC 1885</span><span class="chip">Cort&#x00E9;bert 1920s</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">The <strong>most distance-legible structure in the whole study</strong> &#x2014; digits scale to a third of the dial. Distinct from Flip because nothing flips: the transition is a step, and the plate stays still.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: aperture</span></div>
+    </article>
+
+    <!-- 12 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">12</span><h3 class="plate-name">Daylight band</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: a 24-hour ring with the arc between sunrise and sunset filled, noon at top, a marker for now">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <circle cx="120" cy="120" r="100" class="w-tick" stroke="var(--lume)" stroke-width="17" stroke-dasharray="272 356.4" stroke-dashoffset="115" stroke-linecap="butt" opacity="0.5"/>
+          <circle cx="120" cy="120" r="100" class="w-faint"/>
+          <circle cx="120" cy="120" r="91.5" class="w-faint"/>
+          <circle cx="120" cy="120" r="108" class="w-tick" stroke-width="7" stroke-dasharray="2 26.3"/>
+          <line x1="16" y1="120" x2="60" y2="120" class="w-faint"/>
+          <line x1="180" y1="120" x2="224" y2="120" class="w-faint"/>
+          <text x="120" y="18" class="w-label" text-anchor="middle">NOON</text>
+          <text x="120" y="228" class="w-label" text-anchor="middle">MIDNIGHT</text>
+          <text x="52" y="88" class="w-label">SUNRISE</text>
+          <text x="162" y="88" class="w-label">SUNSET</text>
+          <line x1="120" y1="120" x2="176" y2="66" class="w-hand" stroke-width="5"/>
+          <circle cx="120" cy="120" r="5" class="w-solid"/>
+          <circle cx="120" cy="120" r="34" class="w-zone"/>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>A 24-hour dial &#x2014; one hand revolution per day, noon at the top &#x2014; with the arc between sunrise and sunset filled bright. Arc <em>length</em> carries the season; the hand's position inside or outside it carries day versus night.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Apple Solar Dial</span><span class="chip">Sun Clock</span><span class="chip">Shepherd Gate 1852</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">The band physically shrinks from June to December. A clock that shows you <strong>the year passing as well as the day</strong>, on hardware that lives in a room for years. Needs latitude and longitude &#x2014; nothing else.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: length &amp; area</span></div>
+    </article>
+
+    <!-- 13 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">13</span><h3 class="plate-name">Depletion disc</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: a solid disc with a wedge swept away, the remaining area showing how much of the day is left">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <path d="M120 120 L120 8 A112 112 0 1 1 22.6 175.9 Z" class="w-fill"/>
+          <path d="M120 120 L120 8 A112 112 0 1 1 22.6 175.9 Z" class="w-line"/>
+          <line x1="120" y1="120" x2="120" y2="8" class="w-hand" stroke-width="2.4"/>
+          <line x1="120" y1="120" x2="22.6" y2="175.9" class="w-hand" stroke-width="2.4"/>
+          <text x="120" y="66" class="w-label" text-anchor="middle">REMAINING</text>
+          <text x="76" y="168" class="w-label" text-anchor="middle">SPENT</text>
+          <circle cx="120" cy="120" r="4" class="w-solid"/>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>One disc, one wedge. The filled area is what's left of the day and it drains anticlockwise to nothing at midnight. No ticks, no numerals, no hands in the usual sense &#x2014; the panel's own outline is the scale.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Year progress bar</span><span class="chip">Calm technology</span><span class="chip">Clepsydra</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">The <strong>cheapest face we could possibly ship</strong> &#x2014; one path, one update per minute &#x2014; and the best structural fit for a circular panel we have found. Reads from any distance in the house.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: length &amp; area</span></div>
+    </article>
+
+    <!-- 14 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">14</span><h3 class="plate-name">Count register</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: four stacked rows of lamp cells, some lit, summing to the time in base five">
+          <defs><clipPath id="clip14"><circle cx="120" cy="120" r="116"/></clipPath></defs>
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <g clip-path="url(#clip14)">
+            <g>
+              <rect x="46" y="50" width="34" height="26" class="w-lume"/>
+              <rect x="84" y="50" width="34" height="26" class="w-lume"/>
+              <rect x="122" y="50" width="34" height="26" class="w-dim"/>
+              <rect x="160" y="50" width="34" height="26" class="w-dim"/>
+            </g>
+            <g>
+              <rect x="46" y="82" width="34" height="26" class="w-lume"/>
+              <rect x="84" y="82" width="34" height="26" class="w-lume"/>
+              <rect x="122" y="82" width="34" height="26" class="w-lume"/>
+              <rect x="160" y="82" width="34" height="26" class="w-dim"/>
+            </g>
+            <g>
+              <rect x="10" y="114" width="17" height="26" class="w-solid"/>
+              <rect x="30" y="114" width="17" height="26" class="w-solid"/>
+              <rect x="50" y="114" width="17" height="26" class="w-solid"/>
+              <rect x="70" y="114" width="17" height="26" class="w-solid"/>
+              <rect x="90" y="114" width="17" height="26" class="w-solid"/>
+              <rect x="110" y="114" width="17" height="26" class="w-dim"/>
+              <rect x="130" y="114" width="17" height="26" class="w-dim"/>
+              <rect x="150" y="114" width="17" height="26" class="w-dim"/>
+              <rect x="170" y="114" width="17" height="26" class="w-dim"/>
+              <rect x="190" y="114" width="17" height="26" class="w-dim"/>
+              <rect x="210" y="114" width="17" height="26" class="w-dim"/>
+            </g>
+            <g>
+              <rect x="46" y="146" width="34" height="26" class="w-solid"/>
+              <rect x="84" y="146" width="34" height="26" class="w-dim"/>
+              <rect x="122" y="146" width="34" height="26" class="w-dim"/>
+              <rect x="160" y="146" width="34" height="26" class="w-dim"/>
+            </g>
+          </g>
+          <text x="120" y="40" class="w-label" text-anchor="middle">&#x00D7;5 HOURS</text>
+          <text x="120" y="192" class="w-label" text-anchor="middle">&#x00D7;1 MINUTES</text>
+          <text x="120" y="206" class="w-label" text-anchor="middle">SUM THE LIT CELLS</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>Four stacked registers of lamps &#x2014; five-hour, one-hour, five-minute, one-minute &#x2014; read by addition rather than by position. The eleven-cell minute row doubles as a coarse progress bar even if you never learn the code.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Berlin Mengenlehreuhr 1975</span><span class="chip">Binary / BCD</span><span class="chip">Fibonacci</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">Huge high-contrast blocks, almost free to render, and the <strong>only archetype here that rewards learning it</strong>. The risk is real: a guest cannot read it at all.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: count</span></div>
+    </article>
+
+    <!-- 15 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">15</span><h3 class="plate-name">Sentence</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: four lines of large words filling the dial, some lit and some dimmed, spelling the time">
+          <defs><clipPath id="clip15"><circle cx="120" cy="120" r="116"/></clipPath></defs>
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <g clip-path="url(#clip15)">
+            <rect x="52" y="52" width="38" height="22" class="w-solid"/>
+            <rect x="96" y="52" width="26" height="22" class="w-solid"/>
+            <rect x="128" y="52" width="58" height="22" class="w-dim"/>
+            <rect x="30" y="84" width="70" height="22" class="w-dim"/>
+            <rect x="106" y="84" width="52" height="22" class="w-solid"/>
+            <rect x="164" y="84" width="46" height="22" class="w-dim"/>
+            <rect x="26" y="116" width="46" height="22" class="w-solid"/>
+            <rect x="78" y="116" width="64" height="22" class="w-dim"/>
+            <rect x="148" y="116" width="66" height="22" class="w-dim"/>
+            <rect x="40" y="148" width="58" height="22" class="w-dim"/>
+            <rect x="104" y="148" width="42" height="22" class="w-solid"/>
+            <rect x="152" y="148" width="48" height="22" class="w-dim"/>
+            <rect x="70" y="180" width="44" height="22" class="w-dim"/>
+            <rect x="120" y="180" width="50" height="22" class="w-dim"/>
+          </g>
+          <text x="120" y="228" class="w-label" text-anchor="middle">LIT WORDS FORM THE SENTENCE</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>A fixed field of words sits permanently on the dial at low contrast; the subset that spells the current time lights up. Reading is linguistic, not geometric, and resolution is deliberately five minutes.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Qlocktwo 2009</span><span class="chip">Fuzzy clocks</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">Qlocktwo's 110-character matrix <strong>fails our distance test</strong> &#x2014; 90px cells, well under the 120px floor. Ours has to drop to four or five lines of very large words, which makes it a typography commission rather than a grid.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: language</span></div>
+    </article>
+
+    <!-- 16 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">16</span><h3 class="plate-name">Colour sector</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: twelve colour sectors beneath an opaque disc with a single wedge cut out, revealing one sector at a time">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <g class="w-faint">
+            <line x1="120" y1="120" x2="120" y2="6"/>
+            <line x1="120" y1="120" x2="177" y2="21.3"/>
+            <line x1="120" y1="120" x2="218.7" y2="63"/>
+            <line x1="120" y1="120" x2="234" y2="120"/>
+            <line x1="120" y1="120" x2="218.7" y2="177"/>
+            <line x1="120" y1="120" x2="177" y2="218.7"/>
+            <line x1="120" y1="120" x2="120" y2="234"/>
+            <line x1="120" y1="120" x2="63" y2="218.7"/>
+            <line x1="120" y1="120" x2="21.3" y2="177"/>
+            <line x1="120" y1="120" x2="6" y2="120"/>
+            <line x1="120" y1="120" x2="21.3" y2="63"/>
+            <line x1="120" y1="120" x2="63" y2="21.3"/>
+          </g>
+          <path d="M120 120 L177 21.3 A114 114 0 0 1 218.7 63 Z" class="w-lume" opacity="0.55"/>
+          <path d="M120 120 L177 21.3 A114 114 0 0 1 218.7 63 Z" class="w-line"/>
+          <circle cx="120" cy="120" r="114" class="w-faint"/>
+          <circle cx="120" cy="120" r="30" class="w-zone"/>
+          <text x="120" y="124" class="w-label" text-anchor="middle">NO HANDS</text>
+          <text x="196" y="80" class="w-label" text-anchor="middle">1/12</text>
+          <text x="120" y="228" class="w-label" text-anchor="middle">HUE = HOUR &#x00B7; EDGE = MINUTE</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>Twelve coloured sectors lie under an opaque disc cut with a single 30&#x00B0; wedge. The disc turns once per twelve hours, so exactly one hue shows at a time &#x2014; the colour is the hour, the sliding edge of the cutout is the minute.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Chromachron, Tian Harlan 1972</span><span class="chip">The Present</span><span class="chip">Ambient Orb</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">Reads from <strong>anywhere in the room, at any angle</strong>, because it is a field of colour rather than a mark. Harlan called it the anti-stress watch; on a wall it becomes room lighting that happens to tell the time.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: colour</span></div>
+    </article>
+
+    <!-- 17 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">17</span><h3 class="plate-name">Composed strokes</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: a grid of twelve small dials whose pairs of hands align to draw the strokes of four large digits">
+          <defs><clipPath id="clip17"><circle cx="120" cy="120" r="116"/></clipPath></defs>
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <g clip-path="url(#clip17)">
+            <g class="w-faint">
+              <circle cx="52" cy="58" r="26"/><circle cx="104" cy="58" r="26"/>
+              <circle cx="156" cy="58" r="26"/><circle cx="208" cy="58" r="26"/>
+              <circle cx="52" cy="120" r="26"/><circle cx="104" cy="120" r="26"/>
+              <circle cx="156" cy="120" r="26"/><circle cx="208" cy="120" r="26"/>
+              <circle cx="52" cy="182" r="26"/><circle cx="104" cy="182" r="26"/>
+              <circle cx="156" cy="182" r="26"/><circle cx="208" cy="182" r="26"/>
+            </g>
+            <g class="w-hand" stroke-width="4">
+              <path d="M52 58 h26 M52 58 v26"/>
+              <path d="M104 58 h-26 M104 58 v26"/>
+              <path d="M156 58 h26 M156 58 v26"/>
+              <path d="M208 58 h-26 M208 58 v26"/>
+              <path d="M52 120 v-26 M52 120 v26"/>
+              <path d="M104 120 v-26 M104 120 h-26"/>
+              <path d="M156 120 v-26 M156 120 v26"/>
+              <path d="M208 120 v-26 M208 120 v26"/>
+              <path d="M52 182 v-26 M52 182 h26"/>
+              <path d="M104 182 v-26 M104 182 h-26"/>
+              <path d="M156 182 v-26 M156 182 h26"/>
+              <path d="M208 182 v-26 M208 182 h-26"/>
+            </g>
+          </g>
+          <text x="120" y="228" class="w-label" text-anchor="middle">48 HANDS &#x00B7; 4 DIGITS</text>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>A grid of small analog dials whose hands stop being hands. Each pair aligns to draw one stroke of a seven-segment glyph, so twelve dials compose four digits &#x2014; and between minutes the whole array choreographs, showing no time at all.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">ClockClock 24, Humans since 1982</span><span class="chip">Flip-disc matrix</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">Digits assembled at <strong>full canvas width</strong>, so they beat every other type treatment on distance &#x2014; and the transit between minutes is the most watchable second of any face here. A round panel forces a 4&#x00D7;3 grid rather than 6&#x00D7;4.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: composed form</span></div>
+    </article>
+
+    <!-- 18 ----------------------------------------------- -->
+    <article class="plate">
+      <div class="plate-head"><span class="plate-idx">18</span><h3 class="plate-name">One hand, one day</h3></div>
+      <figure>
+        <svg viewBox="0 0 240 240" role="img" aria-label="Wireframe: a single heavy hand making one revolution per day against twenty-four divisions, noon at top">
+          <circle cx="120" cy="120" r="116" class="w-edge"/>
+          <circle cx="120" cy="120" r="106" class="w-tick" stroke-width="14" stroke-dasharray="3 24.7"/>
+          <circle cx="120" cy="120" r="94" class="w-tick" stroke-width="7" stroke-dasharray="1.4 5.15"/>
+          <circle cx="120" cy="120" r="86" class="w-faint"/>
+          <text x="120" y="20" class="w-label" text-anchor="middle">12 NOON</text>
+          <text x="120" y="228" class="w-label" text-anchor="middle">24 MIDNIGHT</text>
+          <text x="24" y="122" class="w-label">06</text>
+          <text x="206" y="122" class="w-label">18</text>
+          <line x1="120" y1="140" x2="166" y2="46" class="w-hand" stroke-width="9"/>
+          <circle cx="120" cy="120" r="8" class="w-solid"/>
+        </svg>
+      </figure>
+      <dl>
+        <div><dt>Structure</dt><dd>One hand, one revolution per day &#x2014; fifteen degrees an hour, a quarter degree a minute. The scale is graduated in quarter hours and precision below about five minutes is structurally unavailable, on purpose.</dd></div>
+        <div><dt>Lineage</dt><dd class="chips"><span class="chip">Botta UNO 1986</span><span class="chip">slow watches 2012</span><span class="chip">Pre-1600 tower dials</span></dd></div>
+        <div><dt>Our angle</dt><dd class="angle">One heavy hand is <strong>the most legible object physically possible</strong> on this panel, and the design already accepts the two-or-three-minute ambiguity that distance imposes anyway. Fewest moving parts of anything here.</dd></div>
+      </dl>
+      <div class="tagrow"><span class="tag tag-new">New ground</span><span class="tag tag-adj">Family: angle</span></div>
+    </article>
+
+  </div>
+
+  <div class="section-rule"><span>C &middot; Findings that change our decisions</span></div>
+
+  <div class="findings">
+
+    <div class="finding">
+      <h3>Three platforms agree on a lit-pixel budget. Our night mode doesn't meet it.</h3>
+      <p>
+        Wear OS quality rule <strong>WO&#8209;P7</strong> and Samsung's Watch Face Studio both cap always-on faces
+        at <strong>15% of pixels lit</strong>, averaged across the face and sampled every ten minutes for a
+        whole day; Garmin is stricter at 10%, and shuts the screen off above it. Our night mode dims
+        with CSS, which lowers brightness but leaves the same pixels lit. A face designed to a real
+        pixel budget looks structurally different &#x2014; thin strokes, no filled areas, and a small
+        per-minute position shift for burn-in.
+      </p>
+      <p class="src">Source: developer.android.com/docs/quality-guidelines/wear-app-quality &#x00B7; developer.samsung.com</p>
+    </div>
+
+    <div class="finding">
+      <h3>No platform publishes a watch-face taxonomy. Only complication slots.</h3>
+      <p>
+        Apple names about 62 faces and groups them <strong>zero</strong> ways. Wear OS has no layout types.
+        Pebble shipped watchfaces as a single flat bucket. Facer's 21 live categories are genres &#x2014;
+        Anime, Luxury, Space &#x2014; with no Analog/Digital split at all. The only portable structural
+        vocabulary anywhere is the slot system: <strong>corner, bezel, edge-arc, subdial, background,
+        inline band</strong>. Our five categories are our own invention, which is fine &#x2014; but we should
+        stop treating them as an industry standard and name them for what our faces actually do.
+      </p>
+      <p class="src">Source: developer.apple.com/documentation/clockkit &#x00B7; developer.android.com/training/wearables/wff</p>
+    </div>
+
+    <div class="finding">
+      <h3>Apple's gauge trichotomy is worth stealing outright.</h3>
+      <p>
+        Closed gauge, open gauge, segmented gauge &#x2014; a ring completing 360&#x00B0; for a fraction of a whole;
+        an arc with visible endpoints for an arbitrary min and max; a divided arc for values that change
+        fast. That's a genuine information-design distinction we currently make by accident, and it
+        maps directly onto Sheet 01's rim-gauge plate.
+      </p>
+      <p class="src">Source: developer.apple.com/design/human-interface-guidelines/complications</p>
+    </div>
+
+    <div class="finding">
+      <h3>Motion is a distance cue that geometry isn't.</h3>
+      <p>
+        The Mondaine station clock's second hand sweeps in <strong>58.5 seconds</strong> then parks at twelve for
+        a beat until the minute steps &#x2014; you read the minute from the pause, not from a mark. Deadbeat
+        seconds work the same way: sixty discrete six-degree positions read further away than any
+        printed graduation. We already have <code class="mono">useClockHands</code> with a sweep mode, so this
+        costs us nothing but a decision.
+      </p>
+      <p class="src">Source: Hilfiker/SBB 1944, red disc 1953 &#x00B7; Graham dead-beat escapement c.1675</p>
+    </div>
+
+    <div class="finding">
+      <h3>Pebble is the only platform that published round-specific layout rules.</h3>
+      <p>
+        Keep information at least two pixels off the bezel. Avoid thin rings near the edge &#x2014; mounting
+        tolerance makes them visibly off-centre. Paginate rather than reflow, because every text row in
+        a circle has a different available width. All three apply directly to a round panel in a
+        3D-printed housing, and the thin-ring warning is the one we are most likely to trip.
+      </p>
+      <p class="src">Source: developer.rebble.io/guides/design-and-interaction/in-the-round</p>
+    </div>
+
+  </div>
+
+  <section class="decide">
+    <h2>Where this leaves the choice</h2>
+    <p>
+      Eighteen plates across two sheets. The useful cut is not "which look do we like" but
+      <strong>which encoding families do we want represented</strong> &#x2014; because we currently ship nine faces
+      that all do the same thing.
+    </p>
+    <ol>
+      <li><strong>My revised recommendation.</strong> One face from three different families beats three angle-faces: <em>13 Depletion disc</em> (length/area &#x2014; nearly free, best round fit, reads anywhere), <em>11 Aperture plate</em> (aperture &#x2014; the distance champion), and <em>12 Daylight band</em> (length/area with real astronomical data, and it visibly changes across the year). If we want a fourth with genuine personality, <em>17 Composed strokes</em>.</li>
+      <li><strong>Or pick by family instead of by plate.</strong> Tell me which of the eight families you want on the wall and I'll take the strongest member of each into design.</li>
+      <li><strong>One thing I'd like a ruling on:</strong> is a face allowed to require learning? Plate 14 and plate 16 are unreadable to a guest until explained. That's a legitimate choice for a clock in your own home, and a bad one for anything you'd share.</li>
+    </ol>
+  </section>
+
+</div>
