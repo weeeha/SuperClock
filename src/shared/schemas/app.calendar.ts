@@ -4,7 +4,7 @@ import type { FieldMetaMap } from '../types';
 export const calendarAppSchema = z.object({
   source: z.string().default('default'),
   weekStart: z.enum(['monday', 'sunday']).default('monday'),
-  defaultView: z.enum(['month', 'week']).default('month'),
+  defaultView: z.enum(['cover', 'week', 'month', 'year']).default('cover'),
   timeFormat: z.enum(['24h', '12h']).default('24h'),
 });
 
