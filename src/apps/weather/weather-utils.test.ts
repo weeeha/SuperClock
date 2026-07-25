@@ -7,6 +7,7 @@ import {
   polar,
   dayProgress,
   rampColor,
+  parseForecast,
 } from './weather-utils';
 
 describe('parseLocalISO', () => {
@@ -126,5 +127,95 @@ describe('rampColor', () => {
       [10, '#fff'],
     ];
     expect(rampColor(shorthand, 5)).toBe('#808080');
+  });
+});
+
+/** Trimmed but structurally exact Open-Meteo payload. 36 hourly entries so the
+ *  12-hour window starting at 17:00 runs off the end of day one. */
+function fixture() {
+  const time: string[] = [];
+  for (let hh = 0; hh < 24; hh++) time.push(`2026-07-24T${String(hh).padStart(2, '0')}:00`);
+  for (let hh = 0; hh < 12; hh++) time.push(`2026-07-25T${String(hh).padStart(2, '0')}:00`);
+  const n = time.length;
+  const seq = (f: (i: number) => number) => Array.from({ length: n }, (_, i) => f(i));
+  return {
+    utc_offset_seconds: -14400,
+    current: {
+      time: '2026-07-24T17:00',
+      temperature_2m: 27.4,
+      apparent_temperature: 28.1,
+      relative_humidity_2m: 51,
+      weather_code: 1,
+      wind_speed_10m: 11.2,
+      wind_direction_10m: 234,
+      wind_gusts_10m: 21.3,
+      uv_index: 2.4,
+      precipitation_probability: 0,
+      is_day: 1,
+    },
+    hourly: {
+      time,
+      temperature_2m: seq((i) => 20 + (i % 12)),
+      apparent_temperature: seq((i) => 21 + (i % 12)),
+      relative_humidity_2m: seq(() => 50),
+      precipitation_probability: seq((i) => i % 30),
+      wind_speed_10m: seq(() => 11),
+      wind_gusts_10m: seq(() => 21),
+      uv_index: seq((i) => (i % 12) / 4),
+      weather_code: seq(() => 1),
+      is_day: seq((i) => (i % 24 >= 6 && i % 24 < 20 ? 1 : 0)),
+    },
+    daily: {
+      time: ['2026-07-24', '2026-07-25'],
+      temperature_2m_max: [27, 29],
+      temperature_2m_min: [15, 17],
+      sunrise: ['2026-07-24T05:29', '2026-07-25T05:30'],
+      sunset: ['2026-07-24T20:32', '2026-07-25T20:31'],
+    },
+  };
+}
+
+describe('parseForecast', () => {
+  const now = new Date(2026, 6, 24, 17, 25, 0);
+
+  it('returns exactly 12 hours starting at the current hour', () => {
+    const m = parseForecast(fixture(), now);
+    expect(m.hours).toHaveLength(12);
+    expect(m.hours[0].hour).toBe(17);
+    expect(m.hours.map((h) => h.hour)).toEqual([17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4]);
+  });
+
+  it('rounds current readings and keeps wind direction', () => {
+    const m = parseForecast(fixture(), now);
+    expect(m.current.temp).toBe(27);
+    expect(m.current.apparent).toBe(28);
+    expect(m.current.humidity).toBe(51);
+    expect(m.current.windSpeed).toBe(11);
+    expect(m.current.windGust).toBe(21);
+    expect(m.current.windDir).toBe(234);
+    expect(m.current.uv).toBe(2);
+    expect(m.current.isDay).toBe(true);
+  });
+
+  it('reads today high/low and sunrise/sunset as local minutes', () => {
+    const m = parseForecast(fixture(), now);
+    expect(m.today.high).toBe(27);
+    expect(m.today.low).toBe(15);
+    expect(m.today.sunriseMin).toBe(5 * 60 + 29);
+    expect(m.today.sunsetMin).toBe(20 * 60 + 32);
+  });
+
+  it('crosses midnight into the next forecast day', () => {
+    const m = parseForecast(fixture(), now);
+    const past = m.hours.slice(7);
+    expect(past.map((h) => h.hour)).toEqual([0, 1, 2, 3, 4]);
+    expect(past.every((h) => !h.isDay)).toBe(true);
+  });
+
+  it('falls back to the first hour when the current hour is missing', () => {
+    const f = fixture();
+    const m = parseForecast(f, new Date(2026, 0, 1, 3, 0, 0));
+    expect(m.hours).toHaveLength(12);
+    expect(m.hours[0].hour).toBe(0);
   });
 });

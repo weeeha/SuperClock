@@ -77,3 +77,101 @@ export function rampColor(stops: ColorStop[], v: number): string {
   }
   return last[1];
 }
+
+export interface HourSample {
+  /** Local hour of day, 0–23. */
+  hour: number;
+  temp: number;
+  apparent: number;
+  humidity: number;
+  precipProb: number;
+  windSpeed: number;
+  windGust: number;
+  uv: number;
+  code: number;
+  isDay: boolean;
+}
+
+export interface WeatherModel {
+  current: {
+    hour: number;
+    temp: number;
+    apparent: number;
+    humidity: number;
+    code: number;
+    windSpeed: number;
+    windDir: number;
+    windGust: number;
+    uv: number;
+    precipProb: number;
+    isDay: boolean;
+  };
+  today: { high: number; low: number; sunriseMin: number; sunsetMin: number };
+  /** Up to 12 samples, starting at the current hour. */
+  hours: HourSample[];
+}
+
+export interface OpenMeteoResponse {
+  current: Record<string, number | string>;
+  hourly: { time: string[] } & Record<string, number[] | string[]>;
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    sunrise: string[];
+    sunset: string[];
+  };
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel {
+  const times = json.hourly.time;
+  const key = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
+  const found = times.indexOf(key);
+  const start = found >= 0 ? found : 0;
+
+  const num = (field: string, i: number) => Number((json.hourly[field] as number[])[i]);
+
+  const hours: HourSample[] = [];
+  for (let i = start; i < Math.min(start + 12, times.length); i++) {
+    hours.push({
+      hour: parseLocalISO(times[i]).getHours(),
+      temp: Math.round(num('temperature_2m', i)),
+      apparent: Math.round(num('apparent_temperature', i)),
+      humidity: Math.round(num('relative_humidity_2m', i)),
+      precipProb: Math.round(num('precipitation_probability', i)),
+      windSpeed: Math.round(num('wind_speed_10m', i)),
+      windGust: Math.round(num('wind_gusts_10m', i)),
+      uv: Math.round(num('uv_index', i)),
+      code: num('weather_code', i),
+      isDay: num('is_day', i) === 1,
+    });
+  }
+
+  const c = json.current;
+  const cnum = (field: string) => Number(c[field]);
+
+  return {
+    current: {
+      hour: parseLocalISO(String(c.time)).getHours(),
+      temp: Math.round(cnum('temperature_2m')),
+      apparent: Math.round(cnum('apparent_temperature')),
+      humidity: Math.round(cnum('relative_humidity_2m')),
+      code: cnum('weather_code'),
+      windSpeed: Math.round(cnum('wind_speed_10m')),
+      windDir: Math.round(cnum('wind_direction_10m')),
+      windGust: Math.round(cnum('wind_gusts_10m')),
+      uv: Math.round(cnum('uv_index')),
+      precipProb: Math.round(cnum('precipitation_probability')),
+      isDay: cnum('is_day') === 1,
+    },
+    today: {
+      high: Math.round(json.daily.temperature_2m_max[0]),
+      low: Math.round(json.daily.temperature_2m_min[0]),
+      sunriseMin: minutesSinceMidnight(json.daily.sunrise[0]),
+      sunsetMin: minutesSinceMidnight(json.daily.sunset[0]),
+    },
+    hours,
+  };
+}
