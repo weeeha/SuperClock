@@ -330,6 +330,13 @@ Expected: FAIL — `Failed to resolve import "./circuit"`
 
 - [ ] **Step 3: Write the implementation**
 
+Create `src/apps/fitness/circuit.ts`. Note the `anchor` parameter: a new
+phase's boundary is computed from the *ideal* previous boundary
+(`state.phaseEndsAt`), never from the observed `event.now`, because tick
+detection lag would otherwise compound across ~24 transitions (measured:
+~1.7s of drift over one full-body circuit). SKIP is the exception — a user
+skip is a real-time action, so it anchors on `event.now`.
+
 Create `src/apps/fitness/circuit.ts`:
 
 ```ts
@@ -418,12 +425,21 @@ function isLastExercise(state: CircuitState, workout: Workout): boolean {
   return nextExerciseId(state, workout) === null;
 }
 
-function enterWork(state: CircuitState, workout: Workout, now: number): CircuitResult {
+// `anchor` is the timestamp the new phase's duration is measured from. For a
+// natural (TICK-driven) expiry it must be the *previous* phase's ideal
+// `phaseEndsAt`, not the actual tick time — ticks can land up to one tick
+// interval late, and anchoring off the observed `now` instead of the ideal
+// boundary would let that lag accumulate across every transition in the
+// circuit. `now` is the real observed time, used only for point-in-time
+// facts (`finishedAt`) that should reflect when a transition was actually
+// detected rather than the ideal schedule.
+
+function enterWork(state: CircuitState, workout: Workout, anchor: number): CircuitResult {
   return {
     state: {
       ...state,
       phase: 'work',
-      phaseEndsAt: now + workout.workSeconds * 1000,
+      phaseEndsAt: anchor + workout.workSeconds * 1000,
       lastCueSecond: null,
     },
     cues: [
@@ -433,12 +449,12 @@ function enterWork(state: CircuitState, workout: Workout, now: number): CircuitR
   };
 }
 
-function enterComplete(state: CircuitState, now: number): CircuitResult {
+function enterComplete(state: CircuitState, anchor: number, now: number): CircuitResult {
   return {
     state: {
       ...state,
       phase: 'complete',
-      phaseEndsAt: now + COMPLETE_LINGER_MS,
+      phaseEndsAt: anchor + COMPLETE_LINGER_MS,
       finishedAt: now,
       lastCueSecond: null,
     },
@@ -447,11 +463,11 @@ function enterComplete(state: CircuitState, now: number): CircuitResult {
 }
 
 /** Work has ended: rest, or finish if that was the last exercise. */
-function afterWork(state: CircuitState, workout: Workout, now: number): CircuitResult {
-  if (isLastExercise(state, workout)) return enterComplete(state, now);
-  if (workout.restSeconds === 0) return afterRest(state, workout, now);
+function afterWork(state: CircuitState, workout: Workout, anchor: number, now: number): CircuitResult {
+  if (isLastExercise(state, workout)) return enterComplete(state, anchor, now);
+  if (workout.restSeconds === 0) return afterRest(state, workout, anchor);
   return {
-    state: { ...state, phase: 'rest', phaseEndsAt: now + workout.restSeconds * 1000, lastCueSecond: null },
+    state: { ...state, phase: 'rest', phaseEndsAt: anchor + workout.restSeconds * 1000, lastCueSecond: null },
     cues: [
       { kind: 'beep', tone: 'rest' },
       { kind: 'voice', id: nextExerciseId(state, workout)! },
@@ -460,12 +476,12 @@ function afterWork(state: CircuitState, workout: Workout, now: number): CircuitR
 }
 
 /** Rest has ended: advance to the next exercise, rolling the round over. */
-function afterRest(state: CircuitState, workout: Workout, now: number): CircuitResult {
+function afterRest(state: CircuitState, workout: Workout, anchor: number): CircuitResult {
   const atEndOfRound = state.index + 1 >= workout.exerciseIds.length;
   const advanced: CircuitState = atEndOfRound
     ? { ...state, index: 0, round: state.round + 1 }
     : { ...state, index: state.index + 1 };
-  return enterWork(advanced, workout, now);
+  return enterWork(advanced, workout, anchor);
 }
 
 export function reduce(state: CircuitState, event: CircuitEvent, workout: Workout): CircuitResult {
@@ -499,10 +515,13 @@ export function reduce(state: CircuitState, event: CircuitEvent, workout: Workou
         return { state, cues: [] };
       }
 
+      // Anchor the next phase's boundary off the ideal previous boundary
+      // (state.phaseEndsAt), not the possibly-late event.now — see the note
+      // above enterWork. `now` is passed through separately for finishedAt.
       switch (state.phase) {
-        case 'countdown': return enterWork(state, workout, event.now);
-        case 'work':      return afterWork(state, workout, event.now);
-        case 'rest':      return afterRest(state, workout, event.now);
+        case 'countdown': return enterWork(state, workout, state.phaseEndsAt);
+        case 'work':      return afterWork(state, workout, state.phaseEndsAt, event.now);
+        case 'rest':      return afterRest(state, workout, state.phaseEndsAt);
         case 'complete':  return { state: initialState(state.workoutId), cues: [] };
         default:          return { state, cues: [] };
       }
@@ -539,9 +558,11 @@ export function reduce(state: CircuitState, event: CircuitEvent, workout: Workou
     }
 
     case 'SKIP': {
+      // A skip is a real user action taken before natural expiry, so the
+      // next phase is anchored off the actual moment of the skip.
       switch (state.phase) {
         case 'countdown': return enterWork(state, workout, event.now);
-        case 'work':      return afterWork(state, workout, event.now);
+        case 'work':      return afterWork(state, workout, event.now, event.now);
         case 'rest':      return afterRest(state, workout, event.now);
         default:          return { state, cues: [] };
       }
