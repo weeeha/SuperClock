@@ -7,14 +7,18 @@
 
 import type { Cue } from './circuit';
 
-const TONE_HZ: Record<string, number> = {
+/** Derived from Cue rather than restated so a new beep tone in the reducer
+ *  can't silently fall through TONE_HZ/TONE_MS's `?? default` here. */
+type BeepTone = Extract<Cue, { kind: 'beep' }>['tone'];
+
+const TONE_HZ: Record<BeepTone, number> = {
   tick: 660,
   work: 880,
   rest: 440,
   finish: 1320,
 };
 
-const TONE_MS: Record<string, number> = {
+const TONE_MS: Record<BeepTone, number> = {
   tick: 90,
   work: 180,
   rest: 180,
@@ -48,15 +52,15 @@ export class WorkoutAudio {
     else this.speak(cue.id);
   }
 
-  private beep(tone: string): void {
+  private beep(tone: BeepTone): void {
     if (!this.opts.beeps) return;
     const ctx = this.context();
     if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.value = TONE_HZ[tone] ?? 660;
-    const seconds = (TONE_MS[tone] ?? 120) / 1000;
+    osc.frequency.value = TONE_HZ[tone];
+    const seconds = TONE_MS[tone] / 1000;
     // Ramp rather than a hard stop; a square cut-off clicks audibly.
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
@@ -88,7 +92,21 @@ export class WorkoutAudio {
     return this.ctx;
   }
 
+  // Browsers do not stop an HTMLAudioElement just because the JS reference
+  // to it is dropped — an in-flight voice clip would keep announcing over
+  // whatever app the user swiped to next. Pause every clip before clearing.
+  //
+  // this.ctx is nulled out immediately (not after close() resolves), so a
+  // beep() right after dispose() lazily builds a fresh AudioContext rather
+  // than reusing a closing one. That's safe rather than a leak: each
+  // instance holds at most one AudioContext at a time (context() only
+  // constructs when this.ctx is null), close() is invoked synchronously
+  // here so the browser starts releasing the audio device immediately, and
+  // dispose()/construct cycles from swiping apps happen on human timescales
+  // — nowhere near fast enough to stack up toward Chromium's ~6-context cap
+  // even over a kiosk session that runs for weeks.
   dispose(): void {
+    for (const el of this.clips.values()) el.pause();
     void this.ctx?.close();
     this.ctx = null;
     this.clips.clear();
