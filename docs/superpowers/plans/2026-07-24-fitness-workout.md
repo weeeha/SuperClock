@@ -1291,10 +1291,14 @@ const TONE_MS: Record<string, number> = {
 export class WorkoutAudio {
   private ctx: AudioContext | null = null;
   private clips = new Map<string, HTMLAudioElement>();
+  // NOT a constructor parameter property (`constructor(private readonly
+  // opts: ...)`) — `erasableSyntaxOnly` rejects that with TS1294, since it
+  // emits runtime code rather than being purely erasable.
+  private readonly opts: { beeps: boolean; voice: boolean };
 
-  constructor(
-    private readonly opts: { beeps: boolean; voice: boolean },
-  ) {}
+  constructor(opts: { beeps: boolean; voice: boolean }) {
+    this.opts = opts;
+  }
 
   /** Fetch every clip up front — a name announced 200ms late is worse than
    *  silence, so nothing may be loaded at the phase boundary. */
