@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="70" cy="85" r="30" fill="#3dadff" opacity="0.9"/>
+  <circle cx="130" cy="85" r="30" fill="#66d575" opacity="0.9"/>
+  <circle cx="100" cy="135" r="30" fill="#ff9e42" opacity="0.9"/>
+  <text x="100" y="182" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="600" fill="#e8e8e8">Agents</text>
+</svg>
