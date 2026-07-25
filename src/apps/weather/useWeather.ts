@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { buildForecastUrl, buildGeocodeUrl, parseCoords, type Coords } from './weather-api';
 import { parseForecast, type WeatherModel } from './weather-utils';
 
@@ -31,7 +31,12 @@ async function resolveLocation(location: string): Promise<{ coords: Coords; labe
       coords: { lat: hit.latitude, lon: hit.longitude },
       label: String(hit.name),
     };
-    localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ query: trimmed, ...resolved }));
+    try {
+      localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ query: trimmed, ...resolved }));
+    } catch {
+      // Cache write is best-effort — a full or disabled localStorage must not
+      // discard a location we already resolved successfully.
+    }
     return resolved;
   }
 
@@ -49,9 +54,9 @@ export interface WeatherState {
   offline: boolean;
 }
 
-/** Fetches once on mount, then refreshes every 15 minutes while the app is
- *  active. Background apps must not tick — a kiosk runs for weeks, and leaked
- *  timers are real heat on a Pi. */
+/** Fetches once on mount (and whenever location/unit change), then refreshes
+ *  every 15 minutes while the app is active. Background apps must not tick —
+ *  a kiosk runs for weeks, and leaked timers are real heat on a Pi. */
 export function useWeather(
   location: string,
   unit: 'celsius' | 'fahrenheit',
@@ -61,39 +66,45 @@ export function useWeather(
   const [label, setLabel] = useState('');
   const [offline, setOffline] = useState(false);
 
+  const load = useCallback(async (isCancelled: () => boolean) => {
+    try {
+      const { coords, label: resolved } = await resolveLocation(location);
+      const res = await fetch(buildForecastUrl(coords, unit));
+      if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
+      const json = await res.json();
+      if (isCancelled()) return;
+      setModel(parseForecast(json, new Date()));
+      setLabel(resolved);
+      setOffline(false);
+    } catch (err) {
+      if (isCancelled()) return;
+      console.warn('Weather fetch failed:', (err as Error).message);
+      setOffline(true);
+    }
+  }, [location, unit]);
+
+  // Initial load, and again whenever the configured location or unit changes.
+  // Deliberately NOT gated on isActive: the app grid deactivates this app
+  // without unmounting it, so re-running here on every toggle would fire a
+  // request each time the grid opens or closes.
   useEffect(() => {
     let cancelled = false;
+    load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
 
-    async function load() {
-      try {
-        const { coords, label: resolved } = await resolveLocation(location);
-        const res = await fetch(buildForecastUrl(coords, unit));
-        if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
-        const json = await res.json();
-        if (cancelled) return;
-        setModel(parseForecast(json, new Date()));
-        setLabel(resolved);
-        setOffline(false);
-      } catch (err) {
-        if (cancelled) return;
-        console.warn('Weather fetch failed:', (err as Error).message);
-        setOffline(true);
-      }
-    }
-
-    load();
-    if (!isActive) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const id = setInterval(load, REFRESH_MS);
+  // Periodic refresh only — gated on isActive so background apps don't tick.
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    const id = setInterval(() => load(() => cancelled), REFRESH_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [location, unit, isActive]);
+  }, [isActive, load]);
 
   return { model, label, offline };
 }
