@@ -6,7 +6,7 @@ registerApp({
     id: 'fitness',
     name: 'Fitness',
     icon: '\u{1F4AA}',
-    description: 'Exercise counter with progress ring',
+    description: '7-minute workout circuits with a guided timer',
     category: 'productivity',
   },
   component: lazy(() => import('./FitnessApp')),
