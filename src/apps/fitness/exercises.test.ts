@@ -31,7 +31,7 @@ describe('workouts', () => {
   // is core exercises by definition.
   it('full-body never repeats a target group twice in a row', () => {
     const workout = getWorkout('full-body');
-    const targets = workout.exerciseIds.map((id) => getExercise(id).targets);
+    const targets = workout.exerciseIds.map((id) => getExercise(id).target);
     for (let i = 1; i < targets.length; i++) {
       expect(targets[i], `position ${i} repeats ${targets[i]}`).not.toBe(targets[i - 1]);
     }

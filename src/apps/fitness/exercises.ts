@@ -10,7 +10,7 @@ export interface Exercise {
   id: string;
   name: string;
   /** Drives the full-body alternation invariant. Never displayed. */
-  targets: Target;
+  target: Target;
 }
 
 export interface Workout {
@@ -24,22 +24,22 @@ export interface Workout {
 
 // Ordered upper → lower → core, repeated four times.
 export const EXERCISES: Exercise[] = [
-  { id: 'push-ups',          name: 'Push-ups',          targets: 'upper' },
-  { id: 'squats',            name: 'Squats',            targets: 'lower' },
-  { id: 'crunches',          name: 'Crunches',          targets: 'core'  },
-  { id: 'bench-dips',        name: 'Bench Dips',        targets: 'upper' },
-  { id: 'lunges',            name: 'Lunges',            targets: 'lower' },
-  { id: 'plank',             name: 'Plank',             targets: 'core'  },
-  { id: 'shoulder-taps',     name: 'Shoulder Taps',     targets: 'upper' },
-  { id: 'jumping-jacks',     name: 'Jumping Jacks',     targets: 'lower' },
-  { id: 'mountain-climbers', name: 'Mountain Climbers', targets: 'core'  },
-  { id: 'push-up-rotation',  name: 'Push-up & Rotation', targets: 'upper' },
-  { id: 'high-knees',        name: 'High Knees',        targets: 'lower' },
-  { id: 'side-plank',        name: 'Side Plank',        targets: 'core'  },
+  { id: 'push-ups',          name: 'Push-ups',          target: 'upper' },
+  { id: 'squats',            name: 'Squats',            target: 'lower' },
+  { id: 'crunches',          name: 'Crunches',          target: 'core'  },
+  { id: 'bench-dips',        name: 'Bench Dips',        target: 'upper' },
+  { id: 'lunges',            name: 'Lunges',            target: 'lower' },
+  { id: 'plank',             name: 'Plank',             target: 'core'  },
+  { id: 'shoulder-taps',     name: 'Shoulder Taps',     target: 'upper' },
+  { id: 'jumping-jacks',     name: 'Jumping Jacks',     target: 'lower' },
+  { id: 'mountain-climbers', name: 'Mountain Climbers', target: 'core'  },
+  { id: 'push-up-rotation',  name: 'Push-up & Rotation', target: 'upper' },
+  { id: 'high-knees',        name: 'High Knees',        target: 'lower' },
+  { id: 'side-plank',        name: 'Side Plank',        target: 'core'  },
 ];
 
 function idsFor(target: Target): string[] {
-  return EXERCISES.filter((e) => e.targets === target).map((e) => e.id);
+  return EXERCISES.filter((e) => e.target === target).map((e) => e.id);
 }
 
 export const WORKOUTS: Workout[] = [
@@ -69,6 +69,11 @@ export const WORKOUTS: Workout[] = [
   },
 ];
 
+// These throw rather than returning `T | undefined` like getApp/getFace do.
+// Those registries hold dynamically registered entries where a miss is a real
+// runtime state; EXERCISES and WORKOUTS are a hand-authored constant in this
+// same file, so an unknown id is a programming error and every call site would
+// otherwise carry a null check that can never fire.
 export function getWorkout(id: string): Workout {
   const found = WORKOUTS.find((w) => w.id === id);
   if (!found) throw new Error(`Unknown workout: ${id}`);
