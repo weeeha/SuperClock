@@ -1901,6 +1901,20 @@ Use `read_console_messages` and `preview_logs`.
 Expected: no errors; no 404s for `/fitness/*.png` or `/fitness/voice/*.m4a`
 in `read_network_requests`.
 
+- [ ] **Step 3b: Measure the `foreignObject` render cost**
+
+`WatchFace` re-renders ~10×/second while a circuit runs, and the exercise art
+sits in a `foreignObject` wrapping an `<img>`. That subtree is handled
+differently per rendering engine than a plain SVG `<image>`, and it is exactly
+the kind of thing that is free on a dev machine and not free on a Pi's GPU.
+
+The `<img src>` only changes at phase boundaries, so React should no-op most
+frames — but confirm rather than assume. Record frame timings during an active
+`work` phase, and repeat the check on the device in Task 15. If it is costly,
+the fix is a plain SVG `<image>` — but do not pre-emptively change it, because
+`foreignObject` is what keeps the Spec B sprite-atlas swap from touching
+`WatchFace`.
+
 - [ ] **Step 4: Confirm the states render**
 
 Tap to start, then screenshot `countdown`, `work`, `rest` (disc inverted to
