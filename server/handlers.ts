@@ -82,15 +82,13 @@ export function eventsFromParsed(
   return events;
 }
 
+/** Throws on fetch/parse failure — the route maps failures to distinct HTTP
+ *  statuses so the kiosk can tell "not configured" from "upstream down" from
+ *  "genuinely no events". Swallowing errors here rendered all three as a
+ *  live empty calendar (honest-offline violation). */
 export async function getCalendarEvents(icsUrl: string, from: Date, to: Date): Promise<CalendarEvent[]> {
-  if (!icsUrl) return [];
-  try {
-    const data = await ical.async.fromURL(icsUrl);
-    return eventsFromParsed(data as Record<string, unknown>, from, to);
-  } catch (err) {
-    console.warn('[api] getCalendarEvents failed:', (err as Error).message);
-    return [];
-  }
+  const data = await ical.async.fromURL(icsUrl);
+  return eventsFromParsed(data as Record<string, unknown>, from, to);
 }
 
 export async function listPhotos(photosDir: string): Promise<string[]> {

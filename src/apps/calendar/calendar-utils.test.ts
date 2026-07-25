@@ -12,6 +12,7 @@ import {
   eventsForDay,
   groupEventsByDay,
   overlapsRange,
+  popDrill,
   relativeTime,
   sameDay,
 } from './calendar-utils';
@@ -182,5 +183,23 @@ describe('relativeTime', () => {
     const now = new Date(2026, 6, 19, 15, 30);
     expect(relativeTime(new Date(2026, 6, 19, 15, 30, 20), now)).toBe('now');
     expect(relativeTime(new Date(2026, 6, 19, 14, 30), now)).toBe('started 1 hour ago');
+  });
+});
+
+describe('popDrill', () => {
+  const day = new Date(2026, 6, 19);
+  const event: CalendarEvent = {
+    uid: 'e1', title: 'Standup', start: '2026-07-19T09:00:00Z',
+    end: '2026-07-19T09:15:00Z', allDay: false,
+  };
+
+  it('pops details → day, keeping the originating day', () => {
+    expect(popDrill({ kind: 'details', day, event })).toEqual({ kind: 'day', day });
+  });
+  it('pops day → resting (null)', () => {
+    expect(popDrill({ kind: 'day', day })).toBeNull();
+  });
+  it('is an idempotent no-op at the surface', () => {
+    expect(popDrill(null)).toBeNull();
   });
 });

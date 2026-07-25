@@ -27,7 +27,7 @@ Split the round 1080×1080 touch surface into an **inner disc** and an **outer r
 | Left arc (9 o'clock ±45°), swipe right | Back (drill-up; no-op at app top level) |
 | 3-finger tap | Panic/home — default clock, from any state |
 
-Right arc unassigned (falls through to horizontal app switch). Pinch-in is retired.
+Right arc unassigned (falls through to horizontal app switch). Pinch-in stays as a **redundant** grid entry (decided 2026-07-25) — same outcome as the top arc, hedging rim-accuracy risk; it may be retired once the arc gesture proves reliable on hardware.
 
 **Misfire mitigation** (rim touch is least accurate on these Waveshare panels, and fingers rest on the rim when handling the clock):
 
@@ -82,7 +82,7 @@ Sheet rises from the bottom arc, covers the lower half of the disc, content curv
 
 - Ring width (70 px) and arc spans (90°) are educated guesses — tune on hardware, fastclock first. — Nick/Claude at implementation.
 - Sound endpoint shape (per-device amp control via SunFounder sysfs) not yet designed. — implementation follow-up.
-- Does retiring pinch-in break any muscle memory worth keeping? Cheap to leave in as a redundant grid entry if so. — Nick.
+- ~~Does retiring pinch-in break any muscle memory worth keeping?~~ **Resolved 2026-07-25: keep pinch-in as a redundant grid entry** (Nick).
 
 ## Handoff Pointers
 
@@ -95,3 +95,5 @@ Sheet rises from the bottom arc, covers the lower half of the disc, content curv
 ## Changelog
 
 - 2026-07-24 — initial draft from approved brainstorm (decisions 1a, 2a, 3b).
+- 2026-07-25 — pinch-in kept as redundant grid entry (was: retired); open question resolved. Build order approved: nav → calendar not-configured tell (parallel) → Timer/Todo → small proposals.
+- 2026-07-25 — implemented (plan docs/superpowers/plans/2026-07-25-kiosk-navigation-gestures.md). Geometry constants live in src/core/gesture-zones.ts pending hardware tuning on fastclock. Execution amendments: (1) idle home-return defers to an active playlist — rotation must not fight the 5-min return, and it returns to the home APP, not a specific face; (2) grid entry commits at 80px travel without visual peek-follow in v1 (sheet has true finger-follow; grid follow deferred to hardware tuning); (3) arc-origin gestures never fall through to app gestures — the 50-79px band is a snap-back no-op, pinned in gesture-resolve.test.ts.
