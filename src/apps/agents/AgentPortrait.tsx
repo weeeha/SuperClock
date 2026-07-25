@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-// Portraits ship in a later task (public/agents/<id>.png); until then — and on
-// any missing/corrupt file on-device — fall back to an initial-letter disc.
+// Falls back to an initial-letter disc when a portrait PNG is missing or
+// corrupt on-device (public/agents/<id>.png is not pinned by any test).
 export default function AgentPortrait({
   name,
   src,
