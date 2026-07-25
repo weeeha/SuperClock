@@ -7,9 +7,9 @@ import type { FieldMetaMap } from '../types';
 // device-config layer, and this plain z.object strips unknown keys.
 export const fitnessAppSchema = z.object({
   workoutId: z.enum(['full-body', 'core', 'lower']).default('full-body'),
-  workSeconds: z.number().int().min(10).max(120).default(30),
-  restSeconds: z.number().int().min(0).max(60).default(10),
-  rounds: z.number().int().min(1).max(5).default(1),
+  workSeconds: z.number().int().min(10).max(120).optional(),
+  restSeconds: z.number().int().min(0).max(60).optional(),
+  rounds: z.number().int().min(1).max(5).optional(),
   voiceCues: z.boolean().default(true),
   beeps: z.boolean().default(true),
   keepBright: z.boolean().default(true),
@@ -17,9 +17,9 @@ export const fitnessAppSchema = z.object({
 
 export const fitnessAppMeta: FieldMetaMap = {
   workoutId: { description: 'Which circuit runs when you tap to start' },
-  workSeconds: { min: 10, max: 120, step: 5, description: 'Seconds per exercise' },
-  restSeconds: { min: 0, max: 60, step: 5, description: 'Seconds between exercises (0 = no rest)' },
-  rounds: { min: 1, max: 5, step: 1, description: 'Times to repeat the circuit' },
+  workSeconds: { min: 10, max: 120, step: 5, description: 'Seconds per exercise (unset = use the workout default)' },
+  restSeconds: { min: 0, max: 60, step: 5, description: 'Seconds between exercises (unset = use the workout default)' },
+  rounds: { min: 1, max: 5, step: 1, description: 'Times to repeat the circuit (unset = use the workout default)' },
   voiceCues: { description: 'Announce each exercise by name' },
   beeps: { description: 'Countdown and transition tones' },
   keepBright: { description: 'Ignore night dimming while a workout is running' },

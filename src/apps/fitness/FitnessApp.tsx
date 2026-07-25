@@ -23,7 +23,7 @@ import { initialState, reduce } from './circuit';
 import type { CircuitState, CircuitEvent } from './circuit';
 import { useCircuitTimer } from './useCircuitTimer';
 import { WorkoutAudio } from './audio';
-import { loadStreak, saveStreak, completeWorkout, settleMissedDays, HEARTS_PER_MONTH } from './streak';
+import { loadStreak, saveStreak, completeWorkout, settleMissedDays, toDateKey, HEARTS_PER_MONTH } from './streak';
 import { deriveViewModel } from './view-model';
 import WatchFace from './WatchFace';
 
@@ -47,7 +47,12 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   // without editing code.
   const workout: Workout = useMemo(() => {
     const base = getWorkout(WORKOUTS[workoutIndex].id);
-    return { ...base, workSeconds: cfg.workSeconds, restSeconds: cfg.restSeconds, rounds: cfg.rounds };
+    return {
+      ...base,
+      workSeconds: cfg.workSeconds ?? base.workSeconds,
+      restSeconds: cfg.restSeconds ?? base.restSeconds,
+      rounds: cfg.rounds ?? base.rounds,
+    };
   }, [workoutIndex, cfg.workSeconds, cfg.restSeconds, cfg.rounds]);
 
   // Ref and state are seeded independently rather than one from the other
@@ -70,6 +75,22 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   useEffect(() => {
     saveStreak(streak);
   }, [streak]);
+
+  // Re-settle on day rollover, not just at mount: a kiosk can sit on this
+  // screen for weeks, and settleMissedDays' header comment promises a
+  // periodic recheck so missed-day hearts decrement at midnight even
+  // without a workout completing. `settledThroughKey` (already part of
+  // StreakState) doubles as the "did the day actually change" gate, so the
+  // functional updater returns the same `prev` reference — and React skips
+  // the re-render — on every poll that isn't a rollover.
+  useEffect(() => {
+    if (!isActive) return;
+    const id = window.setInterval(() => {
+      const now = new Date();
+      setStreak((prev) => (prev.settledThroughKey === toDateKey(now) ? prev : settleMissedDays(prev, now)));
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [isActive]);
 
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
   const showGrid = useNavigation((s) => s.showGrid);
