@@ -590,6 +590,14 @@ git commit -m "feat(fitness): pure circuit reducer with drift-free timing"
 
 ### Task 3: Circuit reducer — pause, resume, skip, abort
 
+> **Tasks 2-4 are implemented and committed.** The full shipped test suite
+> (27 tests) lives in `src/apps/fitness/circuit.test.ts`. It covers START/TICK
+> progression, drift-freedom, pause/resume/skip/abort with their no-op guards,
+> cue emission, an explicit anchor-invariant regression test for the late-tick
+> case, and `restSeconds: 0`. Read the file rather than the snippets below,
+> which are the original pre-implementation drafts and contain one known
+> off-by-one (the `rounds` loop bound needs `* 2`, not `* 2 - 1`).
+
 **Files:**
 - Modify: `src/apps/fitness/circuit.test.ts` (append)
 
