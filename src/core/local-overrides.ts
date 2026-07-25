@@ -4,6 +4,20 @@
 // keeps the admin authoritative without a sync protocol.
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { StateStorage } from 'zustand/middleware';
+
+// zustand's persist defaults `storage` to `createJSONStorage(() => window.localStorage)`
+// only when the `storage` key is entirely absent from options. Passing an
+// explicit `storage: undefined` (e.g. from a ternary) overrides that default
+// with `undefined` itself — persist then falls into its "storage
+// unavailable" branch and calls `console.warn` on every single `set()`. So
+// under node (no `window`) we must hand it a real no-op `StateStorage`
+// rather than `undefined`, to stay silent.
+const noopStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
 
 interface Override<T> {
   value: T;
@@ -31,12 +45,13 @@ export const useLocalOverrides = create<LocalOverridesState>()(
       // Guard for test/SSR environments without a real browser localStorage
       // (vitest runs under node — Node 26 ships a bare `localStorage` global
       // that warns/throws without `--localstorage-file`). Gate on
-      // `window.localStorage` specifically so persist becomes a graceful
-      // no-op under node instead of triggering that warning on every write.
+      // `window.localStorage` specifically and fall back to a real no-op
+      // storage (see `noopStorage` above) — NOT `undefined` — so persist
+      // stays silent under node instead of warning on every write.
       storage:
         typeof window !== 'undefined' && window.localStorage
           ? createJSONStorage(() => window.localStorage)
-          : undefined,
+          : createJSONStorage(() => noopStorage),
     },
   ),
 );

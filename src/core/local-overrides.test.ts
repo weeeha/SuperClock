@@ -26,6 +26,13 @@ describe('brightness override', () => {
     expect(effectiveBrightness(undefined)).toBeUndefined();
     expect(useLocalOverrides.getState().brightness).toBeNull();
   });
+
+  it('repeated calls with an unchanged base keep the override alive', () => {
+    useLocalOverrides.getState().setBrightness(40, 80);
+    expect(effectiveBrightness(80)).toBe(40);
+    expect(effectiveBrightness(80)).toBe(40);
+    expect(useLocalOverrides.getState().brightness).not.toBeNull();
+  });
 });
 
 describe('night override', () => {
