@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNavigation } from './core/navigation';
 import { useAppGestures } from './core/hooks/useGestures';
+import { useIdleReturn } from './core/hooks/useIdleReturn';
 import { usePlaylistAutoRotate } from './core/playlist';
 import { useApplySettings } from './core/apply-settings';
 import SwipeContainer from './core/components/SwipeContainer';
@@ -34,6 +35,7 @@ export default function App() {
   }, []);
 
   useAppGestures(containerRef);
+  useIdleReturn();
   usePlaylistAutoRotate();
   useApplySettings();
 
