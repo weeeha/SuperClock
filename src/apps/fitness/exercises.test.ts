@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EXERCISES, WORKOUTS, getWorkout, getExercise } from './exercises';
+import { fitnessAppSchema } from '../../shared/schemas/app.fitness';
 
 describe('exercise pool', () => {
   it('has exactly 12 exercises', () => {
@@ -43,5 +44,14 @@ describe('workouts', () => {
 
   it('getExercise throws on an unknown id', () => {
     expect(() => getExercise('not-a-real-exercise')).toThrow();
+  });
+});
+
+describe('config coherence', () => {
+  // getWorkout throws on unknown ids, which is only safe because config is
+  // validated against this enum first. Drift here reintroduces the crash.
+  it('workoutId enum lists exactly the defined workouts', () => {
+    const options = fitnessAppSchema.shape.workoutId.unwrap().options;
+    expect([...options].sort()).toEqual(WORKOUTS.map((w) => w.id).sort());
   });
 });
