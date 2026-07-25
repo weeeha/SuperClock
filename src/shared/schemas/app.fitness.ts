@@ -10,7 +10,7 @@ export const fitnessAppSchema = z.object({
 export const fitnessAppMeta: FieldMetaMap = {
   exercise: { description: 'Label shown inside the ring', placeholder: 'Push-ups' },
   dailyGoal: { min: 1, max: 500, step: 1, description: 'Reps to fill the ring' },
-  resetAt: { description: 'When the counter zeroes back to 0' },
+  resetAt: { description: 'When the counter zeroes back to 0 (wake-time/manual currently behave as midnight)' },
 };
 
 export type FitnessAppConfig = z.infer<typeof fitnessAppSchema>;

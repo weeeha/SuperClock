@@ -1,5 +1,6 @@
 import type { AppProps } from '../../core/types';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { useHabitsToday } from './complications-data';
 
 const COMP_R = 125;
 const COMPS = {
@@ -16,6 +17,8 @@ function arcDash(r: number, pct: number) {
 
 export default function ComplicationsDark({ isActive }: AppProps) {
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
+  const habits = useHabitsToday(time);
+  const habitPct = habits.total > 0 ? habits.done / habits.total : 0;
 
   const dayName = time.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   const dateNum = time.getDate();
@@ -48,16 +51,17 @@ export default function ComplicationsDark({ isActive }: AppProps) {
         {/* Tick marks */}
         {ticks}
 
-        {/* ── Top complication: caffeine ── */}
+        {/* ── Top complication: caffeine (no real data source yet) ── */}
         <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} fill="#1e1e1e" />
         <text x={COMPS.top.cx} y={COMPS.top.cy - 22} textAnchor="middle" fontSize="62" dominantBaseline="auto">☕</text>
         <text x={COMPS.top.cx} y={COMPS.top.cy + 46} textAnchor="middle" fill="white" fontSize="50" fontWeight="700" fontFamily="system-ui">2</text>
+        <text x={COMPS.top.cx} y={COMPS.top.cy + 84} textAnchor="middle" fill="#666" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
 
-        {/* ── Left complication: habit ring ── */}
+        {/* ── Left complication: habit ring (live from HabitsApp storage) ── */}
         <circle
           cx={COMPS.left.cx} cy={COMPS.left.cy} r={COMP_R + 14}
           fill="none" stroke="#22c55e" strokeWidth="12" strokeLinecap="round"
-          strokeDasharray={arcDash(COMP_R + 14, 0.65)}
+          strokeDasharray={arcDash(COMP_R + 14, habitPct)}
           transform={`rotate(-90 ${COMPS.left.cx} ${COMPS.left.cy})`}
         />
         <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r={COMP_R} fill="#1e1e1e" />
@@ -73,8 +77,9 @@ export default function ComplicationsDark({ isActive }: AppProps) {
           />
         ))}
         <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r="16" fill="#22c55e" />
+        <text x={COMPS.left.cx} y={COMPS.left.cy + 92} textAnchor="middle" fill="#22c55e" fontSize="28" fontWeight="700" fontFamily="system-ui">{habits.done}/{habits.total}</text>
 
-        {/* ── Right complication: weather ── */}
+        {/* ── Right complication: weather (no real data source yet) ── */}
         <circle cx={COMPS.right.cx} cy={COMPS.right.cy} r={COMP_R} fill="#1e1e1e" />
         <circle cx={COMPS.right.cx - 10} cy={COMPS.right.cy - 28} r="22" fill="#fbbf24" />
         {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
@@ -90,6 +95,7 @@ export default function ComplicationsDark({ isActive }: AppProps) {
         <ellipse cx={COMPS.right.cx + 10} cy={COMPS.right.cy - 6} rx="36" ry="20" fill="#ccc" />
         <ellipse cx={COMPS.right.cx - 14} cy={COMPS.right.cy - 10} rx="22" ry="16" fill="#ccc" />
         <text x={COMPS.right.cx} y={COMPS.right.cy + 46} textAnchor="middle" fill="#fbbf24" fontSize="38" fontWeight="700" fontFamily="system-ui">42°C</text>
+        <text x={COMPS.right.cx} y={COMPS.right.cy + 84} textAnchor="middle" fill="#666" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
 
         {/* ── Bottom complication: date ── */}
         <circle cx={COMPS.bottom.cx} cy={COMPS.bottom.cy} r={COMP_R} fill="#1e1e1e" />

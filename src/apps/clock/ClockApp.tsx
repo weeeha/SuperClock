@@ -17,11 +17,16 @@ export default function ClockApp(props: AppProps) {
       setVerticalSwipeCallback(null);
       return;
     }
-    setVerticalSwipeCallback((dir) => {
+    const cb = (dir: 'up' | 'down') => {
       if (dir === 'down') setFaceIndex((i) => (i + 1) % SWIPE_CYCLE_ORDER.length);
       else setFaceIndex((i) => (i - 1 + SWIPE_CYCLE_ORDER.length) % SWIPE_CYCLE_ORDER.length);
-    });
-    return () => setVerticalSwipeCallback(null);
+    };
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours.
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [props.isActive, configFace, setVerticalSwipeCallback]);
 
   const Face = configFace ?? SWIPE_CYCLE_ORDER[faceIndex];

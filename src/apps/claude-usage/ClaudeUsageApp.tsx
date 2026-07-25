@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
+import { useNavigation } from '../../core/navigation';
 import { MOOD_GROUPS, SPRITES, type Sprite } from './sprites';
 import { useClaudeUsage } from './useClaudeUsage';
 import { useMood } from './useMood';
 import ClawdSprite from './ClawdSprite';
+import UsageDetailView from './UsageDetailView';
+
+type View = 'pet' | 'detail';
 
 const SPRITE_ROTATE_MS = 20_000;
 const CANVAS = 1000;
@@ -67,14 +71,18 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
   const sessionUtil = data?.session.utilization ?? 0;
   const weekUtil = data?.week.utilization ?? 0;
   const sessionPct = data ? sessionUtil * 100 : null;
-  const mood = useMood(sessionPct);
+  const { mood, ratePerMin } = useMood(sessionPct);
+
+  const [view, setView] = useState<View>('pet');
+  const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
+  const showGrid = useNavigation((s) => s.showGrid);
 
   const [rotation, setRotation] = useState(0);
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || view !== 'pet') return; // sprite unmounted in detail view — don't tick
     const id = setInterval(() => setRotation((r) => r + 1), SPRITE_ROTATE_MS);
     return () => clearInterval(id);
-  }, [isActive]);
+  }, [isActive, view]);
 
   // Re-render countdowns each minute even if no new poll arrives.
   const [, setTick] = useState(0);
@@ -83,6 +91,31 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, [isActive]);
+
+  // View switching consumes vertical swipes via the shell's callback slot —
+  // same registration/cleanup pattern as HabitsApp (pointer-channel shell
+  // gestures can't be stopped from inside the app).
+  useEffect(() => {
+    if (!isActive) {
+      setVerticalSwipeCallback(null);
+      return;
+    }
+    const cb = (dir: 'up' | 'down') => {
+      if (dir === 'up') {
+        if (view === 'pet') setView('detail');
+      } else if (view === 'detail') {
+        setView('pet');
+      } else {
+        showGrid(); // swipe down at the resting view = the shell's default gesture
+      }
+    };
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours.
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
+  }, [isActive, view, setVerticalSwipeCallback, showGrid]);
 
   const sprite = useMemo(() => pickSpriteForMood(mood, rotation), [mood, rotation]);
 
@@ -97,7 +130,8 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
   const showData = data?.ok === true;
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-[#0a0a09]">
+    <div className="relative flex h-full w-full items-center justify-center bg-[#0a0a09]">
+      {view === 'pet' ? (
       <svg
         viewBox={`0 0 ${CANVAS} ${CANVAS}`}
         preserveAspectRatio="xMidYMid slice"
@@ -201,6 +235,28 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
           </g>
         )}
       </svg>
+      ) : (
+        <UsageDetailView
+          showData={showData}
+          offlineLabel={hasNoData ? 'no data' : errorState ? 'auth expired — open claude code' : null}
+          errorDetail={(errorState && data?.error) || null}
+          sessionFrac={sessionFrac}
+          weekFrac={weekFrac}
+          sessionColor={sessionColor}
+          weekColor={weekColor}
+          sessionReset={showData ? fmtCountdown(data.session.resetAt) : ''}
+          weekReset={showData ? fmtCountdown(data.week.resetAt) : ''}
+          ratePerMin={ratePerMin}
+          mood={mood}
+          fetchedAt={data?.fetchedAt ?? 0}
+        />
+      )}
+
+      {/* View indicator dots — same affordance as HabitsApp */}
+      <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
+        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'pet' ? 'bg-white' : 'bg-white/25'}`} />
+        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'detail' ? 'bg-white' : 'bg-white/25'}`} />
+      </div>
     </div>
   );
 }
