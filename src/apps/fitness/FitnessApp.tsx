@@ -124,6 +124,28 @@ export default function FitnessApp({ isActive, config }: AppProps) {
 
   useEffect(() => () => audio.current?.dispose(), []);
 
+  // Dev-only handle for stepping the circuit by hand, mirroring `window.__nav`.
+  // Two places need it: the Pi has no attachable debugger, and Claude's preview
+  // tab is permanently backgrounded — Chromium suspends rAF entirely in a hidden
+  // tab, so `useCircuitTimer` never fires there and the circuit cannot otherwise
+  // be advanced. Stripped from production builds by the `import.meta.env.DEV`
+  // guard.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __fitness?: unknown };
+    w.__fitness = {
+      // Advances the display clock alongside the reducer, exactly as the real
+      // tick callback does — otherwise the rendered countdown is derived from
+      // a `now` frozen at mount and shows nonsense.
+      dispatch: (event: CircuitEvent) => {
+        if ('now' in event) setNow(event.now);
+        dispatch(event);
+      },
+      getState: () => stateRef.current,
+    };
+    return () => { delete w.__fitness; };
+  }, [dispatch]);
+
   useEffect(() => {
     if (!isActive) { setVerticalSwipeCallback(null); return; }
     setVerticalSwipeCallback((dir) => {
