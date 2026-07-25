@@ -1,5 +1,8 @@
 // Spec: overlays self-dismiss after 20s untouched; the kiosk returns to the
-// default face after ~5min. Single 5s interval, visibility-gated.
+// home app (appOrder[0]) after ~5min. Single 5s interval, visibility-gated.
+// Note: this resets the ACTIVE APP, not any per-app face/view state — faces
+// are ClockApp-internal (e.g. which watchface is showing) and are never
+// touched here.
 //
 // Deferral rule: home-return backs off while a playlist is actively driving
 // navigation (isPlaylistDriving() from ../playlist) — an admin-configured
@@ -23,6 +26,9 @@ export function checkIdle(): void {
   const idle = Date.now() - nav.lastGestureMs;
 
   if (idle > OVERLAY_IDLE_MS) {
+    // grid and settings are mutually exclusive store states (showGrid clears
+    // settingsOpen, and showSettings only runs when mode === 'app'), so at
+    // most one of these fires — this is not a double-dismiss path.
     if (nav.mode === 'grid') nav.hideGrid();
     if (nav.settingsOpen) nav.hideSettings();
   }

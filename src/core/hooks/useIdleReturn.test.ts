@@ -54,13 +54,31 @@ describe('checkIdle', () => {
   });
 
   it('an idle settings overlay is dismissed and chains the home clock', () => {
+    // Start away from home so a wrongly-fired home-return is observable.
+    const home = useNavigation.getState().appOrder[0];
+    useNavigation.getState().swipeToNext();
+    useNavigation.getState().finishTransition();
+    const away = useNavigation.getState().activeAppId;
+    expect(away).not.toBe(home);
+
     useNavigation.getState().showSettings();
     vi.advanceTimersByTime(OVERLAY_IDLE_MS + 1000);
     checkIdle();
     expect(useNavigation.getState().settingsOpen).toBe(false);
+
     // hideSettings stamped lastGestureMs — home return NOT immediate
     vi.advanceTimersByTime(1000);
     checkIdle();
+    expect(useNavigation.getState().mode).toBe('app');
+
+    // Elapsed time since the ORIGINAL showSettings() gesture is now past
+    // HOME_IDLE_MS, but elapsed time since the CHAINED hideSettings()
+    // restamp is still short of it. If home-return chained off the stale
+    // original timestamp instead of the restamp, this would incorrectly
+    // fire here — it must not.
+    vi.advanceTimersByTime(HOME_IDLE_MS - 10_000);
+    checkIdle();
+    expect(useNavigation.getState().activeAppId).toBe(away);
     expect(useNavigation.getState().mode).toBe('app');
   });
 
