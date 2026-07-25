@@ -10,6 +10,12 @@ interface NetworkStatus {
   connected: boolean;
 }
 
+// Spring shared by the open animation AND the exit collapse. Kept in one place
+// because AnimatePresence animates out the element from its LAST PRESENT render
+// — during finger-tracking that render's `transition` is {duration:0}, so the
+// exit must carry its own transition (inside `exit`) to slide rather than snap.
+const SHEET_SPRING = { type: 'spring', stiffness: 300, damping: 32 } as const;
+
 // Bottom quick-settings sheet: brightness + night mode + wifi status. Opened by
 // the bottom-arc swipe (nav `settingsOpen`) and follows the live drag while the
 // gesture is mid-flight (nav `peek.target === 'settings'`). It writes local
@@ -18,7 +24,12 @@ interface NetworkStatus {
 // what keeps the override from being spent on the next render.
 export default function QuickSettings() {
   const settingsOpen = useNavigation((s) => s.settingsOpen);
-  const peek = useNavigation((s) => s.peek);
+  // Select a primitive that is non-zero ONLY during a live settings-peek, so a
+  // future grid-peek write can't re-render this component. Already excludes the
+  // open state, so `tracking` below is simply `peeking > 0`.
+  const peeking = useNavigation((s) =>
+    s.peek?.target === 'settings' && !s.settingsOpen ? s.peek.progress : 0,
+  );
   const hideSettings = useNavigation((s) => s.hideSettings);
   const setBrightness = useLocalOverrides((s) => s.setBrightness);
   const setNight = useLocalOverrides((s) => s.setNight);
@@ -31,24 +42,35 @@ export default function QuickSettings() {
   const brightness = effectiveBrightness(bases.brightness, brightnessOverride) ?? 100;
   const nightOn = effectiveNight(bases.night, nightOverride);
 
-  const [net, setNet] = useState<NetworkStatus | null>(null);
+  // `null` = not fetched yet; 'unavailable' = the endpoint itself failed (honest
+  // tell, distinct from a genuine "not connected"); otherwise the live status.
+  const [net, setNet] = useState<NetworkStatus | 'unavailable' | null>(null);
   useEffect(() => {
     if (!settingsOpen) return; // active-aware: no fetch while closed
     let cancelled = false;
     fetch('/api/device/network')
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`network status ${r.status}`);
+        return r.json();
+      })
       .then((d: NetworkStatus) => {
         if (!cancelled) setNet(d);
       })
       .catch(() => {
-        if (!cancelled) setNet({ ssid: null, connected: false });
+        // Endpoint failure is NOT the same as "not connected" — don't fake a
+        // radio state we couldn't read.
+        if (!cancelled) setNet('unavailable');
       });
     return () => {
       cancelled = true;
     };
   }, [settingsOpen]);
 
-  const peeking = peek?.target === 'settings' ? peek.progress : 0;
+  // Finger-tracking exactly when a settings-peek exists (the selector already
+  // rules out the open state). While tracking, the sheet follows 1:1 with no
+  // spring; every other state (open, and the AnimatePresence exit) uses the
+  // spring — see the exit note below.
+  const tracking = peeking > 0;
 
   return (
     <AnimatePresence>
@@ -63,12 +85,12 @@ export default function QuickSettings() {
             className="absolute inset-x-0 bottom-0 z-50 h-1/2 rounded-t-[50%_20%] bg-neutral-900/95 px-[14%] pt-[8%] backdrop-blur"
             initial={{ y: '100%' }}
             animate={{ y: settingsOpen ? '0%' : `${(1 - peeking) * 100}%` }}
-            exit={{ y: '100%' }}
-            transition={
-              settingsOpen
-                ? { type: 'spring', stiffness: 300, damping: 32 }
-                : { duration: 0 }
-            }
+            // Exit carries its OWN transition: AnimatePresence animates out the
+            // element from its last present render, which during finger-tracking
+            // had transition={{duration:0}}. A component-level transition alone
+            // would snap; the spring here makes the sub-threshold release slide.
+            exit={{ y: '100%', transition: SHEET_SPRING }}
+            transition={tracking ? { duration: 0 } : SHEET_SPRING}
           >
             <div className="mx-auto mb-6 h-2 w-16 rounded-full bg-white/25" />
 
@@ -111,9 +133,11 @@ export default function QuickSettings() {
               <span className="text-[2.2vmin] text-white/70">
                 {net === null
                   ? '…'
-                  : net.connected
-                    ? `${net.ssid} · connected`
-                    : 'not connected'}
+                  : net === 'unavailable'
+                    ? 'status unavailable'
+                    : net.connected
+                      ? `${net.ssid} · connected`
+                      : 'not connected'}
               </span>
             </div>
           </motion.div>
