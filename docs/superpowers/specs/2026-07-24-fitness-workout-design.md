@@ -196,36 +196,69 @@ Registered through `setVerticalSwipeCallback` while active, following the
 | `paused` | resume | abandon → `ready` | grid |
 | `complete` | → `ready` | — | grid |
 
-**Opening the grid pauses; switching apps discards.**
+**Opening the grid pauses; switching apps suspends.**
 
 `SwipeContainer` passes `isActive={mode !== 'grid'}` and keys its child on the
 active app id. So opening the app grid over a running circuit sets
 `isActive: false` and pauses it — close the grid and it resumes at the same
-second. But swiping to a *different* app changes the key, which unmounts the
-component: it never re-renders with `isActive: false`, and the circuit is
-**discarded, not paused**.
+second. Swiping to a *different* app changes the key instead, which unmounts
+the component outright; see the next section for how that case is handled.
 
-### Known limitation
+### Resuming after a swipe-away
 
 An earlier draft of this spec claimed swipe-away paused and swipe-back
-resumed. It does not, and the code comment asserting it was wrong too — both
-were corrected after a whole-branch review traced the actual mechanism.
+resumed. It didn't — that was aspirational text describing behaviour that
+hadn't been built yet, and the code comment asserting it was wrong too. Both
+have since been corrected: swipe-away now genuinely suspends and resumes.
 
-Two consequences worth weighing before this is considered finished:
+The gap was that `SwipeContainer` passes `isActive={mode !== 'grid'}` and
+keys its child on the active app id. Opening the app grid over a running
+circuit re-renders `FitnessApp` with `isActive: false`, which the existing
+effect correctly pauses. But swiping to a *different* app (or playlist
+auto-rotation in `core/playlist.ts`, which rotates via `switchToInstance` on
+an interval — the same unmount path) changes that key and unmounts the
+component outright. It never re-renders with `isActive: false`, so the pause
+effect never fires, and a plain `useState` circuit died with the component.
 
-- An accidental horizontal swipe mid-circuit loses the workout with no
-  confirmation.
-- **Playlist auto-rotation destroys in-progress workouts.** `core/playlist.ts`
-  rotates via `switchToInstance` on an interval, which is the same unmount
-  path. A kiosk with rotation enabled could never complete a circuit.
-  (`rotationSeconds` is currently `null` on `superclock-fast`, so this is
-  latent rather than live.)
+This is fixed with `src/apps/fitness/circuit-store.ts`, a module-level store
+following the `brightness-lease.ts` pattern (module-level value, a listener
+set, an emit function — free of `window`/DOM so it stays unit-testable).
+`FitnessApp`'s unmount cleanup (the effect with an empty dependency array, so
+it only fires on a real unmount, not an `isActive` flip) reduces a `PAUSE`
+event through the circuit reducer and suspends the *paused* result — pausing
+first matters, because `phaseEndsAt` is an absolute epoch, and suspending a
+still-running state would compute a massively negative remaining time on
+resume and jump straight to `complete`. The next mount seeds its initial
+state from `takeSuspendedCircuit(workout.id, Date.now())` instead of always
+starting `ready`.
 
-Making resume real requires circuit state to outlive the mount — either a
-module-level store (the `brightness-lease.ts` pattern) or `localStorage`,
-plus pausing on unmount so a workout resumed an hour later doesn't jump
-straight to `complete`. Suppressing playlist rotation while a circuit runs
-would be a separate, smaller fix.
+`takeSuspendedCircuit` is take-once (a second matching take returns `null`,
+so a stale entry can't be resurrected twice) and additionally refuses to
+hand back an entry when: the entry is older than `SUSPEND_TTL_MS` (30
+minutes — coming back a day later and finding yourself paused at exercise 4
+is confusing, not helpful); or the saved phase is `ready`/`complete`
+(nothing worth resuming). Those two checks only run — and only consume the
+entry — once the workout id has already matched.
+
+A workout-id **mismatch** (resuming a `core` circuit into a `full-body`
+workout would index into the wrong exercise list) also returns `null`, but
+leaves the entry untouched rather than clearing it: `device-config-schema.ts`
+allows more than one fitness instance per device (its `instances` array), so
+a mismatch here just means "not mine, not necessarily invalid" — a different
+instance's mount may still be the rightful owner and should be able to claim
+it afterwards. The suspension is cleared explicitly on `ABORT` and on
+reaching `complete`, so a finished or abandoned workout can never be resumed
+from a later, unrelated mount.
+
+Resuming is never automatic — the restored state is already `paused`, and
+the user taps to resume, same as pausing via the grid. Silently continuing a
+workout because the kiosk swiped back to it would be surprising.
+
+Playlist auto-rotation itself is not suppressed while a circuit runs; a
+kiosk that rotates through the fitness app will still interrupt it, but the
+workout survives the interruption now instead of being discarded.
+Suppressing rotation entirely while a circuit is active would be a separate,
+smaller fix if it turns out to be wanted.
 
 ### Kiosk integration
 
@@ -325,6 +358,8 @@ src/apps/fitness/
   FitnessApp.tsx      # shell: owns state, drives ticks, plays cues
   circuit.ts          # pure reducer
   circuit.test.ts
+  circuit-store.ts    # module-level suspend/resume store, survives unmount
+  circuit-store.test.ts
   exercises.ts        # the 12 exercises + workout definitions
   exercises.test.ts
   streak.ts           # hearts, localStorage, day rollover
@@ -374,6 +409,11 @@ deferring work.
   has a corresponding art asset and voice clip.
 - **`streak.test.ts`** — a heart is lost on a missed day; month rollover
   restores three; local-date correctness across a UTC+ boundary.
+- **`circuit-store.test.ts`** — suspend/take round-trips; take-once (a second
+  take returns `null`); a mismatched workout id, a stale entry past
+  `SUSPEND_TTL_MS`, and a `ready`/`complete` phase each return `null`;
+  `clearSuspendedCircuit` works; pausing before suspending freezes
+  `remainingMs` rather than letting wall-clock time leak in.
 - **`registry-coherence.test.ts`** — unchanged and must stay passing. The app
   id is unchanged, so `ALL_KIOSK_APP_IDS`, `schema-registry.ts` and the
   registry test need no edits.

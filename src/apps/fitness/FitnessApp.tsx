@@ -21,6 +21,7 @@ import { getWorkout, WORKOUTS } from './exercises';
 import type { Workout } from './exercises';
 import { initialState, reduce } from './circuit';
 import type { CircuitState, CircuitEvent } from './circuit';
+import { suspendCircuit, takeSuspendedCircuit, clearSuspendedCircuit } from './circuit-store';
 import { useCircuitTimer } from './useCircuitTimer';
 import { WorkoutAudio } from './audio';
 import { loadStreak, saveStreak, completeWorkout, settleMissedDays, toDateKey, HEARTS_PER_MONTH } from './streak';
@@ -55,15 +56,24 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     };
   }, [workoutIndex, cfg.workSeconds, cfg.restSeconds, cfg.rounds]);
 
-  // Ref and state are seeded independently rather than one from the other
-  // (`useState(stateRef.current)`) because reading a ref's `.current`
-  // during render — even just to hand it to useState — trips
-  // react-hooks/refs. initialState() is pure, so computing the same value
-  // twice at mount is harmless; every update after that keeps the two in
-  // lockstep by construction (dispatch and the workout-swipe handler always
-  // write both together).
-  const stateRef = useRef<CircuitState>(initialState(workout.id));
-  const [state, setState] = useState<CircuitState>(() => initialState(workout.id));
+  // Seeded from a suspended circuit-store entry if one matches this workout
+  // (see circuit-store.ts): swiping away mid-workout suspends a PAUSED state
+  // there on unmount, and coming back should resume it rather than starting
+  // over. takeSuspendedCircuit is take-once, so it must be called exactly
+  // once per mount — not once for `state` and again for `stateRef`, which
+  // would silently discard the second call's null result and desync the two.
+  //
+  // The useState lazy initializer is the one place guaranteed to run exactly
+  // once at mount. `stateRef` is then seeded from `state` (a plain value
+  // returned by useState), not by reading `stateRef.current` during render —
+  // reading a ref's `.current` in the render body is what trips
+  // react-hooks/refs, and this never does that. Every update after mount
+  // keeps the two in lockstep by construction (dispatch and the
+  // workout-swipe handler always write both together).
+  const [state, setState] = useState<CircuitState>(
+    () => takeSuspendedCircuit(workout.id, Date.now()) ?? initialState(workout.id),
+  );
+  const stateRef = useRef<CircuitState>(state);
 
   const [now, setNow] = useState(() => Date.now());
 
@@ -110,6 +120,14 @@ export default function FitnessApp({ isActive, config }: AppProps) {
 
   const running = state.phase === 'countdown' || state.phase === 'work' || state.phase === 'rest';
 
+  // Mirrors `workout` for the unmount cleanup below, which runs with an
+  // empty dep array (see that effect) and so cannot read a fresh `workout`
+  // from its own closure — only from a ref kept current here.
+  const workoutRef = useRef(workout);
+  useEffect(() => {
+    workoutRef.current = workout;
+  }, [workout]);
+
   const dispatch = useCallback((event: CircuitEvent) => {
     const prev = stateRef.current;
     const { state: next, cues } = reduce(prev, event, workout);
@@ -121,6 +139,12 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     if (prev.phase !== 'complete' && next.phase === 'complete') {
       setStreak((prevStreak) => completeWorkout(prevStreak, new Date()));
     }
+    // A stale suspended entry must not linger past the point the workout is
+    // done or explicitly abandoned — otherwise a later mount could resume a
+    // circuit the user already finished or walked away from on purpose.
+    if (event.type === 'ABORT' || (prev.phase !== 'complete' && next.phase === 'complete')) {
+      clearSuspendedCircuit();
+    }
   }, [workout]);
 
   useCircuitTimer(isActive, (t) => {
@@ -130,15 +154,13 @@ export default function FitnessApp({ isActive, config }: AppProps) {
 
   // Pauses a running circuit when the app grid opens over it.
   //
-  // That is the ONLY case this covers. SwipeContainer passes
-  // `isActive={mode !== 'grid'}` and keys its child on the active app id, so
-  // swiping to a DIFFERENT app changes the key and unmounts this component
-  // outright — it never re-renders with isActive:false, and the circuit is
-  // discarded rather than paused. Playlist auto-rotation (core/playlist.ts)
-  // does the same thing, so a rotating kiosk can never finish a workout.
-  //
-  // Making swipe-away resumable requires circuit state to outlive the mount;
-  // see "Known limitation" in the design doc.
+  // SwipeContainer passes `isActive={mode !== 'grid'}` and keys its child on
+  // the active app id, so this effect only fires for the grid-overlay case —
+  // swiping to a DIFFERENT app (or playlist rotation, core/playlist.ts)
+  // changes the key and unmounts this component outright instead of
+  // re-rendering it with isActive:false. That path is covered separately by
+  // the unmount cleanup below, which suspends into circuit-store.ts so the
+  // next mount can resume it.
   useEffect(() => {
     if (!isActive && running) dispatch({ type: 'PAUSE', now: Date.now() });
   }, [isActive, running, dispatch]);
@@ -152,7 +174,35 @@ export default function FitnessApp({ isActive, config }: AppProps) {
     return () => { window.clearInterval(timer); releaseBrightnessLease(); };
   }, [running, cfg.keepBright]);
 
-  useEffect(() => () => audio.current?.dispose(), []);
+  // Runs once, on real unmount only (empty deps) — the case the grid-pause
+  // effect above cannot reach: swiping to a different app, or playlist
+  // rotation, tears this component down instead of re-rendering it with
+  // isActive:false. Suspend whatever's running (or already paused) into
+  // circuit-store.ts before disposing audio, so the next mount can resume it
+  // instead of losing it.
+  //
+  // Reads stateRef/workoutRef rather than the closed-over `state`/`workout`:
+  // this closure is captured once at mount, so those would be whatever was
+  // current on the FIRST render, not the latest.
+  //
+  // Pausing before suspending matters: the reducer stores `phaseEndsAt` as
+  // an absolute epoch, so suspending a still-RUNNING state and resuming it
+  // 10 minutes later would compute a massively negative remaining time and
+  // jump straight to `complete`. Reducing PAUSE through the reducer (rather
+  // than hand-constructing a paused state) also works when the circuit is
+  // already paused — the reducer no-ops on phases other than
+  // countdown/work/rest, so the `phase === 'paused'` check below correctly
+  // skips suspending a `ready` or `complete` circuit too.
+  useEffect(() => {
+    return () => {
+      audio.current?.dispose();
+      const current = stateRef.current;
+      const { state: maybePaused } = reduce(current, { type: 'PAUSE', now: Date.now() }, workoutRef.current);
+      if (maybePaused.phase === 'paused') {
+        suspendCircuit(maybePaused, workoutRef.current.id, Date.now());
+      }
+    };
+  }, []);
 
   // Dev-only handle for stepping the circuit by hand, mirroring `window.__nav`.
   // Two places need it: the Pi has no attachable debugger, and Claude's preview
