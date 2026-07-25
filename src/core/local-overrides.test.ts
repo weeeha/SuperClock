@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useLocalOverrides, effectiveBrightness, effectiveNight } from './local-overrides';
 
 beforeEach(() => {
-  useLocalOverrides.setState({ brightness: null, night: null });
+  useLocalOverrides.setState({
+    brightness: null,
+    night: null,
+    bases: { brightness: undefined, night: false },
+  });
 });
 
 describe('effectiveBrightness (pure)', () => {
@@ -28,6 +32,14 @@ describe('effectiveBrightness (pure)', () => {
     expect(effectiveBrightness(80, o)).toBe(40);
     expect(effectiveBrightness(80, o)).toBe(40);
   });
+
+  it('an override set against an undefined base survives repeated resolution', () => {
+    // base undefined = "no config baseline / unfiltered"; the user still dimmed.
+    // undefined === undefined keeps it alive across repeated resolves.
+    const o = { value: 40, base: undefined };
+    expect(effectiveBrightness(undefined, o)).toBe(40);
+    expect(effectiveBrightness(undefined, o)).toBe(40);
+  });
 });
 
 describe('effectiveNight (pure)', () => {
@@ -52,11 +64,11 @@ describe('effectiveNight (pure)', () => {
   });
 });
 
-describe('dropSpent', () => {
+describe('syncBases', () => {
   it('clears only the brightness slice when its base changed', () => {
     useLocalOverrides.getState().setBrightness(40, 80);
     useLocalOverrides.getState().setNight(true, false);
-    useLocalOverrides.getState().dropSpent(60, false); // brightness base 80→60, night base unchanged
+    useLocalOverrides.getState().syncBases(60, false); // brightness base 80→60, night base unchanged
     expect(useLocalOverrides.getState().brightness).toBeNull();
     expect(useLocalOverrides.getState().night).not.toBeNull();
   });
@@ -64,33 +76,48 @@ describe('dropSpent', () => {
   it('clears only the night slice when its base changed', () => {
     useLocalOverrides.getState().setBrightness(40, 80);
     useLocalOverrides.getState().setNight(true, false);
-    useLocalOverrides.getState().dropSpent(80, true); // night base false→true, brightness base unchanged
+    useLocalOverrides.getState().syncBases(80, true); // night base false→true, brightness base unchanged
     expect(useLocalOverrides.getState().night).toBeNull();
     expect(useLocalOverrides.getState().brightness).not.toBeNull();
   });
 
   it('clears the brightness override when the baseline becomes undefined', () => {
     useLocalOverrides.getState().setBrightness(40, 80);
-    useLocalOverrides.getState().dropSpent(undefined, false);
+    useLocalOverrides.getState().syncBases(undefined, false);
     expect(useLocalOverrides.getState().brightness).toBeNull();
   });
 
-  it('is a state no-op when both bases still match (no store write)', () => {
+  it('records the passed bases so the sheet can read the live baseline', () => {
+    useLocalOverrides.getState().syncBases(70, true);
+    expect(useLocalOverrides.getState().bases).toEqual({ brightness: 70, night: true });
+  });
+
+  it('records an undefined brightness base (unfiltered config) verbatim', () => {
+    useLocalOverrides.getState().syncBases(70, false); // seed a numeric base first
+    useLocalOverrides.getState().syncBases(undefined, false);
+    expect(useLocalOverrides.getState().bases).toEqual({ brightness: undefined, night: false });
+  });
+
+  it('is a state no-op when nothing is spent AND the bases are unchanged', () => {
     useLocalOverrides.getState().setBrightness(40, 80);
     useLocalOverrides.getState().setNight(true, false);
+    useLocalOverrides.getState().syncBases(80, false); // records bases {80,false}
     const before = useLocalOverrides.getState();
     const brightnessRef = before.brightness;
     const nightRef = before.night;
-    useLocalOverrides.getState().dropSpent(80, false); // both bases unchanged
+    const basesRef = before.bases;
+    useLocalOverrides.getState().syncBases(80, false); // both bases unchanged, nothing spent
     const after = useLocalOverrides.getState();
     // same object identities → no set() fired, so no needless re-render
     expect(after.brightness).toBe(brightnessRef);
     expect(after.night).toBe(nightRef);
+    expect(after.bases).toBe(basesRef);
   });
 
-  it('is a no-op when there are no overrides to clear', () => {
-    const before = useLocalOverrides.getState();
-    useLocalOverrides.getState().dropSpent(60, true);
-    expect(useLocalOverrides.getState()).toBe(before);
+  it('still writes (records bases) when a base changed but no override is spent', () => {
+    // No overrides to clear, but the baseline moved → bases must update so the
+    // sheet reflects it. This is NOT a no-op.
+    useLocalOverrides.getState().syncBases(60, true);
+    expect(useLocalOverrides.getState().bases).toEqual({ brightness: 60, night: true });
   });
 });

@@ -31,6 +31,13 @@ describe('resolveDragEnd — arc origins own their gesture (spec: one gesture, o
     expect(action).toEqual({ type: 'showSettings' });
   });
 
+  it('bottom-arc past ARC_MIN_TRAVEL but under commit-progress snaps back', () => {
+    // 120px clears ARC_MIN_TRAVEL (80) yet 120/540 = 0.22 < COMMIT_PROGRESS (0.4):
+    // far enough to peek, not far enough to commit → snap-back no-op, no settings.
+    const action = resolveDragEnd('bottom-arc', 'app', false, 0, -120, 0, V, SHEET);
+    expect(action).toEqual({ type: 'none' });
+  });
+
   it('committed top-arc opens the grid', () => {
     const action = resolveDragEnd('top-arc', 'app', false, 0, ARC_MIN_TRAVEL + 5, 0, V, SHEET);
     expect(action).toEqual({ type: 'showGrid' });

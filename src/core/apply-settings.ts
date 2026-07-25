@@ -52,7 +52,7 @@ export function useApplySettings(): void {
   );
   // A local night override wins until the schedule next flips. The resolver is
   // pure — on a boundary flip it returns the schedule immediately (DOM correct),
-  // and the dropSpent effect below tidies the now-spent override.
+  // and the syncBases effect below tidies the now-spent override.
   const isNight = effectiveNight(scheduledNight, nightOverride);
 
   useEffect(() => {
@@ -83,12 +83,15 @@ export function useApplySettings(): void {
     isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
   const pct = effectiveBrightness(basePct, brightnessOverride);
 
-  // Tidy spent overrides in an effect, not during render (React 19 forbids
-  // updating a store other components read while rendering). The resolvers
-  // already returned the base on a mismatch, so the DOM is correct before this
-  // runs; a night-override drop that shifts basePct converges next render.
+  // Publish the live bases and tidy spent overrides in an effect, not during
+  // render (React 19 forbids updating a store other components read while
+  // rendering). The resolvers already returned the base on a mismatch, so the
+  // DOM is correct before this runs; a night-override drop that shifts basePct
+  // converges next render. Publishing basePct/scheduledNight here is what lets
+  // the quick-settings sheet override against the SAME night-aware base — it
+  // must never recompute the night window itself (spurious spent-drop risk).
   useEffect(() => {
-    useLocalOverrides.getState().dropSpent(basePct, scheduledNight);
+    useLocalOverrides.getState().syncBases(basePct, scheduledNight);
   }, [basePct, scheduledNight]);
 
   useEffect(() => {
