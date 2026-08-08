@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="58" cy="66" r="13" fill="none" stroke="#ff8826" stroke-width="4"/>
+  <path d="M52 66 l5 5 l8 -9" fill="none" stroke="#ff8826" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="84" y="61" width="62" height="10" rx="5" fill="#3a3f45"/>
+  <circle cx="58" cy="106" r="13" fill="none" stroke="#ff8826" stroke-width="4"/>
+  <path d="M52 106 l5 5 l8 -9" fill="none" stroke="#ff8826" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="84" y="101" width="48" height="10" rx="5" fill="#3a3f45"/>
+  <circle cx="58" cy="146" r="13" fill="none" stroke="#5a626b" stroke-width="4"/>
+  <rect x="84" y="141" width="56" height="10" rx="5" fill="#e8e8e8"/>
+  <text x="100" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="22" font-weight="600" fill="#e8e8e8">Todo</text>
+</svg>
