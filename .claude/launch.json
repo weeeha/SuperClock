@@ -4,9 +4,9 @@
     {
       "name": "dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--host", "--port", "5180", "--strictPort"],
+      "runtimeArgs": ["vite", "--host"],
       "port": 5180,
-      "autoPort": false
+      "autoPort": true
     },
     {
       "name": "prod",
@@ -14,6 +14,13 @@
       "runtimeArgs": ["run", "start"],
       "port": 3050,
       "env": { "PORT": "3050" }
+    },
+    {
+      "name": "dev-3050",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host", "--port", "3050", "--strictPort"],
+      "port": 3050,
+      "autoPort": false
     }
   ]
 }
