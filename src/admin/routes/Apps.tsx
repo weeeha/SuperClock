@@ -5,21 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Switch } from '../components/ui/switch';
 import { adminApi } from '../lib/api';
 import { useActiveDevice } from '../store/active-device';
+import { appLabel } from '../../shared/app-labels';
 import type { DeviceId } from '../../shared/types';
-
-const APP_LABELS: Record<string, string> = {
-  clock: 'Clock',
-  weather: 'Weather',
-  calendar: 'Calendar',
-  fitness: 'Fitness',
-  github: 'GitHub',
-  habits: 'Habits',
-  fireplace: 'Fireplace',
-  'photo-frame': 'Photo Frame',
-  quote: 'Quote',
-  'time-tracking': 'Time Tracking',
-  todo: 'Todo',
-};
 
 export default function Apps() {
   const { activeDeviceId } = useActiveDevice();
@@ -86,7 +73,7 @@ export default function Apps() {
                     className="flex flex-1 items-center justify-between px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">{APP_LABELS[app.id] ?? app.id}</span>
+                      <span className="text-sm font-medium">{appLabel(app.id)}</span>
                       {app.id === 'clock' && app.faces && (
                         <span className="text-xs opacity-60">{app.faces.length} faces</span>
                       )}

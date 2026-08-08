@@ -2,11 +2,14 @@
 // that only agree by discipline. This test pins them together so adding an
 // app or face in one place and forgetting another fails CI instead of
 // shipping an app that's invisible in the admin (which happened: claude-usage
-// was registered on the kiosk but missing from capabilities).
+// was registered on the kiosk but missing from capabilities, then again for
+// the admin label map and the kiosk app grid — both pinned below since).
 
 import { describe, it, expect } from 'vitest';
 import '../apps'; // side-effect: registers every kiosk app
 import { getAppIds } from '../core/registry';
+import { appFaces, columns } from '../core/components/app-grid-tiles';
+import { APP_LABELS } from './app-labels';
 import { FACE_COMPONENTS } from '../apps/clock/face-components';
 import { FACES } from './face-registry';
 import { SCHEMAS, defaultsFor } from './schema-registry';
@@ -46,6 +49,29 @@ describe('app registry ↔ capabilities', () => {
       if (!key.startsWith('app.')) continue;
       const appId = key.slice('app.'.length);
       expect(registeredIds, `schema '${key}' has no registered app`).toContain(appId);
+    }
+  });
+});
+
+describe('admin labels ↔ app registry', () => {
+  it('APP_LABELS names exactly the registered kiosk apps', () => {
+    expect(Object.keys(APP_LABELS).sort()).toEqual([...getAppIds()].sort());
+  });
+});
+
+describe('app grid ↔ app registry', () => {
+  it('every registered app is reachable from a grid tile (tiles may repeat)', () => {
+    const placedIds = [...new Set(columns.flat().map((tile) => tile.id))].sort();
+    expect(placedIds).toEqual([...getAppIds()].sort());
+  });
+
+  it('every appFaces entry occupies at least one column slot', () => {
+    const placed = new Set(columns.flat());
+    for (const tile of appFaces) {
+      expect(
+        placed.has(tile),
+        `appFaces entry '${tile.id}' (${tile.src}) is not placed in any column`,
+      ).toBe(true);
     }
   });
 });
