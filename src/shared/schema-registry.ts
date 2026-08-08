@@ -25,6 +25,7 @@ import { habitsAppSchema, habitsAppMeta } from './schemas/app.habits';
 import { photoFrameAppSchema, photoFrameAppMeta } from './schemas/app.photo-frame';
 import { quoteAppSchema, quoteAppMeta } from './schemas/app.quote';
 import { timeTrackingAppSchema, timeTrackingAppMeta } from './schemas/app.time-tracking';
+import { todoAppSchema, todoAppMeta } from './schemas/app.todo';
 import { weatherAppSchema, weatherAppMeta } from './schemas/app.weather';
 
 // Faces
@@ -68,6 +69,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'app.photo-frame': { schema: photoFrameAppSchema, meta: photoFrameAppMeta },
   'app.quote': { schema: quoteAppSchema, meta: quoteAppMeta },
   'app.time-tracking': { schema: timeTrackingAppSchema, meta: timeTrackingAppMeta },
+  'app.todo': { schema: todoAppSchema, meta: todoAppMeta },
   'app.weather': { schema: weatherAppSchema, meta: weatherAppMeta },
 
   // Faces
