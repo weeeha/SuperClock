@@ -28,7 +28,10 @@ export interface TodoStore {
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
-export function createLocalTodoStore(storage: StorageLike = localStorage): TodoStore {
+// Default is window.localStorage, not the bare global: Node ≥22 defines an
+// experimental `localStorage` global that is undefined without a CLI flag and
+// shadows jsdom's real one in tests. In Chromium the two are identical.
+export function createLocalTodoStore(storage: StorageLike = window.localStorage): TodoStore {
   return {
     async load() {
       try {
