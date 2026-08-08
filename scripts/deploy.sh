@@ -22,6 +22,34 @@ npm run build
 echo "=== Deploying to $PI_HOST:$REMOTE_DIR ==="
 ssh "$PI_HOST" "mkdir -p $REMOTE_DIR/scripts $REMOTE_DIR/dist $REMOTE_DIR/config"
 
+# Pre-flight: refuse to sync onto a full card.
+#
+# `rsync --delete` removes the old files BEFORE it discovers it cannot write
+# the new ones, so a full disk doesn't fail cleanly — it leaves dist/ half
+# emptied and the kiosk serving a broken page. This happened on 2026-07-25
+# when Chromium's BrowserMetrics directory had grown to 19GB and filled a
+# 29GB card; the deploy deleted the app bundle and could not replace it.
+#
+# Needing 3x the payload is deliberate slack: rsync writes to temp files
+# alongside the originals before renaming, so the peak is roughly double,
+# and a card with only that much left is about to cause this again anyway.
+PAYLOAD_KB="$(du -sk dist | cut -f1)"
+NEED_KB=$(( PAYLOAD_KB * 3 ))
+AVAIL_KB="$(ssh "$PI_HOST" "df -Pk $REMOTE_DIR | tail -1 | awk '{print \$4}'")"
+if [ "$AVAIL_KB" -lt "$NEED_KB" ]; then
+  echo "ERROR: not enough free space on $PI_HOST" >&2
+  echo "  payload:   $(( PAYLOAD_KB / 1024 )) MB" >&2
+  echo "  available: $(( AVAIL_KB / 1024 )) MB" >&2
+  echo "  required:  $(( NEED_KB / 1024 )) MB (3x payload)" >&2
+  echo >&2
+  echo "Nothing was changed on the device. Free space first, then re-run." >&2
+  echo "Most likely culprit on a long-running kiosk:" >&2
+  echo "  ssh $PI_HOST 'du -sh ~/.config/chromium/BrowserMetrics'" >&2
+  echo "  ssh $PI_HOST 'find ~/.config/chromium/BrowserMetrics -type f -delete'" >&2
+  exit 1
+fi
+echo "Free space OK: $(( AVAIL_KB / 1024 )) MB available, $(( NEED_KB / 1024 )) MB required."
+
 # Built client bundle + bundled server (dist/server.mjs).
 rsync -avz --delete dist/ "$PI_HOST:$REMOTE_DIR/dist/"
 
