@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && npm run build:server",
+    "build": "tsc -b && vite build && npm run build:server && node scripts/write-build-info.mjs",
     "start": "node --env-file-if-exists=.env dist/server.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
