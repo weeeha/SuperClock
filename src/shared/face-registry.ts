@@ -111,6 +111,15 @@ export const FACES: FaceDescriptor[] = [
     configSchemaId: 'face.daylight',
     slots: [],
   },
+  // Composed Strokes (2026-08-08 spec). SVG thumb, three-faces precedent.
+  {
+    id: 'strokes',
+    name: 'Composed Strokes',
+    preview: '/strokes-thumb.svg',
+    category: 'artistic',
+    configSchemaId: 'face.strokes',
+    slots: [],
+  },
 ];
 
 const FACES_BY_ID = new Map(FACES.map((f) => [f.id, f]));

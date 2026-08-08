@@ -21,6 +21,9 @@ html.light {
   --face-plate: #f1f1ef;
   --face-dusk: #8fa9c4;
   --face-spent: #e4e4e1;
+  /* Composed Strokes (2026-08-08 spec): parked hands over --face-plate.
+     --face-spent is too close to the plate to read as a field. */
+  --face-ghost: #d9d9d4;
 }
 html.dark {
   --face-bg: #000000;
@@ -30,6 +33,7 @@ html.dark {
   --face-plate: #15171a;
   --face-dusk: #2b3d52;
   --face-spent: #111316;
+  --face-ghost: #2c2f35;
 }
 
 /* Soft cross-fade for the theme flip. Applied per themed element. */
