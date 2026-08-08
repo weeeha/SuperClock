@@ -103,6 +103,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   swipeToNext: () => {
     const { appOrder, activeAppId } = get();
+    // A single-app order would keep the same render key while entering
+    // 'transitioning' — onExitComplete never fires and gestures wedge.
+    if (appOrder.length < 2) return;
     const idx = appOrder.indexOf(activeAppId);
     const nextIdx = (idx + 1) % appOrder.length;
     set({
@@ -116,6 +119,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   swipeToPrev: () => {
     const { appOrder, activeAppId } = get();
+    if (appOrder.length < 2) return;
     const idx = appOrder.indexOf(activeAppId);
     const prevIdx = (idx - 1 + appOrder.length) % appOrder.length;
     set({
