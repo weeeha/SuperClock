@@ -14,6 +14,8 @@ export interface RoundListProps<T> {
   itemHeight?: number;
   /** Fixed content above the scroll area (title, count). */
   header?: ReactNode;
+  /** Fixed content below the scroll area (actions like clear-all). */
+  footer?: ReactNode;
   /** Shown when items is empty. Required — an empty list must say why. */
   empty: ReactNode;
 }
@@ -27,12 +29,14 @@ export default function RoundList<T>({
   onSelect,
   itemHeight = 96,
   header,
+  footer,
   empty,
 }: RoundListProps<T>) {
   return (
     <div className="w-full h-full flex flex-col items-center">
       {header}
       <div
+        data-roundlist-scroll=""
         className="flex-1 min-h-0 overflow-y-auto"
         style={{
           width: 'min(62%, 680px)',
@@ -55,6 +59,7 @@ export default function RoundList<T>({
               </div>
             ))}
       </div>
+      {footer}
     </div>
   );
 }
