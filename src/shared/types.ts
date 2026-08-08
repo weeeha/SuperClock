@@ -129,6 +129,12 @@ export interface FieldMeta {
   max?: number;
   step?: number;
   showIf?: (value: Record<string, unknown>) => boolean;
+  /** For array-of-string fields whose entry text doubles as the entry's
+   *  storage identity (habit ids are the trimmed lowercased name; streak
+   *  history is keyed by them). The list editor warns when an entry that
+   *  existed before the editing session is renamed. Case/whitespace-only
+   *  changes don't re-key, so they don't warn. */
+  identityKeyed?: boolean;
 }
 
 export type FieldMetaMap = Record<string, FieldMeta>;

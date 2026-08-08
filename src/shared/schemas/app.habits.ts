@@ -12,7 +12,11 @@ export const habitsAppSchema = z.object({
 });
 
 export const habitsAppMeta: FieldMetaMap = {
-  habits: { description: 'Habit names, in ring order (colors assigned by position)' },
+  habits: {
+    description: 'Habit names, in ring order (colors assigned by position)',
+    placeholder: 'Add habit',
+    identityKeyed: true,
+  },
   weekStart: { description: 'First day of the monthly ring' },
   theme: { description: 'auto = follow device theme setting' },
 };

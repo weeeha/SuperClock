@@ -1,12 +1,17 @@
 // Generic zod schema → form renderer.
-// Supports: string (with format: 'color' | 'url'), number (with min/max/step),
-// enum (select), boolean (switch). Unwraps ZodOptional / ZodDefault /
-// ZodNullable. Sidecar `meta` provides labels, descriptions, ranges, and
-// conditional visibility — schemas stay pure-zod.
+// Supports: string (with format: 'color' | 'url' | 'time'), number (with
+// min/max/step), enum (select), boolean (switch), array-of-string (list
+// editor), array-of-enum (ordered multi-select). Dispatch logic lives in
+// schema-introspect.ts (unit-tested), array widgets in array-fields.tsx.
+// Unwraps ZodOptional / ZodDefault / ZodNullable. Sidecar `meta` provides
+// labels, descriptions, ranges, and conditional visibility — schemas stay
+// pure-zod.
 
 import type { ChangeEvent } from 'react';
 import { z } from 'zod';
 import { Switch } from '../components/ui/switch';
+import { EnumOrderField, StringListField } from './array-fields';
+import { describeArray, humanize, unwrap } from './schema-introspect';
 import type { FieldMeta, FieldMetaMap } from '../../shared/types';
 
 interface Props {
@@ -16,40 +21,16 @@ interface Props {
   onChange: (next: Record<string, unknown>) => void;
 }
 
-function unwrap(schema: unknown): z.ZodTypeAny {
-  let s: unknown = schema;
-  for (let i = 0; i < 5; i++) {
-    if (
-      s instanceof z.ZodOptional ||
-      s instanceof z.ZodDefault ||
-      s instanceof z.ZodNullable
-    ) {
-      const def = (s as unknown as { _def?: { innerType?: unknown } })._def;
-      if (def?.innerType) {
-        s = def.innerType;
-        continue;
-      }
-    }
-    break;
-  }
-  return s as z.ZodTypeAny;
-}
-
-function humanize(key: string): string {
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (c) => c.toUpperCase())
-    .trim();
-}
-
 function FieldShell({
   label,
   description,
+  error,
   children,
   inline,
 }: {
   label: string;
   description?: string;
+  error?: string;
   children: React.ReactNode;
   inline?: boolean;
 }) {
@@ -71,6 +52,7 @@ function FieldShell({
       <label className="text-sm font-medium">{label}</label>
       {description && <p className="text-xs opacity-60 -mt-1">{description}</p>}
       {children}
+      {error && <p className="text-xs text-[hsl(var(--destructive))]">{error}</p>}
     </div>
   );
 }
@@ -173,6 +155,32 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
               inline
             >
               <Switch checked={Boolean(current)} onCheckedChange={(v) => set(key, v)} />
+            </FieldShell>
+          );
+        }
+
+        const arrayShape = describeArray(fieldSchema);
+        if (arrayShape) {
+          // Surface zod's own message (weather pages' min(1) and no-duplicates
+          // refine) rather than duplicating those rules in the UI layer.
+          const parsed = (fieldSchema as z.ZodTypeAny).safeParse(current);
+          const error = parsed.success ? undefined : parsed.error.issues[0]?.message;
+          return (
+            <FieldShell key={key} label={label} description={fmeta.description} error={error}>
+              {arrayShape.element === 'string' ? (
+                <StringListField
+                  value={current}
+                  placeholder={fmeta.placeholder}
+                  identityKeyed={fmeta.identityKeyed}
+                  onChange={(items) => set(key, items)}
+                />
+              ) : (
+                <EnumOrderField
+                  value={current}
+                  options={arrayShape.options}
+                  onChange={(items) => set(key, items)}
+                />
+              )}
             </FieldShell>
           );
         }
