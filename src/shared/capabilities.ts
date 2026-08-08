@@ -33,6 +33,7 @@ const ALL_KIOSK_APP_IDS = [
   'time-tracking',
   'claude-usage',
   'breathing',
+  'todo',
 ];
 
 // AppDescriptors built from the registries — no React imports, safe for
