@@ -13,13 +13,13 @@ interface StaticDeviceInfo {
   host: string;
   readOnly: boolean;
   features: FeatureFlag[];
-  supportedAppIds: string[];
+  supportedAppIds: readonly string[];
 }
 
 // Must match the registrations in src/apps/index.ts — pinned by
 // src/shared/registry-coherence.test.ts so drift fails CI instead of
 // shipping an app the admin can't see.
-const ALL_KIOSK_APP_IDS = [
+export const ALL_KIOSK_APP_IDS = [
   'agents',
   'clock',
   'weather',
@@ -34,7 +34,9 @@ const ALL_KIOSK_APP_IDS = [
   'claude-usage',
   'breathing',
   'todo',
-];
+] as const;
+
+export type KioskAppId = (typeof ALL_KIOSK_APP_IDS)[number];
 
 // AppDescriptors built from the registries — no React imports, safe for
 // server-side. Every app's config schema is `app.<id>` in schema-registry.ts;
