@@ -62,6 +62,23 @@ describe('transition contract: mode "transitioning" implies a key change', () =>
     expect(renderKey()).not.toBe(mid);
   });
 
+  it('swipeToNext / swipeToPrev with a single-app order never enter transitioning', () => {
+    // Fleet config can enable exactly one app; a swipe must not wedge the
+    // kiosk (same key + mode 'transitioning' = onExitComplete never fires).
+    const only = useNavigation.getState().appOrder[0];
+    useNavigation.getState().initApps([only]);
+    expect(useNavigation.getState().appOrder).toHaveLength(1);
+
+    const before = renderKey();
+    useNavigation.getState().swipeToNext();
+    expect(useNavigation.getState().mode).toBe('app');
+    expect(renderKey()).toBe(before);
+
+    useNavigation.getState().swipeToPrev();
+    expect(useNavigation.getState().mode).toBe('app');
+    expect(renderKey()).toBe(before);
+  });
+
   it('finishTransition returns to app mode and clears direction', () => {
     useNavigation.getState().swipeToNext();
     useNavigation.getState().finishTransition();
