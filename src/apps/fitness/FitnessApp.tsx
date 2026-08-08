@@ -1,308 +1,291 @@
-import { useState, useEffect, useMemo } from 'react';
+// Thin shell: wiring plus JSX. Timing and phase transitions live in
+// circuit.ts, presentation derivation lives in view-model.ts; this
+// component feeds timestamps into the reducer, plays whatever cues it
+// returns, and renders the derived view model through WatchFace.
+//
+// `dispatch` keeps a ref (`stateRef`) as the reducer's source of truth and
+// mirrors it into React state purely for rendering. State updaters must be
+// pure, and StrictMode deliberately double-invokes them, so the cue
+// playback below lives in this handler instead of inside `setState`'s
+// updater — an updater that beeped would do so twice under StrictMode.
+// Reading `stateRef.current` (not the closed-over `state`) also means the
+// 10Hz tick callback below always reduces from the current phase, not a
+// stale one captured at render time.
+
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { acquireBrightnessLease, releaseBrightnessLease } from '../../core/brightness-lease';
 import { fitnessAppSchema } from '../../shared/schemas/app.fitness';
+import { getWorkout, WORKOUTS } from './exercises';
+import type { Workout } from './exercises';
+import { initialState, reduce } from './circuit';
+import type { CircuitState, CircuitEvent } from './circuit';
+import { suspendCircuit, takeSuspendedCircuit, clearSuspendedCircuit } from './circuit-store';
+import { useCircuitTimer } from './useCircuitTimer';
+import { WorkoutAudio } from './audio';
+import { loadStreak, saveStreak, completeWorkout, settleMissedDays, toDateKey, HEARTS_PER_MONTH } from './streak';
+import { deriveViewModel } from './view-model';
+import WatchFace from './WatchFace';
 
-type View = 'today' | 'week';
+/** Renew well inside the lease TTL so it never lapses mid-workout. */
+const LEASE_RENEW_MS = 30_000;
 
-const STORAGE_KEY = 'superclock-fitness-days';
-const LEGACY_KEY = 'superclock-fitness-count'; // pre-per-day single lifetime count
-
-// LOCAL calendar date, not toISOString() (UTC) — same rationale as HabitsApp:
-// mixing the two shifts day keys by one around midnight in any UTC+ timezone.
-function toDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function loadDays(): Record<string, number> {
-  let days: Record<string, number> = {};
-  try { days = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}'); }
-  catch { days = {}; }
-
-  // One-time migration: the old key held a single lifetime count — treat it as
-  // today's reps once, then delete it so it can never re-migrate.
-  const legacy = localStorage.getItem(LEGACY_KEY);
-  if (legacy !== null) {
-    const n = parseInt(legacy, 10);
-    if (Number.isFinite(n) && n > 0) {
-      const today = toDateStr(new Date());
-      days[today] = Math.max(days[today] ?? 0, n);
-    }
-    localStorage.removeItem(LEGACY_KEY);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
-  }
-  return days;
-}
-
-// Consecutive days (ending today, or yesterday if today isn't done yet)
-// on which the goal was actually met. Earned, not decorative.
-function computeStreak(days: Record<string, number>, goal: number, now: Date): number {
-  const d = new Date(now);
-  if ((days[toDateStr(d)] ?? 0) < goal) d.setDate(d.getDate() - 1);
-  let streak = 0;
-  while ((days[toDateStr(d)] ?? 0) >= goal) {
-    streak += 1;
-    d.setDate(d.getDate() - 1);
-  }
-  return streak;
-}
-
-// ── Today view ──────────────────────────────────────────────────────────────
-
-function TodayView({
-  reps,
-  goal,
-  exercise,
-  streak,
-}: {
-  reps: number;
-  goal: number;
-  exercise: string;
-  streak: number;
-}) {
-  const progress = Math.min(reps / goal, 1);
-  const circumference = 2 * Math.PI * 460;
-  const offset = circumference * (1 - progress);
-  const dotCount = Math.min(streak, 7);
-
-  return (
-    <svg
-      viewBox="0 0 1000 1000"
-      preserveAspectRatio="xMidYMid slice"
-      className="h-full w-full"
-    >
-      {/* Background fills viewBox so any over-scan stays cream */}
-      <rect x="0" y="0" width="1000" height="1000" fill="#f5f0eb" />
-
-      {/* Progress ring track */}
-      <circle
-        cx="500" cy="500" r="460"
-        fill="none"
-        stroke="#e0d8d0"
-        strokeWidth="40"
-      />
-
-      {/* Progress ring fill — gradient from red to dark red */}
-      <circle
-        cx="500" cy="500" r="460"
-        fill="none"
-        stroke="url(#fitnessGradient)"
-        strokeWidth="40"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        style={{
-          transform: 'rotate(-90deg)',
-          transformOrigin: '500px 500px',
-          transition: 'stroke-dashoffset 0.5s ease',
-        }}
-      />
-
-      <defs>
-        <linearGradient id="fitnessGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e33030" />
-          <stop offset="100%" stopColor="#8b1a1a" />
-        </linearGradient>
-      </defs>
-
-      {/* Count vs goal */}
-      <text x="500" y="380" textAnchor="middle" fill="#222" fontSize="120" fontWeight="800" fontFamily="Inter, sans-serif">
-        {reps}
-      </text>
-      <text x="500" y="445" textAnchor="middle" fill="#999" fontSize="40" fontFamily="Inter, sans-serif">
-        of {goal}
-      </text>
-
-      {/* Exercise emoji + configured label */}
-      <text x="500" y="560" textAnchor="middle" fontSize="100">
-        {'\u{1F4AA}'}
-      </text>
-      <text x="500" y="650" textAnchor="middle" fill="#666" fontSize="44" fontWeight="600" fontFamily="Inter, sans-serif">
-        {exercise}
-      </text>
-
-      {/* Streak dots — one per consecutive goal-met day, capped at 7 */}
-      {Array.from({ length: dotCount }, (_, i) => (
-        <circle
-          key={i}
-          cx={500 + (i - (dotCount - 1) / 2) * 44}
-          cy={720}
-          r={14}
-          fill="#e33030"
-        />
-      ))}
-      {streak > 7 && (
-        <text x="500" y="775" textAnchor="middle" fill="#999" fontSize="30" fontFamily="Inter, sans-serif">
-          {streak} day streak
-        </text>
-      )}
-    </svg>
-  );
-}
-
-// ── Week view ───────────────────────────────────────────────────────────────
-
-function WeekView({
-  days,
-  goal,
-  now,
-}: {
-  days: Record<string, number>;
-  goal: number;
-  now: Date;
-}) {
-  const BAR_W = 56;
-  const GAP = 28;
-  const BASE_Y = 640;
-  const MAX_H = 300;
-  const startX = 500 - (7 * BAR_W + 6 * GAP) / 2;
-
-  const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - (6 - i));
-    return d;
-  });
-
-  return (
-    <svg
-      viewBox="0 0 1000 1000"
-      preserveAspectRatio="xMidYMid slice"
-      className="h-full w-full"
-    >
-      <rect x="0" y="0" width="1000" height="1000" fill="#f5f0eb" />
-
-      <text x="500" y="250" textAnchor="middle" fill="#666" fontSize="44" fontWeight="600" fontFamily="Inter, sans-serif">
-        Last 7 days
-      </text>
-
-      {week.map((d, i) => {
-        const reps = days[toDateStr(d)] ?? 0;
-        const h = Math.max(Math.min(reps / goal, 1) * MAX_H, reps > 0 ? 16 : 0);
-        const x = startX + i * (BAR_W + GAP);
-        const isToday = i === 6;
-        return (
-          <g key={toDateStr(d)}>
-            {/* Track */}
-            <rect
-              x={x} y={BASE_Y - MAX_H}
-              width={BAR_W} height={MAX_H}
-              rx={BAR_W / 2}
-              fill="#e0d8d0"
-            />
-            {/* Fill vs dailyGoal */}
-            {reps > 0 && (
-              <rect
-                x={x} y={BASE_Y - h}
-                width={BAR_W} height={h}
-                rx={Math.min(BAR_W / 2, h / 2)}
-                fill={reps >= goal ? '#8b1a1a' : '#e33030'}
-              />
-            )}
-            <text
-              x={x + BAR_W / 2} y={BASE_Y - MAX_H - 24}
-              textAnchor="middle" fill="#666"
-              fontSize="30" fontFamily="Inter, sans-serif"
-            >
-              {reps}
-            </text>
-            <text
-              x={x + BAR_W / 2} y={BASE_Y + 48}
-              textAnchor="middle"
-              fill={isToday ? '#222' : '#999'}
-              fontSize="30"
-              fontWeight={isToday ? '700' : '400'}
-              fontFamily="Inter, sans-serif"
-            >
-              {d.toLocaleDateString('en-US', { weekday: 'short' })}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-// ── Root component ──────────────────────────────────────────────────────────
-
-/** Fitness/Gym screen — based on Figma S4 design (489:20936). Circular progress ring. */
 export default function FitnessApp({ isActive, config }: AppProps) {
+  // safeParse, not parse: a zod enum only falls back to its default when the
+  // key is ABSENT. A stale or hand-edited `workoutId` that isn't in the enum
+  // would throw and white-screen the kiosk, so bad config degrades to defaults.
   const cfg = useMemo(() => {
     const parsed = fitnessAppSchema.safeParse(config ?? {});
     return parsed.success ? parsed.data : fitnessAppSchema.parse({});
   }, [config]);
 
-  const [view, setView] = useState<View>('today');
-  const [days, setDays] = useState<Record<string, number>>(loadDays);
+  const [workoutIndex, setWorkoutIndex] = useState(() =>
+    Math.max(0, WORKOUTS.findIndex((w) => w.id === cfg.workoutId)),
+  );
+
+  // Config overrides the workout's built-in durations so the admin can retune
+  // without editing code.
+  const workout: Workout = useMemo(() => {
+    const base = getWorkout(WORKOUTS[workoutIndex].id);
+    return {
+      ...base,
+      workSeconds: cfg.workSeconds ?? base.workSeconds,
+      restSeconds: cfg.restSeconds ?? base.restSeconds,
+      rounds: cfg.rounds ?? base.rounds,
+    };
+  }, [workoutIndex, cfg.workSeconds, cfg.restSeconds, cfg.rounds]);
+
+  // Seeded from a suspended circuit-store entry if one matches this workout
+  // (see circuit-store.ts): swiping away mid-workout suspends a PAUSED state
+  // there on unmount, and coming back should resume it rather than starting
+  // over. takeSuspendedCircuit is take-once, so it must be called exactly
+  // once per mount — not once for `state` and again for `stateRef`, which
+  // would silently discard the second call's null result and desync the two.
+  //
+  // The useState lazy initializer is the one place guaranteed to run exactly
+  // once at mount. `stateRef` is then seeded from `state` (a plain value
+  // returned by useState), not by reading `stateRef.current` during render —
+  // reading a ref's `.current` in the render body is what trips
+  // react-hooks/refs, and this never does that. Every update after mount
+  // keeps the two in lockstep by construction (dispatch and the
+  // workout-swipe handler always write both together).
+  const [state, setState] = useState<CircuitState>(
+    () => takeSuspendedCircuit(workout.id, Date.now()) ?? initialState(workout.id),
+  );
+  const stateRef = useRef<CircuitState>(state);
+
+  const [now, setNow] = useState(() => Date.now());
+
+  // No ref mirror here (unlike stateRef above): a functional setState
+  // update gets a guaranteed-fresh `prev` from React itself, so there's no
+  // stale-read hazard to guard against, and persistence moves to its own
+  // effect below instead of running inside the updater.
+  const [streak, setStreak] = useState(() => settleMissedDays(loadStreak(), new Date()));
+  useEffect(() => {
+    saveStreak(streak);
+  }, [streak]);
+
+  // Re-settle on day rollover, not just at mount: a kiosk can sit on this
+  // screen for weeks, and settleMissedDays' header comment promises a
+  // periodic recheck so missed-day hearts decrement at midnight even
+  // without a workout completing. `settledThroughKey` (already part of
+  // StreakState) doubles as the "did the day actually change" gate, so the
+  // functional updater returns the same `prev` reference — and React skips
+  // the re-render — on every poll that isn't a rollover.
+  useEffect(() => {
+    if (!isActive) return;
+    const id = window.setInterval(() => {
+      const now = new Date();
+      setStreak((prev) => (prev.settledThroughKey === toDateKey(now) ? prev : settleMissedDays(prev, now)));
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [isActive]);
+
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
   const showGrid = useNavigation((s) => s.showGrid);
 
-  // Per-day keying means the count zeroes at local midnight on its own — this
-  // minute-level tick (CalendarApp pattern) just rolls `now` so a kiosk left on
-  // this screen overnight re-renders onto the new day's (empty) key.
-  // cfg.resetAt: 'wake-time' and 'manual' currently behave as 'midnight' —
-  // there is no wake signal or manual-reset control yet.
-  const [now, setNow] = useState(() => new Date());
+  const audio = useRef<WorkoutAudio | null>(null);
+  if (audio.current === null) {
+    audio.current = new WorkoutAudio({ beeps: cfg.beeps, voice: cfg.voiceCues });
+  }
+  // The instance above is constructed once and lives for the app's mount
+  // lifetime (kiosk apps stay mounted indefinitely), so a later config poll
+  // that flips beeps/voiceCues has to reach the existing instance — the
+  // constructor args were only ever a snapshot of whatever cfg was at
+  // mount.
   useEffect(() => {
-    if (!isActive) return;
-    const id = setInterval(() => {
-      setNow((prev) => {
-        const d = new Date();
-        return toDateStr(d) === toDateStr(prev) ? prev : d;
-      });
-    }, 60_000);
-    return () => clearInterval(id);
-  }, [isActive]);
+    audio.current?.setOptions({ beeps: cfg.beeps, voice: cfg.voiceCues });
+  }, [cfg.beeps, cfg.voiceCues]);
 
-  // View switching consumes vertical swipes via the shell's callback slot
-  // (same mechanism as HabitsApp's daily/monthly cycling).
+  const running = state.phase === 'countdown' || state.phase === 'work' || state.phase === 'rest';
+
+  // Mirrors `workout` for the unmount cleanup below, which runs with an
+  // empty dep array (see that effect) and so cannot read a fresh `workout`
+  // from its own closure — only from a ref kept current here.
+  const workoutRef = useRef(workout);
   useEffect(() => {
-    if (!isActive) {
-      setVerticalSwipeCallback(null);
-      return;
+    workoutRef.current = workout;
+  }, [workout]);
+
+  const dispatch = useCallback((event: CircuitEvent) => {
+    const prev = stateRef.current;
+    const { state: next, cues } = reduce(prev, event, workout);
+    if (next !== prev) {
+      stateRef.current = next;
+      setState(next);
     }
-    const cb = (dir: 'up' | 'down') => {
-      if (dir === 'up') {
-        if (view === 'today') setView('week');
-      } else if (view === 'week') {
-        setView('today');
-      } else {
-        showGrid(); // swipe down at today = the shell's default gesture
+    for (const cue of cues) audio.current?.play(cue);
+    if (prev.phase !== 'complete' && next.phase === 'complete') {
+      setStreak((prevStreak) => completeWorkout(prevStreak, new Date()));
+    }
+    // A stale suspended entry must not linger past the point the workout is
+    // done or explicitly abandoned — otherwise a later mount could resume a
+    // circuit the user already finished or walked away from on purpose.
+    if (event.type === 'ABORT' || (prev.phase !== 'complete' && next.phase === 'complete')) {
+      clearSuspendedCircuit();
+    }
+  }, [workout]);
+
+  useCircuitTimer(isActive, (t) => {
+    setNow(t);
+    dispatch({ type: 'TICK', now: t });
+  });
+
+  // Pauses a running circuit when the app grid opens over it.
+  //
+  // SwipeContainer passes `isActive={mode !== 'grid'}` and keys its child on
+  // the active app id, so this effect only fires for the grid-overlay case —
+  // swiping to a DIFFERENT app (or playlist rotation, core/playlist.ts)
+  // changes the key and unmounts this component outright instead of
+  // re-rendering it with isActive:false. That path is covered separately by
+  // the unmount cleanup below, which suspends into circuit-store.ts so the
+  // next mount can resume it.
+  useEffect(() => {
+    if (!isActive && running) dispatch({ type: 'PAUSE', now: Date.now() });
+  }, [isActive, running, dispatch]);
+
+  // Hold the screen at full brightness while a circuit runs, unless the
+  // admin has turned that override off for this instance.
+  useEffect(() => {
+    if (!running || !cfg.keepBright) return;
+    acquireBrightnessLease();
+    const timer = window.setInterval(() => acquireBrightnessLease(), LEASE_RENEW_MS);
+    return () => { window.clearInterval(timer); releaseBrightnessLease(); };
+  }, [running, cfg.keepBright]);
+
+  // Runs once, on real unmount only (empty deps) — the case the grid-pause
+  // effect above cannot reach: swiping to a different app, or playlist
+  // rotation, tears this component down instead of re-rendering it with
+  // isActive:false. Suspend whatever's running (or already paused) into
+  // circuit-store.ts before disposing audio, so the next mount can resume it
+  // instead of losing it.
+  //
+  // Reads stateRef/workoutRef rather than the closed-over `state`/`workout`:
+  // this closure is captured once at mount, so those would be whatever was
+  // current on the FIRST render, not the latest.
+  //
+  // Pausing before suspending matters: the reducer stores `phaseEndsAt` as
+  // an absolute epoch, so suspending a still-RUNNING state and resuming it
+  // 10 minutes later would compute a massively negative remaining time and
+  // jump straight to `complete`. Reducing PAUSE through the reducer (rather
+  // than hand-constructing a paused state) also works when the circuit is
+  // already paused — the reducer no-ops on phases other than
+  // countdown/work/rest, so the `phase === 'paused'` check below correctly
+  // skips suspending a `ready` or `complete` circuit too.
+  useEffect(() => {
+    return () => {
+      audio.current?.dispose();
+      const current = stateRef.current;
+      const { state: maybePaused } = reduce(current, { type: 'PAUSE', now: Date.now() }, workoutRef.current);
+      if (maybePaused.phase === 'paused') {
+        suspendCircuit(maybePaused, workoutRef.current.id, Date.now());
+      }
+    };
+  }, []);
+
+  // Dev-only handle for stepping the circuit by hand, mirroring `window.__nav`.
+  // Two places need it: the Pi has no attachable debugger, and Claude's preview
+  // tab is permanently backgrounded — Chromium suspends rAF entirely in a hidden
+  // tab, so `useCircuitTimer` never fires there and the circuit cannot otherwise
+  // be advanced. Stripped from production builds by the `import.meta.env.DEV`
+  // guard.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __fitness?: unknown };
+    w.__fitness = {
+      // Advances the display clock alongside the reducer, exactly as the real
+      // tick callback does — otherwise the rendered countdown is derived from
+      // a `now` frozen at mount and shows nonsense.
+      dispatch: (event: CircuitEvent) => {
+        if ('now' in event) setNow(event.now);
+        dispatch(event);
+      },
+      getState: () => stateRef.current,
+    };
+    return () => { delete w.__fitness; };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!isActive) { setVerticalSwipeCallback(null); return; }
+    const cb = (dir: 'up' | 'down'): void => {
+      if (dir === 'down') { showGrid(); return; }
+      if (state.phase === 'ready') {
+        // Cycling the workout while idle must also reset the circuit to a
+        // clean state for the newly selected workout, not just point the
+        // index at it — otherwise stateRef/state keep holding the previous
+        // workout's id. This lives here, in the swipe handler, rather than
+        // an effect keyed on `workout`/workoutIndex: `workout` is a new
+        // object on every cfg change too (admin retuning
+        // workSeconds/restSeconds/rounds), and an effect that reset on any
+        // such change would wipe an in-progress circuit the moment the
+        // admin pushed a config update mid-workout. Doing the reset only in
+        // response to the explicit "swipe while ready" gesture keeps it
+        // scoped to the one case that should reset.
+        const nextIndex = (workoutIndex + 1) % WORKOUTS.length;
+        setWorkoutIndex(nextIndex);
+        const fresh = initialState(WORKOUTS[nextIndex].id);
+        stateRef.current = fresh;
+        setState(fresh);
+      } else if (state.phase === 'paused') {
+        dispatch({ type: 'ABORT', now: Date.now() });
+      } else if (running) {
+        dispatch({ type: 'SKIP', now: Date.now() });
       }
     };
     setVerticalSwipeCallback(cb);
     return () => {
       // popLayout keeps the exiting app mounted after the next app registers —
-      // only clear the slot if it's still ours.
+      // only clear the slot if it's still ours (guarded-cleanup contract).
       if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
     };
-  }, [isActive, view, setVerticalSwipeCallback, showGrid]);
+  }, [isActive, state.phase, running, workoutIndex, setVerticalSwipeCallback, showGrid, dispatch]);
 
-  const todayReps = days[toDateStr(now)] ?? 0;
-  const streak = computeStreak(days, cfg.dailyGoal, now);
-
-  function handleTap() {
-    const key = toDateStr(new Date());
-    const next = { ...days, [key]: (days[key] ?? 0) + 1 };
-    setDays(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  function handleTap(): void {
+    const t = Date.now();
+    if (state.phase === 'ready') {
+      audio.current?.preload(workout.exerciseIds);
+      dispatch({ type: 'START', workoutId: workout.id, now: t });
+    } else if (state.phase === 'paused') dispatch({ type: 'RESUME', now: t });
+    else if (state.phase === 'complete') dispatch({ type: 'ABORT', now: t });
+    else dispatch({ type: 'PAUSE', now: t });
   }
 
+  const vm = deriveViewModel(state, workout, now);
+
   return (
-    <div
-      className="relative h-full w-full overflow-hidden bg-[#f5f0eb]"
-      onClick={view === 'today' ? handleTap : undefined}
-    >
-      {view === 'today'
-        ? <TodayView reps={todayReps} goal={cfg.dailyGoal} exercise={cfg.exercise} streak={streak} />
-        : <WeekView days={days} goal={cfg.dailyGoal} now={now} />
-      }
-      <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'today' ? 'bg-black/70' : 'bg-black/20'}`} />
-        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'week' ? 'bg-black/70' : 'bg-black/20'}`} />
-      </div>
+    <div className="h-full w-full" onClick={handleTap}>
+      <WatchFace
+        progress={vm.progress}
+        headline={vm.headline}
+        caption={vm.caption}
+        heartsTotal={HEARTS_PER_MONTH}
+        heartsLeft={streak.hearts}
+        exerciseId={vm.artId}
+        artPhase={vm.artPhase}
+        playing={state.phase !== 'paused'}
+        inverted={state.phase === 'rest'}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { useDeviceConfig } from './device-config';
 import { isWithinWindow } from '../shared/time-window';
 import { useLocalOverrides, effectiveBrightness, effectiveNight } from './local-overrides';
+import { useBrightnessLease } from './brightness-lease';
 
 // Re-evaluate the night window this often. Boundary lag budget: ≤5s config
 // poll + ≤30s tick — same cadence as the server's display-adapter evaluator.
@@ -54,6 +55,7 @@ export function useApplySettings(): void {
   // pure — on a boundary flip it returns the schedule immediately (DOM correct),
   // and the syncBases effect below tidies the now-spent override.
   const isNight = effectiveNight(scheduledNight, nightOverride);
+  const brightnessLeased = useBrightnessLease();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -78,10 +80,15 @@ export function useApplySettings(): void {
   // moves off its base. Resolved in render (not the effect) so a quick-settings
   // slider change — which re-renders this hook via the subscription above but
   // touches none of isNight/nightBrightness/dayBrightness — still reaches the
-  // effect via the `pct` dep.
+  // effect via the `applied` dep.
   const basePct =
     isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
   const pct = effectiveBrightness(basePct, brightnessOverride);
+  // A leased screen (an in-progress workout) renders unfiltered regardless of
+  // the night window or a local override — you cannot read a dimmed timer
+  // mid-exercise. The lease outranks the dimming pipeline but never touches
+  // the override/base bookkeeping in syncBases below.
+  const applied = brightnessLeased ? undefined : pct;
 
   // Publish the live bases and tidy spent overrides in an effect, not during
   // render (React 19 forbids updating a store other components read while
@@ -99,8 +106,8 @@ export function useApplySettings(): void {
     root.style.transition = 'filter 1s ease';
     // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
     // filter that still costs a stacking context.
-    if (typeof pct === 'number' && pct < 100) {
-      const clamped = Math.max(0, pct);
+    if (typeof applied === 'number' && applied < 100) {
+      const clamped = Math.max(0, applied);
       root.style.filter = `brightness(${clamped / 100})`;
     } else {
       root.style.filter = '';
@@ -109,5 +116,5 @@ export function useApplySettings(): void {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [pct]);
+  }, [applied]);
 }

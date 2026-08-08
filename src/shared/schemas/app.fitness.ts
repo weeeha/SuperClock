@@ -1,16 +1,28 @@
 import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
 
+// Replaces the old rep-counter fields (exercise/dailyGoal/resetAt), which
+// have no meaning now the app is workout-only. Stale keys in fleet.json are
+// harmless: instance config is typed as an opaque record at the
+// device-config layer, and this plain z.object strips unknown keys.
 export const fitnessAppSchema = z.object({
-  exercise: z.string().default('Push-ups'),
-  dailyGoal: z.number().int().min(1).max(500).default(50),
-  resetAt: z.enum(['midnight', 'wake-time', 'manual']).default('midnight'),
+  workoutId: z.enum(['full-body', 'core', 'lower']).default('full-body'),
+  workSeconds: z.number().int().min(10).max(120).optional(),
+  restSeconds: z.number().int().min(0).max(60).optional(),
+  rounds: z.number().int().min(1).max(5).optional(),
+  voiceCues: z.boolean().default(true),
+  beeps: z.boolean().default(true),
+  keepBright: z.boolean().default(true),
 });
 
 export const fitnessAppMeta: FieldMetaMap = {
-  exercise: { description: 'Label shown inside the ring', placeholder: 'Push-ups' },
-  dailyGoal: { min: 1, max: 500, step: 1, description: 'Reps to fill the ring' },
-  resetAt: { description: 'When the counter zeroes back to 0 (wake-time/manual currently behave as midnight)' },
+  workoutId: { description: 'Which circuit runs when you tap to start' },
+  workSeconds: { min: 10, max: 120, step: 5, description: 'Seconds per exercise (unset = use the workout default)' },
+  restSeconds: { min: 0, max: 60, step: 5, description: 'Seconds between exercises (unset = use the workout default)' },
+  rounds: { min: 1, max: 5, step: 1, description: 'Times to repeat the circuit (unset = use the workout default)' },
+  voiceCues: { description: 'Announce each exercise by name' },
+  beeps: { description: 'Countdown and transition tones' },
+  keepBright: { description: 'Ignore night dimming while a workout is running' },
 };
 
 export type FitnessAppConfig = z.infer<typeof fitnessAppSchema>;
