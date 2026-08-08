@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { CalendarEvent } from '../../api/types';
 import {
+  countdownLabel,
+  dayKey,
+  eventDayKeys,
   startOfWeek,
   weekDays,
   monthWeeks,
@@ -9,6 +12,7 @@ import {
   eventsForDay,
   groupEventsByDay,
   overlapsRange,
+  popDrill,
   relativeTime,
   sameDay,
 } from './calendar-utils';
@@ -128,6 +132,46 @@ describe('overlapsRange', () => {
   });
 });
 
+describe('dayKey / eventDayKeys', () => {
+  it('dayKey uses the local calendar date', () => {
+    expect(dayKey(new Date(2026, 6, 19, 23, 59))).toBe('2026-7-19');
+  });
+  it('expands a multi-day timed event across its span', () => {
+    const e = ev({ start: new Date(2026, 6, 14, 10).toISOString(), end: new Date(2026, 6, 16, 15).toISOString() });
+    const keys = eventDayKeys([e]);
+    expect(keys.has('2026-7-14')).toBe(true);
+    expect(keys.has('2026-7-15')).toBe(true);
+    expect(keys.has('2026-7-16')).toBe(true);
+    expect(keys.has('2026-7-17')).toBe(false);
+  });
+  it('respects the exclusive all-day DTEND', () => {
+    const trip = ev({ allDay: true,
+      start: new Date(2026, 6, 14).toISOString(), end: new Date(2026, 6, 17).toISOString() });
+    const keys = eventDayKeys([trip]);
+    expect(keys.has('2026-7-16')).toBe(true);
+    expect(keys.has('2026-7-17')).toBe(false);
+  });
+  it('a zero-duration event covers only its own day', () => {
+    const e = ev({ start: new Date(2026, 6, 19, 9).toISOString(), end: new Date(2026, 6, 19, 9).toISOString() });
+    expect([...eventDayKeys([e])]).toEqual(['2026-7-19']);
+  });
+});
+
+describe('countdownLabel', () => {
+  const now = new Date(2026, 6, 19, 15, 30);
+  it('formats hours + minutes inside the window', () => {
+    expect(countdownLabel(new Date(2026, 6, 19, 18, 42), now)).toBe('in 3h 12m');
+    expect(countdownLabel(new Date(2026, 6, 19, 16, 15), now)).toBe('in 45m');
+  });
+  it('returns null for past starts and beyond the window', () => {
+    expect(countdownLabel(new Date(2026, 6, 19, 15, 0), now)).toBeNull();
+    expect(countdownLabel(new Date(2026, 6, 20, 8, 0), now)).toBeNull(); // 16.5h out
+  });
+  it('exactly at the 12h edge still counts down', () => {
+    expect(countdownLabel(new Date(2026, 6, 20, 3, 30), now)).toBe('in 12h 0m');
+  });
+});
+
 describe('relativeTime', () => {
   it('formats future distances from now', () => {
     const now = new Date(2026, 6, 19, 15, 30);
@@ -139,5 +183,23 @@ describe('relativeTime', () => {
     const now = new Date(2026, 6, 19, 15, 30);
     expect(relativeTime(new Date(2026, 6, 19, 15, 30, 20), now)).toBe('now');
     expect(relativeTime(new Date(2026, 6, 19, 14, 30), now)).toBe('started 1 hour ago');
+  });
+});
+
+describe('popDrill', () => {
+  const day = new Date(2026, 6, 19);
+  const event: CalendarEvent = {
+    uid: 'e1', title: 'Standup', start: '2026-07-19T09:00:00Z',
+    end: '2026-07-19T09:15:00Z', allDay: false,
+  };
+
+  it('pops details → day, keeping the originating day', () => {
+    expect(popDrill({ kind: 'details', day, event })).toEqual({ kind: 'day', day });
+  });
+  it('pops day → resting (null)', () => {
+    expect(popDrill({ kind: 'day', day })).toBeNull();
+  });
+  it('is an idempotent no-op at the surface', () => {
+    expect(popDrill(null)).toBeNull();
   });
 });

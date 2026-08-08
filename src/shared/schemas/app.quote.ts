@@ -9,7 +9,7 @@ export const quoteAppSchema = z.object({
 });
 
 export const quoteAppMeta: FieldMetaMap = {
-  source: { description: 'Where quotes come from' },
+  source: { description: 'Where quotes come from (url not implemented yet — falls back to built-in)' },
   sourceUrl: {
     format: 'url',
     description: 'JSON endpoint returning [{ text, author }]',

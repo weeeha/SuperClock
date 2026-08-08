@@ -1,9 +1,30 @@
 import { useEffect, useRef } from 'react';
 import { useDeviceConfig } from './device-config';
 import { useNavigation } from './navigation';
+import { loadLocalConfig } from '../shared/local-config';
+import type { DeviceConfig } from '../shared/types';
 
 // 30-second cooldown after any user gesture before auto-rotation resumes.
 const GESTURE_PAUSE_MS = 30_000;
+
+// Single source of truth for "is there a playlist to rotate through" —
+// shared by the hook (via useDeviceConfig) and isPlaylistDriving (via the
+// same localStorage-backed snapshot, read outside React).
+function getRotationState(config: DeviceConfig | null) {
+  const items = config?.playlist.items ?? [];
+  const rotationSeconds = config?.playlist.rotationSeconds ?? null;
+  return { items, rotationSeconds };
+}
+
+// True when the device has an active, non-empty playlist — i.e.
+// usePlaylistAutoRotate is (or will imminently be) driving navigation.
+// Non-hook so it can be called from plain functions like useIdleReturn's
+// checkIdle(); reads the same cached config snapshot loadLocalConfig()
+// backs useDeviceConfig with, so this never drifts from what the hook sees.
+export function isPlaylistDriving(): boolean {
+  const { items, rotationSeconds } = getRotationState(loadLocalConfig());
+  return Boolean(rotationSeconds) && items.length > 0;
+}
 
 // Drives auto-rotation through DeviceConfig.playlist.items.
 // On enable, immediately shows items[0]. Each tick advances to the next item.
@@ -14,8 +35,7 @@ export function usePlaylistAutoRotate(): void {
   const switchToInstance = useNavigation((s) => s.switchToInstance);
   const positionRef = useRef(0);
 
-  const items = config?.playlist.items ?? [];
-  const rotationSeconds = config?.playlist.rotationSeconds ?? null;
+  const { items, rotationSeconds } = getRotationState(config);
   const instances = config?.instances ?? [];
   const itemsKey = items.join('|');
 

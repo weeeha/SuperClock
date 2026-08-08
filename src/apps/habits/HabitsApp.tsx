@@ -1,18 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { habitsAppSchema } from '../../shared/schemas/app.habits';
 
 type View = 'daily' | 'monthly';
 
-const HABITS = [
-  { id: 'health',   name: 'Health',   color: '#FF3333' },
-  { id: 'read',     name: 'Read',     color: '#19A340' },
-  { id: 'fitness',  name: 'Fitness',  color: '#FF7012' },
-  { id: 'code',     name: 'Code',     color: '#0044FF' },
-  { id: 'water',    name: 'Water',    color: '#00B7FF' },
-  { id: 'nature',   name: 'Nature',   color: '#16DD73' },
-  { id: 'creative', name: 'Creative', color: '#FFD400' },
-];
+type Habit = { id: string; name: string; color: string };
+
+const HABIT_COLORS = ['#FF3333', '#19A340', '#FF7012', '#0044FF', '#00B7FF', '#16DD73', '#FFD400'];
+
+// Ids are lowercased names — identical to the ids the old hardcoded list used,
+// so completions stored under STORAGE_KEY keep resolving after the move to
+// config-driven habits. Colors assign by position (palette cycles past 7).
+function habitsFromNames(names: string[]): Habit[] {
+  const habits: Habit[] = [];
+  const seen = new Set<string>();
+  for (const name of names) {
+    const id = name.trim().toLowerCase();
+    if (!id || seen.has(id)) continue; // duplicate ids would collide in storage + React keys
+    seen.add(id);
+    habits.push({ id, name: name.trim(), color: HABIT_COLORS[habits.length % HABIT_COLORS.length] });
+  }
+  return habits;
+}
 
 const CX = 500;
 const CY = 500;
@@ -56,10 +66,12 @@ function arcPath(r: number, startDeg: number, endDeg: number): string {
 // ── Daily view ──────────────────────────────────────────────────────────────
 
 function DailyView({
+  habits,
   completions,
   toggle,
   now,
 }: {
+  habits: Habit[];
   completions: Record<string, boolean>;
   toggle: (id: string) => void;
   now: Date;
@@ -68,14 +80,14 @@ function DailyView({
   const day = now.getDate();
   const weekday = now.toLocaleDateString('en-US', { weekday: 'short' });
   const month = now.toLocaleDateString('en-US', { month: 'short' });
-  const doneCount = HABITS.filter(h => completions[hKey(h.id, todayStr)]).length;
+  const doneCount = habits.filter(h => completions[hKey(h.id, todayStr)]).length;
   const ORBIT = 310;
   const BTN_R = 88;
 
   return (
     <svg viewBox="0 0 1000 1000" className="w-full h-full">
       <defs>
-        {HABITS.map(h => (
+        {habits.map(h => (
           <filter key={h.id} id={`gd-${h.id}`} x="-80%" y="-80%" width="260%" height="260%">
             <feGaussianBlur stdDeviation="18" result="blur" />
             <feMerge>
@@ -86,8 +98,8 @@ function DailyView({
         ))}
       </defs>
 
-      {HABITS.map((habit, i) => {
-        const angle = (i / HABITS.length) * 360;
+      {habits.map((habit, i) => {
+        const angle = (i / habits.length) * 360;
         const [bx, by] = polarToXY(ORBIT, angle);
         const done = !!completions[hKey(habit.id, todayStr)];
         return (
@@ -120,7 +132,7 @@ function DailyView({
       <text x={CX} y={CY + 98} textAnchor="middle" fill="rgba(255,255,255,0.4)"
         fontSize="34" fontFamily="Inter, sans-serif">{month}</text>
       <text x={CX} y={CY + 138} textAnchor="middle" fill="rgba(255,255,255,0.25)"
-        fontSize="24" fontFamily="Inter, sans-serif">{doneCount}/{HABITS.length}</text>
+        fontSize="24" fontFamily="Inter, sans-serif">{doneCount}/{habits.length}</text>
     </svg>
   );
 }
@@ -128,9 +140,11 @@ function DailyView({
 // ── Monthly view ─────────────────────────────────────────────────────────────
 
 function MonthlyView({
+  habits,
   completions,
   now,
 }: {
+  habits: Habit[];
   completions: Record<string, boolean>;
   now: Date;
 }) {
@@ -140,7 +154,12 @@ function MonthlyView({
   const todayDay = now.getDate();
   const monthName = now.toLocaleDateString('en-US', { month: 'long' });
 
-  const RING_RADII = [140, 178, 216, 254, 292, 330, 368];
+  // Rings spread evenly from RING_MIN to RING_MAX; at 7 habits this yields the
+  // original hardcoded radii (140..368 step 38), and other counts still fit.
+  const RING_MIN = 140;
+  const RING_MAX = 368;
+  const ringR = (hi: number) =>
+    habits.length > 1 ? RING_MIN + (hi * (RING_MAX - RING_MIN)) / (habits.length - 1) : RING_MIN;
   const STROKE_W = 28;
   const SEG = 360 / totalDays;
   const GAP = 1.8;
@@ -148,7 +167,7 @@ function MonthlyView({
   return (
     <svg viewBox="0 0 1000 1000" className="w-full h-full">
       <defs>
-        {HABITS.map(h => (
+        {habits.map(h => (
           <filter key={h.id} id={`gm-${h.id}`} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="7" result="blur" />
             <feMerge>
@@ -159,8 +178,8 @@ function MonthlyView({
         ))}
       </defs>
 
-      {HABITS.map((habit, hi) => {
-        const r = RING_RADII[hi];
+      {habits.map((habit, hi) => {
+        const r = ringR(hi);
         return Array.from({ length: totalDays }, (_, d) => {
           const dayNum = d + 1;
           const dateStr = toDateStr(new Date(year, month, dayNum));
@@ -191,8 +210,8 @@ function MonthlyView({
         fontSize="72" fontFamily="Inter, sans-serif" fontWeight="700">{todayDay}</text>
 
       {/* Habit colour dots */}
-      {HABITS.map((h, i) => (
-        <circle key={h.id} cx={CX - 90 + i * 30} cy={CY + 88} r={6} fill={h.color} />
+      {habits.map((h, i) => (
+        <circle key={h.id} cx={CX - (habits.length - 1) * 15 + i * 30} cy={CY + 88} r={6} fill={h.color} />
       ))}
     </svg>
   );
@@ -200,7 +219,12 @@ function MonthlyView({
 
 // ── Root component ────────────────────────────────────────────────────────────
 
-export default function HabitsApp({ isActive }: AppProps) {
+export default function HabitsApp({ isActive, config }: AppProps) {
+  const cfg = useMemo(() => {
+    const parsed = habitsAppSchema.safeParse(config ?? {});
+    return parsed.success ? parsed.data : habitsAppSchema.parse({});
+  }, [config]);
+  const habits = useMemo(() => habitsFromNames(cfg.habits), [cfg.habits]);
   const [view, setView] = useState<View>('daily');
   const [completions, setCompletions] = useState<Record<string, boolean>>(loadCompletions);
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
@@ -232,7 +256,7 @@ export default function HabitsApp({ isActive }: AppProps) {
       setVerticalSwipeCallback(null);
       return;
     }
-    setVerticalSwipeCallback((dir) => {
+    const cb = (dir: 'up' | 'down') => {
       if (dir === 'up') {
         if (view === 'daily') setView('monthly');
       } else if (view === 'monthly') {
@@ -240,8 +264,13 @@ export default function HabitsApp({ isActive }: AppProps) {
       } else {
         showGrid(); // swipe down at daily = the shell's default gesture
       }
-    });
-    return () => setVerticalSwipeCallback(null);
+    };
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours.
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [isActive, view, setVerticalSwipeCallback, showGrid]);
 
   function toggle(habitId: string) {
@@ -254,8 +283,8 @@ export default function HabitsApp({ isActive }: AppProps) {
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       {view === 'daily'
-        ? <DailyView completions={completions} toggle={toggle} now={now} />
-        : <MonthlyView completions={completions} now={now} />
+        ? <DailyView habits={habits} completions={completions} toggle={toggle} now={now} />
+        : <MonthlyView habits={habits} completions={completions} now={now} />
       }
       <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
         <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'daily' ? 'bg-white' : 'bg-white/25'}`} />

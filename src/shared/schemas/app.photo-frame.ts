@@ -9,14 +9,14 @@ export const photoFrameAppSchema = z.object({
 });
 
 export const photoFrameAppMeta: FieldMetaMap = {
-  source: { description: 'Where photos come from' },
+  source: { description: 'Where photos come from (only "local" is implemented)' },
   sourcePath: {
     description: 'Folder name (local), URL (url), or topic (unsplash)',
     placeholder: 'family-2024',
     showIf: (v) => v.source !== 'local',
   },
   intervalSeconds: { min: 3, max: 300, step: 1, description: 'Seconds between slides' },
-  transition: {},
+  transition: { description: '"zoom" is not implemented yet and falls back to fade' },
 };
 
 export type PhotoFrameAppConfig = z.infer<typeof photoFrameAppSchema>;

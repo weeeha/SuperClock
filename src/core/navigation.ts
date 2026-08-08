@@ -13,6 +13,14 @@ interface NavigationState {
   verticalSwipeCallback: ((dir: 'up' | 'down') => void) | null;
   /** epoch ms of last user-initiated gesture — used by playlist to pause auto-rotate. */
   lastGestureMs: number;
+  /** Quick-settings sheet — an overlay FLAG, deliberately not a NavMode:
+   *  it must never interact with the transition contract below. */
+  settingsOpen: boolean;
+  /** Live drag progress (0..1) of an arc peek gesture, for peek-follow UI. */
+  peek: { target: 'settings' | 'grid'; progress: number } | null;
+  /** System back (left-arc swipe). Registered by drilled-in apps, same
+   *  ownership pattern as verticalSwipeCallback — including guarded cleanup. */
+  backCallback: (() => void) | null;
 
   // Actions
   /** (Re)build appOrder from the registry, filtered to `enabledApps` when
@@ -24,9 +32,16 @@ interface NavigationState {
   swipeToPrev: () => void;
   showGrid: () => void;
   hideGrid: () => void;
+  /** 3-finger tap: panic/home — default clock, from any state (spec 2026-07-24). */
+  panicHome: () => void;
   finishTransition: () => void;
   setVerticalSwipeCallback: (fn: ((dir: 'up' | 'down') => void) | null) => void;
   noteUserGesture: () => void;
+  showSettings: () => void;
+  hideSettings: () => void;
+  setPeek: (peek: { target: 'settings' | 'grid'; progress: number } | null) => void;
+  setBackCallback: (fn: (() => void) | null) => void;
+  goBack: () => void;
 }
 
 export const useNavigation = create<NavigationState>((set, get) => ({
@@ -37,6 +52,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   transitionDirection: null,
   verticalSwipeCallback: null,
   lastGestureMs: 0,
+  settingsOpen: false,
+  peek: null,
+  backCallback: null,
 
   initApps: (enabledApps) => {
     const all = getAppIds();
@@ -109,11 +127,32 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     });
   },
 
-  showGrid: () => set({ mode: 'grid', lastGestureMs: Date.now() }),
+  showGrid: () => set({ mode: 'grid', settingsOpen: false, peek: null, lastGestureMs: Date.now() }),
   hideGrid: () => set({ mode: 'app', lastGestureMs: Date.now() }),
+  panicHome: () => {
+    set({ settingsOpen: false, peek: null, lastGestureMs: Date.now() });
+    // Reuse switchToApp so the transition contract (mode:'transitioning' <=>
+    // key change) holds from every state — app/grid/transitioning alike.
+    get().switchToApp(get().appOrder[0] ?? get().activeAppId);
+  },
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
   setVerticalSwipeCallback: (fn) => set({ verticalSwipeCallback: fn }),
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),
+
+  showSettings: () => {
+    const { mode, settingsOpen } = get();
+    if (mode !== 'app' || settingsOpen) return;
+    set({ settingsOpen: true, peek: null, lastGestureMs: Date.now() });
+  },
+  hideSettings: () => set({ settingsOpen: false, peek: null, lastGestureMs: Date.now() }),
+  setPeek: (peek) => set({ peek }),
+  setBackCallback: (fn) => set({ backCallback: fn }),
+  goBack: () => {
+    const { backCallback } = get();
+    if (!backCallback) return; // no-op at app top level, per spec
+    set({ lastGestureMs: Date.now() });
+    backCallback();
+  },
 }));
 
 // Expose for debugging in dev (window-guarded: this module also loads under

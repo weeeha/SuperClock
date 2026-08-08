@@ -14,6 +14,7 @@ import { dateComplicationSchema } from './schemas/complication.date';
 import { temperatureComplicationSchema } from './schemas/complication.temperature';
 
 // Apps
+import { agentsAppSchema, agentsAppMeta } from './schemas/app.agents';
 import { breathingAppSchema, breathingAppMeta } from './schemas/app.breathing';
 import { calendarAppSchema, calendarAppMeta } from './schemas/app.calendar';
 import { claudeUsageAppSchema, claudeUsageAppMeta } from './schemas/app.claude-usage';
@@ -41,6 +42,9 @@ import {
 } from './schemas/face.complications-dark';
 import { worldFaceSchema, worldFaceMeta } from './schemas/face.world';
 import { flipFaceSchema, flipFaceMeta } from './schemas/face.flip';
+import { depletionFaceSchema, depletionFaceMeta } from './schemas/face.depletion';
+import { apertureFaceSchema, apertureFaceMeta } from './schemas/face.aperture';
+import { daylightFaceSchema, daylightFaceMeta } from './schemas/face.daylight';
 
 export interface SchemaEntry {
   schema: z.ZodObject<z.ZodRawShape>;
@@ -53,6 +57,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'complication.temperature': { schema: temperatureComplicationSchema },
 
   // Apps
+  'app.agents': { schema: agentsAppSchema, meta: agentsAppMeta },
   'app.breathing': { schema: breathingAppSchema, meta: breathingAppMeta },
   'app.calendar': { schema: calendarAppSchema, meta: calendarAppMeta },
   'app.claude-usage': { schema: claudeUsageAppSchema, meta: claudeUsageAppMeta },
@@ -80,6 +85,9 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   },
   'face.world': { schema: worldFaceSchema, meta: worldFaceMeta },
   'face.flip': { schema: flipFaceSchema, meta: flipFaceMeta },
+  'face.depletion': { schema: depletionFaceSchema, meta: depletionFaceMeta },
+  'face.aperture': { schema: apertureFaceSchema, meta: apertureFaceMeta },
+  'face.daylight': { schema: daylightFaceSchema, meta: daylightFaceMeta },
 };
 
 export function getSchema(id: string | undefined): SchemaEntry | undefined {

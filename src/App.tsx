@@ -2,10 +2,12 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNavigation } from './core/navigation';
 import { useAppGestures } from './core/hooks/useGestures';
+import { useIdleReturn } from './core/hooks/useIdleReturn';
 import { usePlaylistAutoRotate } from './core/playlist';
 import { useApplySettings } from './core/apply-settings';
 import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
+import QuickSettings from './core/components/QuickSettings';
 import PresenceShade from './core/components/PresenceShade';
 import { startConfigPolling, stopConfigPolling } from './shared/local-config';
 import { useDeviceConfig } from './core/device-config';
@@ -33,6 +35,7 @@ export default function App() {
   }, []);
 
   useAppGestures(containerRef);
+  useIdleReturn();
   usePlaylistAutoRotate();
   useApplySettings();
 
@@ -42,6 +45,7 @@ export default function App() {
       <AnimatePresence>
         {mode === 'grid' && <AppGrid />}
       </AnimatePresence>
+      <QuickSettings />
       <PresenceShade />
       {import.meta.env.DEV && (
         <div

@@ -8,6 +8,9 @@ import ComplicationsLight from './ComplicationsLight';
 import ComplicationsDark from './ComplicationsDark';
 import WorldClock from './WorldClock';
 import FlipClock from './FlipClock';
+import DepletionClock from './DepletionClock';
+import ApertureClock from './ApertureClock';
+import DaylightClock from './DaylightClock';
 
 export interface FaceProps {
   isActive: boolean;
@@ -30,6 +33,9 @@ export const FACE_COMPONENTS: Record<string, FaceComponent> = {
   'complications-dark': ComplicationsDark,
   world: WorldClock,
   flip: FlipClock,
+  depletion: DepletionClock,
+  aperture: ApertureClock,
+  daylight: DaylightClock,
 };
 
 export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
@@ -42,4 +48,7 @@ export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
   ComplicationsDark,
   WorldClock,
   FlipClock,
+  DepletionClock,
+  ApertureClock,
+  DaylightClock,
 ];

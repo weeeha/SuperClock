@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useDeviceConfig } from './device-config';
 import { isWithinWindow } from '../shared/time-window';
+import { useLocalOverrides, effectiveBrightness, effectiveNight } from './local-overrides';
 import { useBrightnessLease } from './brightness-lease';
 
 // Re-evaluate the night window this often. Boundary lag budget: ≤5s config
@@ -37,7 +38,12 @@ export function useApplySettings(): void {
   const nightEnd = config?.settings.night?.end;
   const nightBrightness = config?.settings.night?.brightness;
 
-  const isNight = useSyncExternalStore(
+  // Subscribe to the override slices so the hook re-runs when the quick-settings
+  // sheet writes one; the values feed the pure resolvers below.
+  const brightnessOverride = useLocalOverrides((s) => s.brightness);
+  const nightOverride = useLocalOverrides((s) => s.night);
+
+  const scheduledNight = useSyncExternalStore(
     subscribeToNightTick,
     () =>
       nightStart !== undefined &&
@@ -45,6 +51,10 @@ export function useApplySettings(): void {
       isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
     getServerSnapshot,
   );
+  // A local night override wins until the schedule next flips. The resolver is
+  // pure — on a boundary flip it returns the schedule immediately (DOM correct),
+  // and the syncBases effect below tidies the now-spent override.
+  const isNight = effectiveNight(scheduledNight, nightOverride);
   const brightnessLeased = useBrightnessLease();
 
   useEffect(() => {
@@ -66,21 +76,39 @@ export function useApplySettings(): void {
     root.classList.toggle('light', !dark);
   }, [theme, isNight]);
 
+  // Night wins the baseline; then a local brightness override wins until config
+  // moves off its base. Resolved in render (not the effect) so a quick-settings
+  // slider change — which re-renders this hook via the subscription above but
+  // touches none of isNight/nightBrightness/dayBrightness — still reaches the
+  // effect via the `applied` dep.
+  const basePct =
+    isNight && typeof nightBrightness === 'number' ? nightBrightness : dayBrightness;
+  const pct = effectiveBrightness(basePct, brightnessOverride);
+  // A leased screen (an in-progress workout) renders unfiltered regardless of
+  // the night window or a local override — you cannot read a dimmed timer
+  // mid-exercise. The lease outranks the dimming pipeline but never touches
+  // the override/base bookkeeping in syncBases below.
+  const applied = brightnessLeased ? undefined : pct;
+
+  // Publish the live bases and tidy spent overrides in an effect, not during
+  // render (React 19 forbids updating a store other components read while
+  // rendering). The resolvers already returned the base on a mismatch, so the
+  // DOM is correct before this runs; a night-override drop that shifts basePct
+  // converges next render. Publishing basePct/scheduledNight here is what lets
+  // the quick-settings sheet override against the SAME night-aware base — it
+  // must never recompute the night window itself (spurious spent-drop risk).
+  useEffect(() => {
+    useLocalOverrides.getState().syncBases(basePct, scheduledNight);
+  }, [basePct, scheduledNight]);
+
   useEffect(() => {
     const root = document.documentElement;
     root.style.transition = 'filter 1s ease';
-    // A leased screen (an in-progress workout) renders unfiltered regardless
-    // of the night window — you cannot read a dimmed timer mid-exercise.
-    const effective = brightnessLeased
-      ? undefined
-      : isNight && typeof nightBrightness === 'number'
-        ? nightBrightness
-        : dayBrightness;
     // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
     // filter that still costs a stacking context.
-    if (typeof effective === 'number' && effective < 100) {
-      const pct = Math.max(0, effective);
-      root.style.filter = `brightness(${pct / 100})`;
+    if (typeof applied === 'number' && applied < 100) {
+      const clamped = Math.max(0, applied);
+      root.style.filter = `brightness(${clamped / 100})`;
     } else {
       root.style.filter = '';
     }
@@ -88,5 +116,5 @@ export function useApplySettings(): void {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [isNight, nightBrightness, dayBrightness, brightnessLeased]);
+  }, [applied]);
 }

@@ -228,7 +228,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
 
   useEffect(() => {
     if (!isActive) { setVerticalSwipeCallback(null); return; }
-    setVerticalSwipeCallback((dir) => {
+    const cb = (dir: 'up' | 'down'): void => {
       if (dir === 'down') { showGrid(); return; }
       if (state.phase === 'ready') {
         // Cycling the workout while idle must also reset the circuit to a
@@ -252,8 +252,13 @@ export default function FitnessApp({ isActive, config }: AppProps) {
       } else if (running) {
         dispatch({ type: 'SKIP', now: Date.now() });
       }
-    });
-    return () => setVerticalSwipeCallback(null);
+    };
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours (guarded-cleanup contract).
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [isActive, state.phase, running, workoutIndex, setVerticalSwipeCallback, showGrid, dispatch]);
 
   function handleTap(): void {

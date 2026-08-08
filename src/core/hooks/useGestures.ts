@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { useNavigation } from '../navigation';
+import { classifyTouchStart } from '../gesture-zones';
+import type { TouchZone } from '../gesture-zones';
+import { resolveDragEnd } from '../gesture-resolve';
 
-const SWIPE_THRESHOLD = 50;
-const SWIPE_VELOCITY = 0.3;
 const PINCH_IN_THRESHOLD = 0.9;
 
 export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | null>) {
@@ -24,9 +25,9 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
     const updateDebug = (label: string) => {
       if (debug) debug.textContent = `${label}: ptr=${active.size}`;
     };
+    // Panic/home per spec: unconditional, from any state — not gated on mode.
     const trigger = () => {
-      const { mode, showGrid } = useNavigation.getState();
-      if (mode === 'app') showGrid();
+      useNavigation.getState().panicHome();
     };
     const onPointerDown = (e: PointerEvent) => {
       active.add(e.pointerId);
@@ -56,30 +57,49 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
   // Fires once per pinch gesture so we don't re-trigger while fingers are still down
   const pinchFired = useRef(false);
 
+  // Zone is decided at drag START (spec: origin owns the gesture) and
+  // consumed at drag end. Ref, not state — gestures must not re-render.
+  const zoneRef = useRef<TouchZone>('inner');
+  // Sheet height the peek progress is measured against (half the disc).
+  const sheetHeight = () => window.innerHeight / 2;
+
   useGesture(
     {
-      onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
-        const { mode, swipeToNext, swipeToPrev, showGrid, hideGrid, verticalSwipeCallback } = useNavigation.getState();
-        const absX = Math.abs(mx);
-        const absY = Math.abs(my);
-
-        // Vertical swipe — delegate to active app or toggle grid
-        if (absY > absX && absY > SWIPE_THRESHOLD && Math.abs(vy) > SWIPE_VELOCITY) {
-          if (mode === 'app' && verticalSwipeCallback) {
-            verticalSwipeCallback(my > 0 ? 'down' : 'up');
-          } else if (my > 0 && mode === 'app') {
-            showGrid();
-          } else if (my < 0 && mode === 'grid') {
-            hideGrid();
-          }
-          return;
+      onDragStart: ({ xy: [x, y] }) => {
+        zoneRef.current = classifyTouchStart(x, y, window.innerWidth, window.innerHeight);
+      },
+      onDrag: ({ movement: [, my] }) => {
+        const { mode, settingsOpen, setPeek } = useNavigation.getState();
+        if (mode !== 'app' || settingsOpen) return;
+        // Peek-follow: bottom arc drags the settings sheet up with the finger.
+        if (zoneRef.current === 'bottom-arc' && my < 0) {
+          setPeek({ target: 'settings', progress: Math.min(1, -my / sheetHeight()) });
         }
+      },
+      onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
+        const nav = useNavigation.getState();
+        const zone = zoneRef.current;
+        zoneRef.current = 'inner';
+        nav.setPeek(null);
 
-        // Horizontal swipe — switch apps
-        if (mode !== 'app') return;
-        if (absX < SWIPE_THRESHOLD || Math.abs(vx) < SWIPE_VELOCITY) return;
-        if (mx < 0) swipeToNext();
-        else swipeToPrev();
+        // Origin zone + live nav state decide exactly one action (pure, tested
+        // in gesture-resolve.test.ts). Assigned-arc origins never fall through
+        // to app gestures; unclaimed inner vertical is a strict no-op.
+        const action = resolveDragEnd(zone, nav.mode, nav.settingsOpen, mx, my, vx, vy, sheetHeight());
+        switch (action.type) {
+          case 'hideSettings': nav.hideSettings(); break;
+          case 'showSettings': nav.showSettings(); break;
+          case 'showGrid': nav.showGrid(); break;
+          case 'hideGrid': nav.hideGrid(); break;
+          case 'back': nav.goBack(); break; // strict no-op when no back callback
+          case 'vertical':
+            // App-owned; strict no-op when the active app registered nothing.
+            if (nav.verticalSwipeCallback) nav.verticalSwipeCallback(action.dir);
+            break;
+          case 'next': nav.swipeToNext(); break;
+          case 'prev': nav.swipeToPrev(); break;
+          case 'none': break;
+        }
       },
       onPinchStart: () => {
         pinchFired.current = false;

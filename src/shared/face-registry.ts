@@ -86,6 +86,31 @@ export const FACES: FaceDescriptor[] = [
     configSchemaId: 'face.flip',
     slots: [],
   },
+  // Three-faces set (2026-07-24 spec). SVG thumbs, minimalismo precedent.
+  {
+    id: 'depletion',
+    name: 'Depletion Disc',
+    preview: '/depletion-thumb.svg',
+    category: 'modern',
+    configSchemaId: 'face.depletion',
+    slots: [],
+  },
+  {
+    id: 'aperture',
+    name: 'Aperture Plate',
+    preview: '/aperture-thumb.svg',
+    category: 'modern',
+    configSchemaId: 'face.aperture',
+    slots: [],
+  },
+  {
+    id: 'daylight',
+    name: 'Daylight Band',
+    preview: '/daylight-thumb.svg',
+    category: 'utility',
+    configSchemaId: 'face.daylight',
+    slots: [],
+  },
 ];
 
 const FACES_BY_ID = new Map(FACES.map((f) => [f.id, f]));

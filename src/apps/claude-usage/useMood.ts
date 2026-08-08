@@ -19,21 +19,30 @@ interface Sample {
   pct: number;
 }
 
-function moodFromRing(ring: Sample[]): MoodGroup {
-  if (ring.length < 2) return 0;
+// %/min over the ring window; null until MIN_WINDOW_MS of trusted history.
+function rateFromRing(ring: Sample[]): number | null {
+  if (ring.length < 2) return null;
   const oldest = ring[0];
   const newest = ring[ring.length - 1];
   const dt = newest.ms - oldest.ms;
-  if (dt < MIN_WINDOW_MS) return 0;
+  if (dt < MIN_WINDOW_MS) return null;
   const dp = Math.max(0, newest.pct - oldest.pct);
-  const rate = (dp * 60_000) / dt;
-  if (rate < RATE_THRESH_NORMAL) return 0;
+  return (dp * 60_000) / dt;
+}
+
+function moodFromRate(rate: number | null): MoodGroup {
+  if (rate == null || rate < RATE_THRESH_NORMAL) return 0;
   if (rate < RATE_THRESH_ACTIVE) return 1;
   if (rate < RATE_THRESH_HEAVY) return 2;
   return 3;
 }
 
-export function useMood(sessionPct: number | null): MoodGroup {
+export interface MoodState {
+  mood: MoodGroup;
+  ratePerMin: number | null;
+}
+
+export function useMood(sessionPct: number | null): MoodState {
   const [ring, setRing] = useState<Sample[]>([]);
   const [lastPct, setLastPct] = useState<number | null>(null);
 
@@ -53,5 +62,6 @@ export function useMood(sessionPct: number | null): MoodGroup {
     });
   }
 
-  return moodFromRing(ring);
+  const ratePerMin = rateFromRing(ring);
+  return { mood: moodFromRate(ratePerMin), ratePerMin };
 }

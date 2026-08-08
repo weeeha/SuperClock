@@ -29,6 +29,8 @@ function saveCache(events: CalendarEvent[]): void {
 export interface CalendarData {
   events: CalendarEvent[];
   offline: boolean;
+  /** Server has no CALENDAR_ICS_URL — a config state, not a network one. */
+  notConfigured: boolean;
   loading: boolean;
 }
 
@@ -37,6 +39,7 @@ export interface CalendarData {
 export function useCalendarEvents(fromIso: string, toIso: string, enabled: boolean): CalendarData {
   const [events, setEvents] = useState<CalendarEvent[]>(loadCache);
   const [offline, setOffline] = useState(false);
+  const [notConfigured, setNotConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -56,15 +59,29 @@ export function useCalendarEvents(fromIso: string, toIso: string, enabled: boole
         const res = await fetch(`/api/calendar?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`, {
           signal: ac.signal,
         });
+        if (res.status === 503) {
+          // Distinguish "no ICS URL on the server" (config state) from a
+          // network failure — never render it as offline or as a live
+          // empty calendar.
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          if (body?.error === 'calendar_not_configured') {
+            if (cancelled) return;
+            setNotConfigured(true);
+            setOffline(false);
+            return;
+          }
+        }
         if (!res.ok) throw new Error(`status ${res.status}`);
         const data = (await res.json()) as CalendarEvent[];
         if (cancelled) return;
         setEvents(data);
         saveCache(data);
         setOffline(false);
+        setNotConfigured(false);
       } catch (err) {
         if ((err as Error).name === 'AbortError' || cancelled) return;
         setOffline(true); // keep last-good events already in state
+        setNotConfigured(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -79,5 +96,5 @@ export function useCalendarEvents(fromIso: string, toIso: string, enabled: boole
     };
   }, [fromIso, toIso, enabled]);
 
-  return { events, offline, loading };
+  return { events, offline, notConfigured, loading };
 }

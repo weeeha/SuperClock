@@ -2,6 +2,20 @@ import type { CalendarEvent } from '../../api/types';
 
 export type WeekStart = 'monday' | 'sunday';
 
+/** The calendar drill stack above the zoom ladder: a day agenda, or a single
+ *  event's details opened from that day. `null` = resting on the ladder. */
+export type Drill =
+  | { kind: 'day'; day: Date }
+  | { kind: 'details'; day: Date; event: CalendarEvent };
+
+/** Pop one level of the drill stack: details → day → resting (null).
+ *  Idempotent at the surface — a no-op when already resting. Single source of
+ *  the "go up one level" walk shared by swipe-down and the system back gesture. */
+export function popDrill(drill: Drill | null): Drill | null {
+  if (!drill) return null;
+  return drill.kind === 'details' ? { kind: 'day', day: drill.day } : null;
+}
+
 /** Midnight of the given date, local time. */
 function atMidnight(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -96,6 +110,43 @@ export function overlapsRange(e: CalendarEvent, from: Date, to: Date): boolean {
   const start = new Date(e.start).getTime();
   const end = new Date(e.end).getTime();
   return start < to.getTime() && end > from.getTime();
+}
+
+/** Local calendar-day key, e.g. "2026-7-24". Stable across DST; never UTC-shifted. */
+export function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+/** Set of local day keys covered by any event (multi-day spans expanded,
+ *  all-day exclusive DTEND respected). One pass over events — cheap enough
+ *  to memo once per fetch for the year heat-ring. */
+export function eventDayKeys(events: CalendarEvent[]): Set<string> {
+  const keys = new Set<string>();
+  for (const e of events) {
+    const start = new Date(e.start);
+    let end = new Date(e.end);
+    if (e.allDay && end.getTime() > start.getTime()) {
+      end = new Date(end.getTime() - 1); // exclusive DTEND → last covered day
+    }
+    let cursor = atMidnight(start);
+    const stopMs = Math.max(cursor.getTime(), atMidnight(end).getTime());
+    for (let i = 0; cursor.getTime() <= stopMs && i < 400; i++) {
+      keys.add(dayKey(cursor));
+      cursor = addDays(cursor, 1);
+    }
+  }
+  return keys;
+}
+
+/** "in 3h 12m" / "in 45m" when target is in the future and within `withinHours`;
+ *  otherwise null (caller falls back to the absolute time range). */
+export function countdownLabel(target: Date, now: Date, withinHours = 12): string | null {
+  const diffMs = target.getTime() - now.getTime();
+  if (diffMs <= 0 || diffMs > withinHours * 3_600_000) return null;
+  const totalMin = Math.ceil(diffMs / 60_000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `in ${h}h ${m}m` : `in ${m}m`;
 }
 
 export function relativeTime(target: Date, now: Date): string {
