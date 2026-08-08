@@ -37,7 +37,8 @@ ticks, no bezel — the lattice itself implies the circle.
   ClockClock precedent; the font disambiguates.
 - **Hands:** length `54` (= P/2 − 1, so within-digit strokes meet tip-to-tip at cell
   boundaries and read as continuous), width `13`, `stroke-linecap="round"`, drawn from dial
-  centre. Parked = one hand shape at **225°** (both logical hands co-located), width `9`.
+  centre. Parked = both hands co-located at **225°** (reads as one line; keeps parked ↔
+  stroke transitions pure rotations of persistent elements — no swaps, no pops).
 - **Dial plates:** `fill: var(--face-plate)`, no ring stroke. Background `--face-bg`.
   No outer bezel circle — deliberate departure from siblings.
 
