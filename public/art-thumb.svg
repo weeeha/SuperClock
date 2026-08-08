@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Background mat -->
+  <rect width="256" height="256" fill="#0a0a0a"/>
+
+  <!-- Soft painterly bg gradient -->
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#c4906a"/>
+      <stop offset="60%" stop-color="#6b4a3a"/>
+      <stop offset="100%" stop-color="#2a1d18"/>
+    </radialGradient>
+    <linearGradient id="frame" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#d4b896"/>
+      <stop offset="100%" stop-color="#8a6b4a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- The "painting" — abstract composition evoking a landscape with figure -->
+  <g>
+    <rect x="36" y="36" width="184" height="184" fill="url(#g1)"/>
+    <!-- horizon -->
+    <rect x="36" y="148" width="184" height="72" fill="#3d4a3a" opacity="0.7"/>
+    <!-- sun -->
+    <circle cx="170" cy="92" r="22" fill="#f5d4a3" opacity="0.9"/>
+    <!-- foreground figure -->
+    <ellipse cx="92" cy="170" rx="14" ry="32" fill="#1f2620" opacity="0.85"/>
+    <circle cx="92" cy="138" r="10" fill="#1f2620" opacity="0.85"/>
+    <!-- brushstroke accent -->
+    <path d="M40 200 Q 120 184 220 196" stroke="#d4b896" stroke-width="2" fill="none" opacity="0.35"/>
+  </g>
+
+  <!-- Frame -->
+  <rect x="36" y="36" width="184" height="184" fill="none" stroke="url(#frame)" stroke-width="10"/>
+  <rect x="41" y="41" width="174" height="174" fill="none" stroke="#000" stroke-width="1" opacity="0.4"/>
+  <rect x="31" y="31" width="194" height="194" fill="none" stroke="#000" stroke-width="1" opacity="0.5"/>
+</svg>
