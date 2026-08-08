@@ -9,6 +9,7 @@ import radarRoutes from './radar/routes';
 import { initRadarService } from './radar/service';
 import { getOccupancySummary, initOccupancyService } from './occupancy/service';
 import { startPushRetryLoop } from './device-push';
+import { getBuildInfo } from './build-info';
 
 interface MountOptions {
   publicRoot: string; // for /api/photos directory lookup
@@ -26,7 +27,10 @@ export function buildApiApp(opts: MountOptions): Express {
   app.use(express.json());
 
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, uptime: process.uptime() });
+    // `build` is the deploy-verification anchor: deploy.sh compares
+    // build.commit against the commit it shipped. null = running from
+    // source (dev) or a pre-stamp bundle.
+    res.json({ ok: true, uptime: process.uptime(), build: getBuildInfo() });
   });
 
   app.get('/api/calendar', async (req, res) => {
