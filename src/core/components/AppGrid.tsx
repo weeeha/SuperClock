@@ -21,12 +21,13 @@ const appFaces: { id: string; src: string }[] = [
   { id: 'github',          src: '/github-thumb.svg' },
   { id: 'claude-usage',    src: '/claude-usage-thumb.svg' },
   { id: 'agents',          src: '/agents-thumb.svg' },
+  { id: 'todo',            src: '/todo-thumb.svg' },
 ];
 
 // Arrange into columns matching Figma layout (489:30357)
 // The Figma design has 7 columns with varying heights
 const columns = [
-  [appFaces[0]],                          // Earth/Calendar (single)
+  [appFaces[0], appFaces[15]],            // Earth/Calendar, Todo
   [appFaces[1], appFaces[2]],             // Quote, Space
   [appFaces[3], appFaces[4], appFaces[5]], // Calendar, Productivity, Github
   [appFaces[6], appFaces[7], appFaces[8], appFaces[9]], // Watchface, Abstract, Weather, Space

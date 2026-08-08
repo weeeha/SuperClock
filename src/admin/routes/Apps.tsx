@@ -18,6 +18,7 @@ const APP_LABELS: Record<string, string> = {
   'photo-frame': 'Photo Frame',
   quote: 'Quote',
   'time-tracking': 'Time Tracking',
+  todo: 'Todo',
 };
 
 export default function Apps() {

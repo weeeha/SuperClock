@@ -21,6 +21,7 @@ const APP_LABEL: Record<string, string> = {
   'photo-frame': 'Photo Frame',
   quote: 'Quote',
   'time-tracking': 'Time Tracking',
+  todo: 'Todo',
 };
 
 export function PlaylistRow({ index, instance, onRemove }: Props) {
