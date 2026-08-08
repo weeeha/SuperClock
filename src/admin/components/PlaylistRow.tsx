@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X } from 'lucide-react';
 import { getFace } from '../../shared/face-registry';
+import { appLabel } from '../../shared/app-labels';
 import type { ScreenInstance } from '../../shared/types';
 
 interface Props {
@@ -10,20 +11,6 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-const APP_LABEL: Record<string, string> = {
-  clock: 'Clock',
-  weather: 'Weather',
-  calendar: 'Calendar',
-  fitness: 'Fitness',
-  github: 'GitHub',
-  habits: 'Habits',
-  fireplace: 'Fireplace',
-  'photo-frame': 'Photo Frame',
-  quote: 'Quote',
-  'time-tracking': 'Time Tracking',
-  todo: 'Todo',
-};
-
 export function PlaylistRow({ index, instance, onRemove }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instance.id,
@@ -31,8 +18,8 @@ export function PlaylistRow({ index, instance, onRemove }: Props) {
 
   const faceId = typeof instance.config?.faceId === 'string' ? instance.config.faceId : undefined;
   const face = faceId ? getFace(faceId) : undefined;
-  const name = instance.label ?? face?.name ?? APP_LABEL[instance.appId] ?? instance.appId;
-  const subtitle = instance.appId === 'clock' ? face?.name ?? faceId : APP_LABEL[instance.appId];
+  const name = instance.label ?? face?.name ?? appLabel(instance.appId);
+  const subtitle = instance.appId === 'clock' ? face?.name ?? faceId : appLabel(instance.appId);
 
   return (
     <div
