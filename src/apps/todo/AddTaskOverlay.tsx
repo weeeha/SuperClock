@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '../../core/navigation';
 import MiniKeyboard from './MiniKeyboard';
 
@@ -16,13 +16,23 @@ export default function AddTaskOverlay({
 
   // System back (left-arc rim swipe) dismisses the overlay — same guarded
   // ownership contract as the vertical-swipe slot (CalendarApp reference).
+  // Registered ONCE per mount, calling through a ref: registering writes to
+  // the same store this tree reads, which forces a consistency re-render —
+  // if the effect also depended on the parent's per-render callback identity,
+  // that write→re-render→re-register cycle recurses until React aborts
+  // ("maximum update depth exceeded", found in preview, invisible to the
+  // component test because the crash needs the full shell's store traffic).
+  const onCancelRef = useRef(onCancel);
   useEffect(() => {
-    const cb = () => onCancel();
+    onCancelRef.current = onCancel;
+  });
+  useEffect(() => {
+    const cb = () => onCancelRef.current();
     setBackCallback(cb);
     return () => {
       if (useNavigation.getState().backCallback === cb) setBackCallback(null);
     };
-  }, [onCancel, setBackCallback]);
+  }, [setBackCallback]);
 
   return (
     <div className="absolute inset-0 z-20 bg-black flex flex-col items-center pt-32">

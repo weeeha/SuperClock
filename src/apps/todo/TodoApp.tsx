@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ulid } from 'ulid';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
@@ -77,11 +77,27 @@ export default function TodoApp({ isActive, config }: AppProps) {
     };
   }, [store]);
 
-  function commit(next: TodoItem[]) {
-    const pruned = pruneDone(next, cfg.maxItems);
-    setItems(pruned);
-    void store.save(pruned);
-  }
+  const commit = useCallback(
+    (next: TodoItem[]) => {
+      const pruned = pruneDone(next, cfg.maxItems);
+      setItems(pruned);
+      void store.save(pruned);
+    },
+    [cfg.maxItems, store],
+  );
+
+  // Stable identities — the overlay registers the system back gesture on
+  // mount, so its props must not churn per render (see AddTaskOverlay).
+  const closeAdd = useCallback(() => setAdding(false), []);
+  const saveAdd = useCallback(
+    (title: string) => {
+      const next = addItem(items, ulid(), title, Date.now());
+      if (next === items) return; // empty draft — keep the overlay open
+      commit(next);
+      setAdding(false);
+    },
+    [items, commit],
+  );
 
   // View switching consumes vertical swipes via the shell's callback slot —
   // HabitsApp is the reference contract, including the guarded cleanup.
@@ -151,17 +167,7 @@ export default function TodoApp({ isActive, config }: AppProps) {
         />
       )}
 
-      {adding && (
-        <AddTaskOverlay
-          onCancel={() => setAdding(false)}
-          onSave={(title) => {
-            const next = addItem(items, ulid(), title, Date.now());
-            if (next === items) return; // empty draft — keep the overlay open
-            commit(next);
-            setAdding(false);
-          }}
-        />
-      )}
+      {adding && <AddTaskOverlay onCancel={closeAdd} onSave={saveAdd} />}
 
       {cfg.showCompleted && (
         <div

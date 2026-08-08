@@ -81,4 +81,19 @@ describe('AddTaskOverlay', () => {
     expect(screen.queryByText('New task')).toBeNull();
     expect(useNavigation.getState().backCallback).toBeNull();
   });
+
+  it('back registration is stable across parent re-renders (no re-register loop)', async () => {
+    // Registering writes to the store the tree reads from, which forces a
+    // consistency re-render — if the overlay re-registered per parent render,
+    // that recursion crashed the whole kiosk tree in the real shell
+    // ("maximum update depth exceeded"). Pin the mount-once contract.
+    const utils = render(<TodoApp isActive config={{ maxItems: 200 }} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByText('+ add a task'));
+    const registered = useNavigation.getState().backCallback;
+    expect(registered).not.toBeNull();
+    utils.rerender(<TodoApp isActive config={{ maxItems: 200 }} />);
+    await act(async () => {});
+    expect(useNavigation.getState().backCallback).toBe(registered);
+  });
 });
