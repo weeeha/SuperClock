@@ -1,7 +1,20 @@
 import { create } from 'zustand';
 import { getAppIds } from './registry';
 
-export type NavMode = 'app' | 'grid' | 'transitioning';
+export type NavMode = 'app' | 'grid' | 'quick-settings' | 'transitioning';
+
+/** Modes where a full-screen shell surface covers the app. Apps gate their
+ *  timers on isActive, so anything listed here deactivates the app beneath. */
+export function isOverlayMode(mode: NavMode): boolean {
+  return mode === 'grid' || mode === 'quick-settings';
+}
+
+/** Which rim the shell briefly bounces when a vertical swipe had no owner. */
+export interface EdgeHint {
+  edge: 'top' | 'bottom';
+  /** Changes on every flash so a repeat hint re-triggers the animation. */
+  id: number;
+}
 
 interface NavigationState {
   mode: NavMode;
@@ -10,7 +23,14 @@ interface NavigationState {
   activeInstanceId: string | null;
   appOrder: string[];
   transitionDirection: 'left' | 'right' | null;
-  verticalSwipeCallback: ((dir: 'up' | 'down') => void) | null;
+  /** Apps own interior vertical. Return false to decline a direction the app
+   *  has nothing to do with — the shell then hints the edge zone instead of
+   *  swallowing the gesture. Returning void counts as handled. */
+  verticalSwipeCallback: ((dir: 'up' | 'down') => boolean | void) | null;
+  /** Apps with internal hierarchy claim the back gesture. Return true if the
+   *  app consumed it; false/absent falls through to the shell (-> grid). */
+  backCallback: (() => boolean) | null;
+  edgeHint: EdgeHint | null;
   /** epoch ms of last user-initiated gesture — used by playlist to pause auto-rotate. */
   lastGestureMs: number;
 
@@ -24,8 +44,16 @@ interface NavigationState {
   swipeToPrev: () => void;
   showGrid: () => void;
   hideGrid: () => void;
+  showQuickSettings: () => void;
+  /** Close whichever shell overlay is open. */
+  dismissOverlay: () => void;
+  /** Offer back to the active app; fall through to the grid if it declines. */
+  goBack: () => void;
+  flashEdgeHint: (edge: 'top' | 'bottom') => void;
+  clearEdgeHint: () => void;
   finishTransition: () => void;
-  setVerticalSwipeCallback: (fn: ((dir: 'up' | 'down') => void) | null) => void;
+  setVerticalSwipeCallback: (fn: ((dir: 'up' | 'down') => boolean | void) | null) => void;
+  setBackCallback: (fn: (() => boolean) | null) => void;
   noteUserGesture: () => void;
 }
 
@@ -36,6 +64,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   appOrder: [],
   transitionDirection: null,
   verticalSwipeCallback: null,
+  backCallback: null,
+  edgeHint: null,
   lastGestureMs: 0,
 
   initApps: (enabledApps) => {
@@ -111,8 +141,26 @@ export const useNavigation = create<NavigationState>((set, get) => ({
 
   showGrid: () => set({ mode: 'grid', lastGestureMs: Date.now() }),
   hideGrid: () => set({ mode: 'app', lastGestureMs: Date.now() }),
+  showQuickSettings: () => set({ mode: 'quick-settings', lastGestureMs: Date.now() }),
+  dismissOverlay: () => set({ mode: 'app', lastGestureMs: Date.now() }),
+
+  goBack: () => {
+    const { backCallback, showGrid } = get();
+    // The app gets first refusal; at its root it declines and the shell
+    // surfaces the grid, so back is never a dead gesture.
+    if (backCallback?.()) {
+      set({ lastGestureMs: Date.now() });
+      return;
+    }
+    showGrid();
+  },
+
+  flashEdgeHint: (edge) => set({ edgeHint: { edge, id: Date.now() } }),
+  clearEdgeHint: () => set({ edgeHint: null }),
+
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
   setVerticalSwipeCallback: (fn) => set({ verticalSwipeCallback: fn }),
+  setBackCallback: (fn) => set({ backCallback: fn }),
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),
 }));
 

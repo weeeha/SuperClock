@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigation } from '../navigation';
+import { isOverlayMode, useNavigation } from '../navigation';
 import { getApp } from '../registry';
 import { useActiveInstance } from '../device-config';
 
@@ -54,11 +54,11 @@ export default function SwipeContainer() {
               </div>
             }
           >
-            {/* Deactivate the app while the grid overlay covers it — apps
+            {/* Deactivate the app while any shell overlay covers it — apps
                 gate their intervals/rAF on isActive, and the fireplace's
                 particle sim burning CPU behind an opaque overlay is real
                 heat on a Pi. */}
-            <AppComponent isActive={mode !== 'grid'} config={instance?.config} />
+            <AppComponent isActive={!isOverlayMode(mode)} config={instance?.config} />
           </Suspense>
         </motion.div>
       </AnimatePresence>

@@ -9,6 +9,13 @@
       "autoPort": false
     },
     {
+      "name": "dev-patterns",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host", "--port", "5181", "--strictPort"],
+      "port": 5181,
+      "autoPort": false
+    },
+    {
       "name": "prod",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start"],

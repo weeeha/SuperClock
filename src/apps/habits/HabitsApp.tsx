@@ -204,7 +204,6 @@ export default function HabitsApp({ isActive }: AppProps) {
   const [view, setView] = useState<View>('daily');
   const [completions, setCompletions] = useState<Record<string, boolean>>(loadCompletions);
   const setVerticalSwipeCallback = useNavigation((s) => s.setVerticalSwipeCallback);
-  const showGrid = useNavigation((s) => s.showGrid);
 
   // Ticks at most once a day: same-date checks return the previous state,
   // so a kiosk left on this screen overnight rolls over to the new day
@@ -234,15 +233,23 @@ export default function HabitsApp({ isActive }: AppProps) {
     }
     setVerticalSwipeCallback((dir) => {
       if (dir === 'up') {
-        if (view === 'daily') setView('monthly');
-      } else if (view === 'monthly') {
-        setView('daily');
-      } else {
-        showGrid(); // swipe down at daily = the shell's default gesture
+        if (view === 'daily') {
+          setView('monthly');
+          return true;
+        }
+        return false; // already at the last view
       }
+      if (view === 'monthly') {
+        setView('daily');
+        return true;
+      }
+      // Swipe down at daily is nothing to us — decline so the shell hints the
+      // edge zone rather than silently eating it. (Previously this called
+      // showGrid(), re-implementing a shell default inside an app.)
+      return false;
     });
     return () => setVerticalSwipeCallback(null);
-  }, [isActive, view, setVerticalSwipeCallback, showGrid]);
+  }, [isActive, view, setVerticalSwipeCallback]);
 
   function toggle(habitId: string) {
     const key = hKey(habitId, toDateStr(new Date()));
