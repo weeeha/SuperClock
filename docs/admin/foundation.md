@@ -11,6 +11,12 @@ Planning artifact. Captures the agreed shape of the admin panel before any UI/co
 > `superclock-server.service`; the server ships as an esbuild bundle
 > (`dist/server.mjs`). Registry coherence is enforced by
 > `src/shared/registry-coherence.test.ts`.
+>
+> **2026-08-08:** connected/community-app principles (auth stance, secrets
+> rule, widget kit v2, Custom Screen, recipe seam) split out to
+> [community-apps.md](community-apps.md); the fleet-first admin redesign
+> itself lives as wireframes on the Figma board ("Admin Panel" page) and is
+> not yet reflected in this doc.
 
 ## Goals
 
