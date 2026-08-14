@@ -9,6 +9,8 @@
     "start": "node --env-file-if-exists=.env dist/server.mjs",
     "lint": "eslint .",
     "check:tokens": "node scripts/check-tokens.mjs",
+    "new:app": "node scripts/new-app.mjs",
+    "new:face": "node scripts/new-face.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs",
