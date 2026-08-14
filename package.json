@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build && npm run build:server && node scripts/write-build-info.mjs",
     "start": "node --env-file-if-exists=.env dist/server.mjs",
     "lint": "eslint .",
+    "check:tokens": "node scripts/check-tokens.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs",

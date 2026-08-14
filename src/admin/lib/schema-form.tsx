@@ -76,7 +76,7 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
 
         if (inner instanceof z.ZodString) {
           if (fmeta.format === 'color') {
-            const hex = typeof current === 'string' && current ? current : '#000000';
+            const hex = typeof current === 'string' && current ? current : '#000000'; // token-gate:allow color-input fallback value, not styling
             return (
               <FieldShell key={key} label={label} description={fmeta.description} inline>
                 <div className="flex items-center gap-2">

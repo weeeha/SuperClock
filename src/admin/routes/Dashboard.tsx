@@ -58,7 +58,7 @@ export default function Dashboard() {
                 {health.data.devices.map((d) => (
                   <li key={d.id} className="flex justify-between">
                     <span>{d.id}</span>
-                    <span className={d.reachable ? 'text-green-400' : 'opacity-50'}>
+                    <span className={d.reachable ? 'text-[hsl(var(--success))]' : 'opacity-50'}>
                       {d.reachable ? 'online' : 'offline'}
                     </span>
                   </li>

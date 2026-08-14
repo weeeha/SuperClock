@@ -31,6 +31,13 @@
   --input: 0 0% 16%;
   --ring: 20 96% 60%;
 
+  /* Status colors beyond the stock shadcn set — fleet UI needs online/queued
+     states. Consumed via the arbitrary-value idiom like every token here,
+     e.g. text-[hsl(var(--success))], bg-[hsl(var(--warning)/0.1)]. */
+  --success: 142 69% 58%;
+  --warning: 43 96% 56%;
+  --warning-foreground: 46 97% 65%;
+
   --radius: 0.5rem;
 
   background-color: hsl(var(--background));

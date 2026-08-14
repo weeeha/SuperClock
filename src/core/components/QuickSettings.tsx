@@ -83,7 +83,7 @@ export default function QuickSettings() {
             <div className="absolute inset-0 z-40" onPointerDown={hideSettings} />
           )}
           <motion.div
-            className="absolute inset-x-0 bottom-0 z-50 h-1/2 rounded-t-[50%_20%] bg-neutral-900/95 px-[14%] pt-[8%] backdrop-blur"
+            className="absolute inset-x-0 bottom-0 z-50 h-1/2 rounded-t-[50%_20%] bg-sheet/95 px-[14%] pt-[8%] backdrop-blur"
             initial={{ y: '100%' }}
             animate={{ y: settingsOpen ? '0%' : `${(1 - peeking) * 100}%` }}
             // Exit carries its OWN transition: AnimatePresence animates out the
