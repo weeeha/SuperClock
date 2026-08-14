@@ -1,7 +1,12 @@
 # Every guarantee this repo makes is a test or a lint rule — but until now
 # they only ran when someone remembered. This gate makes them structural:
-# lint + vitest (registry coherence, navigation invariants, time-window,
-# fleet-store) + a full two-SPA build on every PR and every push to main.
+# lint + token gate + vitest (registry coherence + contract, navigation
+# invariants, time-window, fleet-store) + a full two-SPA build on every PR
+# and every push to main.
+#
+# scripts/gates.sh mirrors these steps IN THIS ORDER — any change here
+# updates that script in the same commit. Order is load-bearing: CI stops at
+# the first failure, so a red early gate hides every gate behind it.
 name: CI
 
 on:
@@ -25,5 +30,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run check:tokens
       - run: npm test
       - run: npm run build
