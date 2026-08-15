@@ -116,6 +116,11 @@ export interface FleetHealth {
   }>;
 }
 
+// How an admin write's push to the target device actually ended: delivered,
+// persisted-but-undelivered (retry drain will re-push), or skipped by the
+// dev-safety guard. Every admin write response reports one honestly.
+export type PushOutcome = 'applied' | 'queued' | 'dev-suppressed';
+
 // UI metadata for schema-driven forms. Schemas stay pure-zod (data); meta
 // describes labels, descriptions, ranges, and conditional visibility (form).
 // Lives in shared/ so both admin and any future kiosk-side settings UI can
