@@ -1,7 +1,8 @@
 import { Router, type Response } from 'express';
 import { ulid } from 'ulid';
 import { readFleet, readDevice, updateDevice } from './fleet-store';
-import { pushToDevice, getReachability } from './device-push';
+import { pushToDevice, getReachability, probeFleet } from './device-push';
+import { withNewInstance } from './config-edits';
 import { adminTokenMiddleware, getAdminToken, compareToken } from './admin-token';
 import {
   deviceConfigPatchSchema,
@@ -84,7 +85,10 @@ router.get('/fleet', async (_req, res) => {
   res.json(fleet);
 });
 
-router.get('/health', (_req, res) => {
+router.get('/health', async (_req, res) => {
+  // Active probe (bounded ~2s, parallel) so the dots report the fleet, not
+  // the push history. The 30s UI poll is the cadence.
+  await probeFleet();
   const reach = getReachability();
   const payload: FleetHealth = {
     devices: ALL_DEVICE_IDS.map((id) => {
@@ -136,10 +140,7 @@ router.post('/fleet/:deviceId/instances', async (req, res) => {
     config: body.config ?? {},
     label: body.label,
   };
-  const updated = await updateDevice(deviceId, (current) => ({
-    ...current,
-    instances: [...current.instances, instance],
-  }));
+  const updated = await updateDevice(deviceId, (current) => withNewInstance(current, instance));
   const push = await pushToDevice(deviceId, updated);
   res.json({ instance, pushOutcome: push.outcome });
 });

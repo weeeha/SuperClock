@@ -1,4 +1,5 @@
 import type { DeviceConfig, DeviceId, PushOutcome } from '../src/shared/types';
+import { ALL_DEVICE_IDS } from '../src/shared/types';
 import { STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { resolveDeviceId } from './resolve-device';
 import { getAdminToken } from './admin-token';
@@ -21,6 +22,35 @@ function update(id: DeviceId, patch: Partial<DeviceStatus>): void {
 
 export function getReachability(): Map<DeviceId, DeviceStatus> {
   return status;
+}
+
+// The status map used to be push-derived only, so a fresh admin server
+// reported the whole fleet unreachable until the first write — dots were
+// fiction and the admin deadlocked in dev (writes gated on reachability that
+// only a write could establish). The health poll now actively probes.
+const PROBE_TIMEOUT_MS = 2000;
+
+export async function probeFleet(): Promise<void> {
+  const ownId = resolveDeviceId();
+  const port = process.env.PORT || '3000';
+  await Promise.all(
+    ALL_DEVICE_IDS.map(async (id) => {
+      if (id === ownId) {
+        // The admin host is, definitionally, reachable from itself.
+        update(id, { reachable: true, lastSeen: new Date() });
+        return;
+      }
+      try {
+        const res = await fetch(`http://${STATIC_DEVICE_INFO[id].host}:${port}/api/health`, {
+          signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+        });
+        if (res.ok) update(id, { reachable: true, lastSeen: new Date() });
+        else update(id, { reachable: false });
+      } catch {
+        update(id, { reachable: false }); // lastSeen intentionally preserved
+      }
+    }),
+  );
 }
 
 // Dev trap this closes: `npm run dev` on the Mac mounts the real admin
