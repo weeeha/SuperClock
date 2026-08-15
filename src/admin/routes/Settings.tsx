@@ -6,13 +6,14 @@ import { Switch } from '../components/ui/switch';
 import { adminApi } from '../lib/api';
 import { useActiveDevice } from '../store/active-device';
 import { STATIC_DEVICE_INFO } from '../../shared/capabilities';
+import { DEFAULT_ACCENT } from '../../shared/types';
 import type { DeviceConfig, FeatureFlag } from '../../shared/types';
 
 type SettingsShape = DeviceConfig['settings'];
 
 const DEFAULTS: SettingsShape = {
   theme: 'system',
-  accent: '#ff6b35',
+  accent: DEFAULT_ACCENT,
   // 100 = no dimming. Must stay neutral: the form saves the whole settings
   // object, so a non-neutral default would get baked in by unrelated saves.
   brightness: 100,

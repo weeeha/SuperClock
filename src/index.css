@@ -4,6 +4,9 @@
   --color-accent: #ff8826;
   --color-temp-high: #eee9bf;
   --color-temp-low: #609cc4;
+  /* Chrome surface for overlays (quick-settings sheet). Deliberately static
+     across day/night — overlay chrome is dark in both palettes. */
+  --color-sheet: #171717;
   --font-family-display: 'Inter', system-ui, sans-serif;
 }
 

@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/session-baselines.sh\"",
+            "timeout": 10,
+            "statusMessage": "Reading git baselines"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/check-tokens-on-edit.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

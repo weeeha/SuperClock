@@ -139,13 +139,18 @@ export interface FieldMeta {
 
 export type FieldMetaMap = Record<string, FieldMeta>;
 
+/** Single home for the default accent — admin forms seed from this too.
+ *  (The kiosk CSS fallback --color-accent in src/index.css is a separate,
+ *  pre-config value; apply-settings overwrites it once config arrives.) */
+export const DEFAULT_ACCENT = '#ff6b35';
+
 export function emptyDeviceConfig(deviceId: DeviceId): DeviceConfig {
   return {
     deviceId,
     enabledApps: [],
     instances: [],
     playlist: { items: [], rotationSeconds: null },
-    settings: { theme: 'system', accent: '#ff6b35' },
+    settings: { theme: 'system', accent: DEFAULT_ACCENT },
     updatedAt: new Date(0).toISOString(),
   };
 }

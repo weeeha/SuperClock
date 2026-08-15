@@ -211,7 +211,7 @@ export function StringListField({
       {isDupe && <p className="text-xs opacity-60">Already in the list.</p>}
 
       {renames.length > 0 && (
-        <div className="flex gap-2 rounded-md border border-amber-400/30 bg-amber-400/10 p-2.5 text-xs text-amber-300">
+        <div className="flex gap-2 rounded-md border border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.1)] p-2.5 text-xs text-[hsl(var(--warning-foreground))]">
           <TriangleAlert className="h-4 w-4 shrink-0" />
           <div className="space-y-0.5">
             <p className="font-medium">Renaming re-keys saved history</p>
@@ -264,7 +264,7 @@ function StringListRow({
       {renamed && (
         <TriangleAlert
           aria-label="Renamed — see warning below"
-          className="h-3.5 w-3.5 shrink-0 text-amber-300"
+          className="h-3.5 w-3.5 shrink-0 text-[hsl(var(--warning-foreground))]"
         />
       )}
       <button

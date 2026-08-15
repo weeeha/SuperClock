@@ -14,10 +14,14 @@ npm run build      # tsc -b + vite build (kiosk + admin) + esbuild server bundle
 npm run start      # node dist/server.mjs — production server (build first), listens on 0.0.0.0:$PORT (default 3000)
 npm run start:src  # tsx server.ts — run the server from source without building
 npm run lint       # ESLint over **/*.{ts,tsx}
-npm test           # Vitest — time-window, fleet-store, registry coherence, navigation invariants
+npm test           # Vitest — time-window, fleet-store, registry coherence + contract, navigation invariants
+npm run check:tokens        # token gate: semantic-only zones + face --face-* rule (scripts/check-tokens.mjs)
+npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction
+npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-*)
+./scripts/gates.sh          # the local CI mirror — lint → check:tokens → test → build, in ci.yml's order
 ```
 
-The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins the app/face/schema registries together — if you add an app or face and `npm test` fails, it is telling you which list you forgot (see Conventions).
+The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins the app/face/schema registries together — if you add an app or face and `npm test` fails, it is telling you which list you forgot (see Conventions). Its sibling `registry-contract.test.ts` catches what coherence can't: files that reached NO registry (a forgotten side-import, an unregistered schema file, missing preview art). Prefer the scaffolders — they emit every touchpoint at once plus a todo test that stays red until the component is implemented.
 
 ### Pi deployment
 
@@ -41,7 +45,7 @@ First-time provisioning uses `scripts/setup-pi.sh` (run as root on Pi OS Trixie)
 
 ### App registry + lazy loading
 
-Every mini-app is a module under `src/apps/<name>/` with an `index.ts` calling `registerApp({ metadata, component: lazy(...) })` and a `<Name>App.tsx` default-exporting a component receiving `AppProps` (`{ isActive, config? }`). **Adding a new app requires:** the side-import in `src/apps/index.ts`, an entry in `ALL_KIOSK_APP_IDS` in `src/shared/capabilities.ts`, and (unless it's config-free) an `app.<id>` schema in `src/shared/schemas/` + `src/shared/schema-registry.ts`. `npm test` fails until all lists agree. Faces additionally need: component + `FACE_COMPONENTS`/`SWIPE_CYCLE_ORDER` in `src/apps/clock/face-components.ts`, a `face-registry.ts` entry, and a `face.<id>` schema.
+Every mini-app is a module under `src/apps/<name>/` with an `index.ts` calling `registerApp({ metadata, component: lazy(...) })` and a `<Name>App.tsx` default-exporting a component receiving `AppProps` (`{ isActive, config? }`). **Adding a new app requires:** the side-import in `src/apps/index.ts`, an entry in `ALL_KIOSK_APP_IDS` in `src/shared/capabilities.ts`, and (unless it's config-free) an `app.<id>` schema in `src/shared/schemas/` + `src/shared/schema-registry.ts`. `npm test` fails until all lists agree. Faces additionally need: component + `FACE_COMPONENTS`/`SWIPE_CYCLE_ORDER` in `src/apps/clock/face-components.ts`, a `face-registry.ts` entry, and a `face.<id>` schema. **Don't hand-assemble these** — `npm run new:app -- <id>` / `npm run new:face -- <id>` emit every touchpoint (transactionally: a drifted anchor or duplicate id aborts with nothing written) plus a failing todo test; implementing the component and deleting that test is the definition of done.
 
 ### Navigation state (Zustand)
 
@@ -73,3 +77,30 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 ### React ↔ LVGL face parity
 
 The `slow` device renders faces natively (LVGL, C — `slow-native/`, PRs #23/#24). Any face that exists on both sides (currently Minimalismo) has **two implementations kept in sync by hand**: if you change a shared face's geometry, palette, or night behavior in React, update `slow-native/src/clock_face.c` in the same PR or file a follow-up. Longer term the intent is a shared JSON face-spec (colors, hand geometry, tick layout — the same data `face.*` schemas and `handPoints` already encode) consumed by both renderers; until that exists, treat visual parity as part of face-change review.
+
+## Traps already paid for
+
+Each of these cost a debugging session once. Don't pay again.
+
+- **Local main lags origin/main while `deploy.sh` ships LOCAL state** — the recurring "my fix didn't stick" failure. The SessionStart hook prints the drift; `git pull` main before any deploy. Never trust `dist/` mtimes either (rsync preserves them — `/api/health`'s build stamp is the truth).
+- **Fresh worktrees start without `node_modules`** — run `npm ci` before tests or build. The SessionStart hook warns.
+- **This checkout path contains spaces** (`ClaudeCode Projects`). Quote every shell path; in node scripts use `fileURLToPath(import.meta.url)`, never `URL.pathname`.
+- **Issue refs like `#1234` parse as hex** in the token gate — write `GH-1234` in gated sources.
+- **ESLint runs the full react-hooks v7 Compiler ruleset** — hooks fixes must satisfy it, not just the classic two rules.
+- **An unconditional cleanup that nulls a shared nav-store slot stomps the incoming app's registration** (SwipeContainer's `popLayout` keeps the exiting app mounted) — copy HabitsApp's guarded cleanup exactly.
+
+## Known gaps — port, don't reinvent
+
+- **No Storybook / a11y-contrast gate.** Contrast is checked by eye. The proven pattern (every story an axe test in real Chromium — jsdom silently skips `color-contrast`) lives in the sibling `Minimal-Design-System` repo; port it, don't rebuild it.
+- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated.** The planned fix is the shared JSON face-spec above.
+- **Seven legacy faces are exempt from the `--face-*` night rule** (`FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`). The list may only shrink: retrofit a face, delete its line.
+- **The unslop skill's Phase 2 greps are run by hand** (`.claude/skills/unslop/SKILL.md`); only the token-gate slice is scripted.
+
+## Open decisions — flag, don't silently pick
+
+Resolving any of these to make a gate or review pass is not yours to do. Propose with evidence and wait.
+
+- **Two default oranges coexist**: the kiosk CSS fallback `--color-accent: #ff8826` (src/index.css) vs the config default `DEFAULT_ACCENT = '#ff6b35'` (src/shared/types.ts, applied once config arrives). Unifying them changes on-glass color — it is a design decision, not a cleanup.
+- **The admin styles semantic colors via arbitrary values** (`text-[hsl(var(--success))]`) because `src/admin/index.css` has no `@theme` block. Moving to real utilities is open; don't drift the file into a mix of both idioms.
+- **Admin border-color utilities are dead on arrival**: the unlayered `.admin-root *` border-color reset in `src/admin/index.css` outranks every layered Tailwind utility (`border-amber-400/30` never rendered either — computed-style verified 2026-08-14). Layering the reset under `@layer base` would revive them and change borders across the admin; decide deliberately, don't fix in passing.
+- **Do not quietly change a face's palette or geometry to turn a check green** (contrast, parity, token gate). The face's look is the product; a red check on a deliberate design is a conversation, not a fix-forward.
