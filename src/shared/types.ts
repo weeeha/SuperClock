@@ -101,10 +101,6 @@ export interface FleetConfig {
   schemaVersion?: number;
 }
 
-/** Outcome of the config write's device push — the admin renders this
- *  honestly (spec: never a false success). */
-export type PushOutcome = 'applied' | 'queued' | 'dev-suppressed';
-
 export interface DeviceState {
   currentScreenId: string | null;
   uptimeMs: number;
