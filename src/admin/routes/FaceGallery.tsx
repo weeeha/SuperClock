@@ -21,9 +21,9 @@ export default function FaceGallery() {
         config: { faceId: face.id, face: {}, complications: {} },
         label: face.name,
       }),
-    onSuccess: async (instance) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['device', activeDeviceId] });
-      navigate(`/apps/${appId}/faces/${instance.id}`);
+      navigate(`/apps/${appId}/faces/${result.instance.id}`);
     },
   });
 

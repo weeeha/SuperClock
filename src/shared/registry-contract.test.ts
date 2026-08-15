@@ -11,6 +11,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { FACES } from './face-registry';
 import { SCHEMAS } from './schema-registry';
+import { APP_ICONS } from './app-icons';
 
 describe('filesystem ↔ registry contract', () => {
   it('every app directory that calls registerApp is side-imported in src/apps/index.ts', () => {
@@ -51,6 +52,15 @@ describe('filesystem ↔ registry contract', () => {
         faceSource,
         `src/apps/clock/${file} looks like a face but face-components.ts never imports it`,
       ).toContain(`from './${m[1]}'`);
+    }
+  });
+
+  it('every app icon path resolves to a real file in public/', () => {
+    for (const [appId, src] of Object.entries(APP_ICONS)) {
+      expect(
+        existsSync(join('public', src)),
+        `APP_ICONS['${appId}'] points at ${src} but public${src} does not exist`,
+      ).toBe(true);
     }
   });
 
