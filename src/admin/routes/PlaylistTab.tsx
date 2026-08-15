@@ -55,9 +55,12 @@ export default function PlaylistTab() {
   });
   const cfg = cfgQ.data ?? undefined;
 
-  // Gate writes on what we KNOW: health confirmed the device offline, or the
-  // device is read-only (slow renders natively; the server refuses writes too).
-  const writesDisabled = (status.known && !status.reachable) || info.readOnly;
+  // Writes stay ENABLED while a clock is unreachable — they persist to
+  // fleet.json and the 60s retry drain delivers, which the `queued` chip
+  // reports honestly (the shell banner already promises exactly this).
+  // Only read-only devices disable writes. `status` still drives the banner.
+  void status;
+  const writesDisabled = info.readOnly;
 
   const rotation = useMutation({
     mutationFn: (rotationSeconds: number | null) => {

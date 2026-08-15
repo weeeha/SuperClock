@@ -131,8 +131,10 @@ export default function SettingsTab() {
     );
   }
 
-  const offline = status.known && !status.reachable;
-  const writable = !info.readOnly && !offline;
+  // Unreachable clocks stay writable — the write persists and queues (the
+  // shell banner promises it; the queued chip reports it). Read-only locks.
+  void status;
+  const writable = !info.readOnly;
   const has = (flag: FeatureFlag) => info.features.includes(flag);
   const canEdit = (flag: FeatureFlag) => has(flag) && writable;
   // Feature-gated rows stay visible; the note explains the disabled controls.

@@ -69,7 +69,8 @@ export default function AppsTab() {
   });
 
   const caps = buildCapabilities(deviceId);
-  const offline = status.known && !status.reachable;
+  // Toggles stay enabled offline — the write queues honestly (chip + banner).
+  void status;
   const supportedIds = caps.apps.map((a) => a.id);
 
   if (deviceQ.isPending) {
@@ -157,7 +158,7 @@ export default function AppsTab() {
                   <Switch
                     checked={isOn}
                     onCheckedChange={(next) => toggle.mutate({ appId, enabled: next })}
-                    disabled={toggle.isPending || offline}
+                    disabled={toggle.isPending}
                     aria-label={`${appDisplayName(appId)} on this clock`}
                   />
                 )}

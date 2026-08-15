@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -65,7 +65,9 @@ function ScreenConfigBody({ instance }: { instance: ScreenInstance }) {
   const queryClient = useQueryClient();
 
   const offline = status.known && !status.reachable;
-  const locked = STATIC_DEVICE_INFO[deviceId].readOnly || offline;
+  // Unreachable ≠ locked: writes persist and queue (chip + shell banner tell
+  // the truth about delivery). Offline only dims the preview.
+  const locked = STATIC_DEVICE_INFO[deviceId].readOnly;
 
   const art = artForInstance(instance);
   // Display name the kiosk falls back to when no custom label is set.
@@ -98,7 +100,13 @@ function ScreenConfigBody({ instance }: { instance: ScreenInstance }) {
   }, [initialKey]);
   const dirty = JSON.stringify(working) !== initialKey;
 
-  const [configOutcome, setConfigOutcome] = useState<PushOutcome | null>(null);
+  // Creation surfaces (Add Screen sheet, Face Gallery) navigate here with the
+  // create's pushOutcome in location state — surface it on arrival so the
+  // outcome of "add" isn't silently dropped by the navigation.
+  const location = useLocation();
+  const arrivalOutcome =
+    (location.state as { pushOutcome?: PushOutcome } | null)?.pushOutcome ?? null;
+  const [configOutcome, setConfigOutcome] = useState<PushOutcome | null>(arrivalOutcome);
   const saveConfig = useMutation({
     mutationFn: () =>
       adminApi.patchInstance(deviceId, instance.id, {

@@ -35,6 +35,7 @@ export function useDeviceId(): DeviceId {
 export interface DeviceStatus {
   reachable: boolean;
   lastSeen: string | null;
+  pending: boolean; // a queued push is waiting for the retry drain
   known: boolean; // false while the health query has not resolved yet
 }
 
@@ -46,6 +47,11 @@ export function useDeviceStatus(deviceId: DeviceId): DeviceStatus {
     refetchInterval: 30_000,
   });
   const entry = health.data?.devices.find((d) => d.id === deviceId);
-  if (!entry) return { reachable: false, lastSeen: null, known: false };
-  return { reachable: entry.reachable, lastSeen: entry.lastSeen, known: true };
+  if (!entry) return { reachable: false, lastSeen: null, pending: false, known: false };
+  return {
+    reachable: entry.reachable,
+    lastSeen: entry.lastSeen,
+    pending: entry.pending,
+    known: true,
+  };
 }

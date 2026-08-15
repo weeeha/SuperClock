@@ -47,9 +47,10 @@ export function AddScreenSheet({ open, onClose }: { open: boolean; onClose: () =
     onClose();
   };
 
-  // Write affordances off for read-only devices and (per the common surface
-  // contract) while the clock is unreachable. Unknown health ≠ offline.
-  const blocked = info.readOnly || (status.known && !status.reachable);
+  // Only read-only blocks creation — an unreachable clock's write persists
+  // and queues (the banner says so; the queued chip reports it after).
+  const offline = status.known && !status.reachable;
+  const blocked = info.readOnly;
   const disabled = blocked || create.isPending;
 
   return (
@@ -70,7 +71,7 @@ export function AddScreenSheet({ open, onClose }: { open: boolean; onClose: () =
         </button>
       </header>
 
-      {blocked && (
+      {(blocked || offline) && (
         <p className="mt-2 rounded-md bg-[hsl(var(--warning)/0.1)] p-2.5 text-xs text-[hsl(var(--warning-foreground))]">
           {info.readOnly
             ? "read-only clock — screens can't be added"

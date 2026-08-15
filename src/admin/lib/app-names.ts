@@ -1,6 +1,9 @@
-// One display name per app id — consumed by the Apps tab and App Detail so
-// the two surfaces can never drift (the v1 pages kept separate maps and did:
-// "Photos" vs "Photo Frame"). Unknown ids humanize instead of vanishing.
+// One display name per app id — the admin's single copy of the KIOSK's
+// registered metadata names (src/apps/*/index.ts is the source of truth but
+// registers lazy React components, so the admin cannot import it). Pinned to
+// glass truth by registry-contract.test.ts, which parses the kiosk sources —
+// change a kiosk name and the suite tells you to update this map.
+// Unknown ids humanize instead of vanishing.
 const APP_NAMES: Record<string, string> = {
   agents: 'Agents',
   breathing: 'Breathing',
@@ -11,10 +14,10 @@ const APP_NAMES: Record<string, string> = {
   fitness: 'Fitness',
   github: 'GitHub',
   habits: 'Habits',
-  'photo-frame': 'Photo Frame',
+  'photo-frame': 'Photos',
   quote: 'Quote',
-  'time-tracking': 'Time Tracking',
-  todo: 'To-do',
+  'time-tracking': 'Timer',
+  todo: 'Todo',
   weather: 'Weather',
 };
 

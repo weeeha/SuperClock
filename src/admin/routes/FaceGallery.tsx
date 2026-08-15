@@ -7,6 +7,7 @@ import { FaceGalleryCard } from '../components/FaceGalleryCard';
 import { PushOutcomeChip } from '../components/PushOutcomeChip';
 import { adminApi } from '../lib/api';
 import { useDeviceId, useDeviceStatus, deviceDisplayName } from '../lib/device-scope';
+import { buildNewInstance } from '../lib/add-screen';
 import { buildCapabilities } from '../../shared/capabilities';
 import { cn } from '../lib/cn';
 import type { FaceDescriptor, PushOutcome } from '../../shared/types';
@@ -57,19 +58,23 @@ export default function FaceGallery() {
   const shown = category ? faces.filter((f) => f.category === category) : faces;
 
   const readOnly = buildCapabilities(deviceId).readOnly;
-  const offline = status.known && !status.reachable;
+  // Offline doesn't block creation — the write persists and queues honestly.
+  void status;
 
   const createInstance = useMutation({
+    // One creation path for the whole admin: the Add-Screen helper seeds the
+    // face's schema defaults (the sheet and the gallery must not drift).
     mutationFn: (face: FaceDescriptor) =>
-      adminApi.createInstance(deviceId, {
-        appId: 'clock',
-        config: { faceId: face.id, face: {}, complications: {} },
-        label: face.name,
-      }),
+      adminApi.createInstance(
+        deviceId,
+        buildNewInstance({ kind: 'face', faceId: face.id, name: face.name, preview: face.preview }),
+      ),
     onSuccess: async (result) => {
       setLastOutcome(result.pushOutcome);
       await queryClient.invalidateQueries({ queryKey: ['device', deviceId] });
-      navigate(`/clock/${deviceId}/screens/${result.instance.id}`);
+      navigate(`/clock/${deviceId}/screens/${result.instance.id}`, {
+        state: { pushOutcome: result.pushOutcome },
+      });
     },
   });
 
@@ -113,7 +118,7 @@ export default function FaceGallery() {
             key={face.id}
             face={face}
             onPick={(f) => createInstance.mutate(f)}
-            disabled={offline || readOnly || createInstance.isPending}
+            disabled={readOnly || createInstance.isPending}
           />
         ))}
       </div>
