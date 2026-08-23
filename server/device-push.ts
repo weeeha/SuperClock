@@ -1,8 +1,11 @@
-import type { DeviceConfig, DeviceId } from '../src/shared/types';
+import type { DeviceConfig, DeviceId, PushOutcome } from '../src/shared/types';
+import { ALL_DEVICE_IDS } from '../src/shared/types';
 import { STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { resolveDeviceId } from './resolve-device';
 import { getAdminToken } from './admin-token';
 import { readDevice } from './fleet-store';
+
+export type { PushOutcome } from '../src/shared/types';
 
 interface DeviceStatus {
   reachable: boolean;
@@ -21,6 +24,48 @@ export function getReachability(): Map<DeviceId, DeviceStatus> {
   return status;
 }
 
+// The status map used to be push-derived only, so a fresh admin server
+// reported the whole fleet unreachable until the first write — dots were
+// fiction and the admin deadlocked in dev (writes gated on reachability that
+// only a write could establish). The health poll now actively probes.
+const PROBE_TIMEOUT_MS = 2000;
+
+export async function probeFleet(): Promise<void> {
+  const ownId = resolveDeviceId();
+  const port = process.env.PORT || '3000';
+  await Promise.all(
+    ALL_DEVICE_IDS.map(async (id) => {
+      if (id === ownId) {
+        // The admin host is, definitionally, reachable from itself.
+        update(id, { reachable: true, lastSeen: new Date() });
+        return;
+      }
+      try {
+        const res = await fetch(`http://${STATIC_DEVICE_INFO[id].host}:${port}/api/health`, {
+          signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+        });
+        if (res.ok) update(id, { reachable: true, lastSeen: new Date() });
+        else update(id, { reachable: false });
+      } catch {
+        update(id, { reachable: false }); // lastSeen intentionally preserved
+      }
+    }),
+  );
+}
+
+// Dev trap this closes: `npm run dev` on the Mac mounts the real admin
+// routes, so editing any device ≠ self pushed config to REAL clocks.
+export function classifyPush(
+  target: DeviceId,
+  own: DeviceId,
+  nodeEnv: string | undefined,
+  allowRemote: boolean,
+): 'push' | 'suppress' {
+  if (nodeEnv === 'production') return 'push';
+  if (target === own) return 'push';
+  return allowRemote ? 'push' : 'suppress';
+}
+
 // Push the given config to the target device.
 // For the admin Pi pushing to itself, fleet.json IS already the device's
 // source of truth — skip the HTTP roundtrip; the device's polling will
@@ -28,11 +73,22 @@ export function getReachability(): Map<DeviceId, DeviceStatus> {
 export async function pushToDevice(
   deviceId: DeviceId,
   config: DeviceConfig,
-): Promise<{ ok: boolean; reason?: string }> {
+): Promise<{ ok: boolean; outcome: PushOutcome; reason?: string }> {
   const ownId = resolveDeviceId();
+
+  const verdict = classifyPush(
+    deviceId,
+    ownId,
+    process.env.NODE_ENV,
+    process.env.ADMIN_ALLOW_REMOTE_WRITES === '1',
+  );
+  // Suppressed pushes must NOT mark the device pending — the retry drain
+  // would deliver the config to the real clock a minute later anyway.
+  if (verdict === 'suppress') return { ok: true, outcome: 'dev-suppressed' };
+
   if (deviceId === ownId) {
     update(deviceId, { reachable: true, lastSeen: new Date(), pending: false });
-    return { ok: true };
+    return { ok: true, outcome: 'applied' };
   }
 
   const host = STATIC_DEVICE_INFO[deviceId].host;
@@ -56,13 +112,13 @@ export async function pushToDevice(
     });
     if (res.ok) {
       update(deviceId, { reachable: true, lastSeen: new Date(), pending: false });
-      return { ok: true };
+      return { ok: true, outcome: 'applied' };
     }
     update(deviceId, { reachable: false, pending: true });
-    return { ok: false, reason: `HTTP ${res.status}` };
+    return { ok: false, outcome: 'queued', reason: `HTTP ${res.status}` };
   } catch (err) {
     update(deviceId, { reachable: false, pending: true });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, outcome: 'queued', reason: (err as Error).message };
   }
 }
 

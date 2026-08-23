@@ -12,7 +12,7 @@
 // enabled row is pinned (min-1); refine errors surface via FieldShell.
 //
 // Both own a per-field DndContext. Reorder wiring mirrors Playlist.tsx /
-// PlaylistRow.tsx (PointerSensor distance 6 so taps don't start drags).
+// the original playlist rows (PointerSensor distance 6 so taps don't start drags).
 
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';

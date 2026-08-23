@@ -29,7 +29,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
       />
       <div
         className={cn(
-          'relative max-h-[85vh] w-full max-w-md overflow-auto rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-xl',
+          'relative max-h-[85dvh] w-full max-w-md overflow-auto rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-xl',
           className,
         )}
         role="dialog"
@@ -40,7 +40,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
             <h2 className="text-lg font-semibold">{title}</h2>
             <button
               onClick={onClose}
-              className="rounded-md p-1 opacity-60 hover:opacity-100 hover:bg-[hsl(var(--muted))]"
+              className="rounded-md p-1 opacity-60 hover:bg-[hsl(var(--muted))] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
