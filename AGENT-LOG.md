@@ -5,6 +5,28 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 2, batch c: three faces with behaviour wired (Productivity, Flip, World)
+
+- **What:** the last three legacy face schemas. Defaults aligned to today's rendering:
+  `face.productivity` accent #ffcc00 → #ff8826 (date, second hand, hub), `face.flip` accent
+  #f97316 → #ffffff (the digits have always been white), `face.world` accent #3b82f6 → #ee0000
+  (the primary dial's second hand and hub ring). New behaviour only when configured:
+  Productivity `showSeconds=false` hides the second hand; Flip `hour24=false` renders 12-hour
+  digits (two digits kept so the panel width never jumps) plus an AM/PM label in the accent
+  colour; World `primaryTimezone` drives the primary dial's hour and minute hands through
+  `src/apps/clock/world-time.ts` (pure: resolveTimezone, timeInTimezone, handDegreesInTimezone;
+  same formulas as useClockHands). An IANA name Intl rejects degrades to the device clock
+  instead of throwing at render. The mini dials now share the same formatter cache.
+- **Changed:** `ProductivityClock.tsx`, `FlipClock.tsx`, `WorldClock.tsx`, new `world-time.ts`
+  + `world-time.test.ts` (7 cases), the three schemas, `schema-liveness.test.ts` (ledger 6 → 3;
+  every face schema is now read). The seven legacy faces remain on FACE_TOKEN_EXEMPT.
+- **Verified:** liveness gate red on exactly the three and world-time red on the missing module,
+  both green after; 38 files / 479 tests, tsc, lint, check:tokens green. Dev preview face cycle:
+  Flip renders white digits, World its red second hand, Productivity its orange, no console
+  errors. Not exercised on-glass: the non-default paths (12-hour Flip, a non-local primary
+  timezone), which are covered by the pure tests and by construction.
+- **Open:** ledger rows for claude-usage, fireplace, github (batch d).
+
 ## 2026-09-05 · item 2, batch b: four accent-only faces wired (Square, Floral, Complications Light, Complications Dark)
 
 - **What:** each face now takes `FaceProps`, parses `faceConfig` against its schema with the

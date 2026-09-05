@@ -1,26 +1,7 @@
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
-
-// One formatter per timezone, built once — Intl.DateTimeFormat construction
-// costs milliseconds on a Pi and this used to run 5× per second.
-const tzFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function getTimeInTZ(date: Date, tz: string) {
-  let fmt = tzFormatters.get(tz);
-  if (!fmt) {
-    fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      hour12: false,
-    });
-    tzFormatters.set(tz, fmt);
-  }
-  const parts = fmt.formatToParts(date);
-  const get = (t: string) => parseInt(parts.find((p) => p.type === t)?.value ?? '0');
-  return { h: get('hour') % 12, m: get('minute') };
-}
+import { worldFaceSchema } from '../../shared/schemas/face.world';
+import { handDegreesInTimezone, resolveTimezone, timeInTimezone } from './world-time';
 
 interface MiniClockProps {
   cx: number;
@@ -97,8 +78,16 @@ const ZONES = [
   { cx: 499, cy: 787, r: 148, tz: 'Asia/Tokyo', label: 'TYO' },
 ];
 
-export default function WorldClock({ isActive }: AppProps) {
-  const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
+export default function WorldClock({ isActive, faceConfig }: FaceProps) {
+  const hands = useClockHands(isActive);
+  const { time, secondDeg } = hands;
+  // Face options validated against face.world, defaults otherwise (AnalogClock pattern).
+  const parsed = worldFaceSchema.safeParse(faceConfig ?? {});
+  const { accent, primaryTimezone } = parsed.success ? parsed.data : worldFaceSchema.parse({});
+  // 'local' (or an IANA name Intl rejects) keeps the device clock on the primary dial;
+  // seconds are the same in every zone, so the second hand always follows useClockHands.
+  const primaryTz = resolveTimezone(primaryTimezone);
+  const { hourDeg, minuteDeg } = primaryTz ? handDegreesInTimezone(time, primaryTz) : hands;
 
   const ticks = [];
   for (let i = 0; i < 60; i++) {
@@ -123,7 +112,7 @@ export default function WorldClock({ isActive }: AppProps) {
 
         {/* Mini timezone clocks */}
         {ZONES.map(({ cx, cy, r, tz, label }) => {
-          const { h, m } = getTimeInTZ(time, tz);
+          const { h, m } = timeInTimezone(time, tz);
           return <MiniClock key={tz} cx={cx} cy={cy} r={r} h={h} m={m} label={label} />;
         })}
 
@@ -142,7 +131,7 @@ export default function WorldClock({ isActive }: AppProps) {
         {/* Second hand — red */}
         <line
           x1="500" y1="590" x2="500" y2="115"
-          stroke="#e00" strokeWidth="6" strokeLinecap="round"
+          stroke={accent} strokeWidth="6" strokeLinecap="round"
           style={{
             transform: `rotate(${secondDeg}deg)`,
             transformOrigin: '500px 500px',
@@ -150,7 +139,7 @@ export default function WorldClock({ isActive }: AppProps) {
           }}
         />
         {/* Center hub */}
-        <circle cx="500" cy="500" r="18" fill="#111" stroke="#e00" strokeWidth="5" />
+        <circle cx="500" cy="500" r="18" fill="#111" stroke={accent} strokeWidth="5" />
       </svg>
     </div>
   );

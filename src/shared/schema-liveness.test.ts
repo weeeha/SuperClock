@@ -43,10 +43,6 @@ export const SCHEMA_UNREAD: Record<string, string> = {
   'app.fireplace': 'never reads config: intensity / hue are admin fiction until wired',
   'app.github':
     'never reads config: username / colorScheme / refreshMinutes come from env and constants',
-  'face.productivity':
-    'legacy face (predates the config contract, also on FACE_TOKEN_EXEMPT); retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.world': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.flip': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
 };
 
 /** Every schema kind must have an owner mapping in consumerOf(). A new kind

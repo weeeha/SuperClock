@@ -1,9 +1,15 @@
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { productivityFaceSchema } from '../../shared/schemas/face.productivity';
 
 /** Productivity clock with colored segments — based on Figma S3 design (489:20734) */
-export default function ProductivityClock({ isActive }: AppProps) {
+export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
+  // Face options validated against face.productivity, defaults otherwise (AnalogClock pattern).
+  const parsed = productivityFaceSchema.safeParse(faceConfig ?? {});
+  const { accent, showSeconds } = parsed.success
+    ? parsed.data
+    : productivityFaceSchema.parse({});
   const day = time.toLocaleDateString('en-US', { weekday: 'short' });
   const date = time.getDate();
 
@@ -78,7 +84,7 @@ export default function ProductivityClock({ isActive }: AppProps) {
         <text x="500" y="310" textAnchor="middle" fill="white" fontSize="48" fontWeight="500" fontFamily="Inter, sans-serif">
           {day}
         </text>
-        <text x="555" y="310" textAnchor="start" fill="#FF8826" fontSize="48" fontWeight="700" fontFamily="Inter, sans-serif">
+        <text x="555" y="310" textAnchor="start" fill={accent} fontSize="48" fontWeight="700" fontFamily="Inter, sans-serif">
           {date}
         </text>
 
@@ -96,19 +102,21 @@ export default function ProductivityClock({ isActive }: AppProps) {
           style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
         />
 
-        {/* Second hand */}
-        <line
-          x1="500" y1="560" x2="500" y2="180"
-          stroke="#FF8826" strokeWidth="4" strokeLinecap="round"
-          style={{
-            transform: `rotate(${secondDeg}deg)`,
-            transformOrigin: '500px 500px',
-            transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
-          }}
-        />
+        {/* Second hand — the face.productivity showSeconds option */}
+        {showSeconds && (
+          <line
+            x1="500" y1="560" x2="500" y2="180"
+            stroke={accent} strokeWidth="4" strokeLinecap="round"
+            style={{
+              transform: `rotate(${secondDeg}deg)`,
+              transformOrigin: '500px 500px',
+              transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
+            }}
+          />
+        )}
 
         {/* Center dot */}
-        <circle cx="500" cy="500" r="10" fill="#FF8826" />
+        <circle cx="500" cy="500" r="10" fill={accent} />
         <circle cx="500" cy="500" r="5" fill="black" />
       </svg>
     </div>
