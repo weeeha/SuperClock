@@ -35,12 +35,9 @@ import { SCHEMAS } from './schema-registry';
 
 /** Schemas the admin renders a form for that nothing on the glass reads yet.
  *  One reason each. May only SHRINK: wire the component to the Calendar
- *  pattern, then delete its line here. Frozen 2026-09-05 at 14 of 27. */
+ *  pattern, then delete its line here. Frozen 2026-09-05 at 14 of 27 and
+ *  shrinking the same day, batch by batch. */
 export const SCHEMA_UNREAD: Record<string, string> = {
-  'app.agents':
-    'reads config?.enabledAgents / defaultAgent as raw fields without the schema; move to the Calendar safeParse pattern (D4)',
-  'app.breathing':
-    'type-only import and a raw `as Partial<BreathingAppConfig>` cast (the case D4 named); move to safeParse',
   'app.claude-usage':
     'never reads config: scope / refreshSeconds / moodEnabled are admin fiction until wired',
   'app.fireplace': 'never reads config: intensity / hue are admin fiction until wired',
@@ -56,10 +53,6 @@ export const SCHEMA_UNREAD: Record<string, string> = {
     'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
   'face.world': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
   'face.flip': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'complication.date':
-    'type-only import + raw config?.format ?? default; the renderer is mounted nowhere (D2 facade)',
-  'complication.temperature':
-    'type-only import + raw config?.unit ?? default; the renderer is mounted nowhere (D2 facade)',
 };
 
 /** Every schema kind must have an owner mapping in consumerOf(). A new kind

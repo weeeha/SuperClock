@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { agentsAppSchema } from '../../shared/schemas/app.agents';
 import { mockAgentProvider, type Agent } from './provider';
 import { openAgent, backToList, onVerticalSwipe, type AgentsView } from './view-state';
 import { MIC_STATES, nextMicState, type MicState } from './mic-state';
@@ -52,12 +53,12 @@ export default function AgentsApp({ isActive, config }: AppProps) {
   }, [isActive, view.kind]);
 
   const visible = useMemo(() => {
-    const rawEnabled = config?.enabledAgents;
-    const enabledAgents = Array.isArray(rawEnabled)
-      ? rawEnabled.filter((x): x is string => typeof x === 'string')
-      : [];
-    const defaultAgent =
-      typeof config?.defaultAgent === 'string' ? config.defaultAgent : 'main';
+    // Calendar pattern: the admin's config validated against app.agents, or
+    // the schema defaults — never raw field reads (decision D4).
+    const parsed = agentsAppSchema.safeParse(config ?? {});
+    const { enabledAgents, defaultAgent } = parsed.success
+      ? parsed.data
+      : agentsAppSchema.parse({});
     const filtered =
       enabledAgents.length > 0
         ? agents.filter((a) => enabledAgents.includes(a.id))

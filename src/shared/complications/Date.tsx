@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { DateComplicationConfig } from '../schemas/complication.date';
+import { dateComplicationSchema, type DateComplicationConfig } from '../schemas/complication.date';
 
 interface Props {
   config?: Partial<DateComplicationConfig>;
@@ -14,7 +14,8 @@ function format(now: Date, mode: DateComplicationConfig['format']): string {
 }
 
 export default function DateComplication({ config }: Props) {
-  const mode = config?.format ?? 'day-month';
+  const parsed = dateComplicationSchema.safeParse(config ?? {});
+  const { format: mode } = parsed.success ? parsed.data : dateComplicationSchema.parse({});
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {

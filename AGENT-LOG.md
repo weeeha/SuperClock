@@ -5,6 +5,21 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 2, batch a: four schemas wired (Agents, Breathing, Date, Temperature)
+
+- **What:** the four mechanical rows of SCHEMA_UNREAD. Each component now value-imports its
+  schema and reads config through `schema.safeParse(config ?? {})` with the schema defaults as
+  the fallback (the Calendar pattern, decision D4). Behaviour unchanged for valid config;
+  malformed config now yields the defaults instead of partially-filtered raw fields.
+- **Changed:** `src/apps/agents/AgentsApp.tsx` (enabledAgents / defaultAgent via
+  `agentsAppSchema`), `src/apps/breathing/BreathingApp.tsx` (showDistance via
+  `breathingAppSchema`, the raw `as Partial<T>` cast is gone),
+  `src/shared/complications/Date.tsx` and `Temperature.tsx` (mixed value+type imports,
+  safeParse). `schema-liveness.test.ts`: ledger 14 → 10.
+- **Verified:** ledger rows removed first, gate red naming exactly the four; green after the
+  wiring. 37 files / 472 tests, tsc -b, lint green.
+- **Open:** ledger rows for 7 legacy faces + claude-usage, fireplace, github (batches b to d).
+
 ## 2026-09-05 · item 1: baseline debt paid, NAV-1 promoted to blocker (branch `claude/agentic-design-system-arch-ac2da8`)
 
 - **What:** the five BASELINE rows from option 2 are fixed and deleted; the baseline is empty
