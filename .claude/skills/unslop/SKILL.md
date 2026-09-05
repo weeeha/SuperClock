@@ -99,13 +99,14 @@ justification):
 
 ## Phase 2 — Audit before "done"
 
-Mechanical: `npm run check:tokens` (token contract) and `npm test` (registry
-coherence + invariants) both green. Greps over `src/{apps,core,components,admin}`
-(expect zero, exceptions justified): `bg-gradient-|bg-clip-text|backdrop-blur`
-· raw `#hex|rgba?(|hsl(` outside `index.css` token blocks · arbitrary `[Npx]`
-values · `transition-all` · `animate-` outside the sanctioned ambient apps ·
-`8884d8|82ca9d|strokeDasharray="3 3"` · emoji codepoints in chrome ·
-`elevate|unlock|empower|supercharge|seamless|effortless` in copy.
+Mechanical: `npm run check:tokens` (token contract), `npm run check:rules`
+(the Phase 2 greps as records in `rules/superclock.json`: gradients/glass,
+arbitrary `[Npx]`, `transition-all`, unbound `animate-`, chart defaults, emoji
+in chrome, marketing copy, guarded nav cleanup, isActive-gated timers, each
+with a severity, sanctioned exemptions and their reasons; judgment rules print
+as unchecked, never as passed) and `npm test` (registry coherence + contract +
+schema liveness + the rule ratchet) all green. Raw `#hex|rgba?(|hsl(` outside
+`index.css` token blocks stays the token gate's job (`SYS-1`, delegated).
 
 Rendered passes: **squint** (one thing dominant, no identical section
 anatomy) · **counts** (font sizes ≤7, radii/shadows ⊆ project scale, ≤1

@@ -5,6 +5,44 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · option 2: rule catalogue + runner (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** every design rule is one record with its severity and its detector, in
+  `rules/superclock.json` (25 rules: 7 grep, 5 heuristic, 3 requires, 4 judgment, 3 rendered,
+  3 delegated; 19 blocker / 4 review / 2 warning; 8 exemptions, each with a reason). Judgment
+  and rendered rules print as unchecked on every run instead of silently passing (one-accent
+  FCE-1, LVGL parity FCE-2, honest offline CPY-4, states STA-1, contrast STA-5, 375px STA-7,
+  circle crop KIO-2); delegated rules name the gate that enforces them (SYS-1 and FCE-3 the
+  token gate, KIO-3 the ESLint clock setInterval ban).
+- **Changed:** `scripts/rulecheck.mjs` (harvested from design-system-rebuild, stdlib only,
+  comment-stripping; three pinned extensions: `requires` co-occurrence, exemptions as
+  { path, reason }, `delegated`; single-file mode prints findings only). `scripts/lib/rule-schema.mjs`
+  (zod, ported from the ds-architecture starter kit). Tests: `rulecheck.test.ts` (engine
+  claims + CLI), `rule-catalogue.test.ts` (schema, compile, fix, exemption reasons, every
+  mechanical rule fires on `<id>-bad.tsx` and stays quiet on `<id>-good.tsx`),
+  `rulecheck-tree.test.ts` (policy: zero tolerance off the baseline, two-way baseline).
+  33 fixtures under `scripts/lib/__fixtures__/rules/`. `npm run check:rules`. Hook
+  `.claude/hooks/check-tokens-on-edit.sh` also runs blocker rules on the edited file
+  (advisory). `AGENTS.md`: command, Conventions bullet, Known gaps rewritten (two bullets
+  replaced), Gestures pointer, one new trap. `unslop/SKILL.md` Phase 2 points at check:rules.
+- **Tree at freeze:** 0 blockers; baseline debt NAV-1 x2 (AgentsApp, WeatherApp: unconditional
+  null of the shared slot), STA-3 x1 (array-fields.tsx:262), LAY-4 x2 (TodoApp border-[3px],
+  Apps.tsx text-[10px]). Sanctioned exemptions: COL-4 QuickSettings sheet + admin sticky
+  header; MOT-1 SwipeContainer Suspense spinner + breathing/fireplace/clock ambient carve-out;
+  LAY-4 vendored shadcn ui/; KIO-1 useCalendarEvents (gated through `enabled`).
+- **Verified:** `./scripts/gates.sh` green: lint, check:tokens, 37 files / 472 tests, build.
+  Engine claims red before the runner existed (missing module), green after; the CLI footer
+  test was red before the suppression, green after. Hook pipe-tested: blocker probe prints the
+  finding, a review-only file stays silent, an ungated file stays silent, exit 0 throughout.
+- **Found along the way:** `useCalendarEvents.ts` mentions isActive only in a doc comment
+  while gating through `enabled`; a raw grep read it as gated, the comment-stripping runner
+  did not. Recorded as a KIO-1 exemption and a trap in AGENTS.md.
+- **Decisions:** ci.yml and gates.sh unchanged on purpose: the CLI exits 1 on any hit
+  (baseline debt included), so policy lives in `npm test`. Severity is earned: NAV-1 ships at
+  review and is promoted to blocker when Agents and Weather adopt the HabitsApp guard.
+- **Open:** the five baseline rows (each a small app or admin change with its own review);
+  options 3 to 7 from the gap analysis, awaiting Nick.
+
 ## 2026-09-05 · option 1: schema-liveness gate (branch `claude/agentic-design-system-arch-ac2da8`)
 
 - **What:** the consumption half of the registry contract. `src/shared/schema-liveness.test.ts`

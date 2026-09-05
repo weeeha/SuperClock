@@ -9,6 +9,7 @@
     "start": "node --env-file-if-exists=.env dist/server.mjs",
     "lint": "eslint .",
     "check:tokens": "node scripts/check-tokens.mjs",
+    "check:rules": "node scripts/rulecheck.mjs",
     "new:app": "node scripts/new-app.mjs",
     "new:face": "node scripts/new-face.mjs",
     "preview": "vite preview",

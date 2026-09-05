@@ -18,6 +18,7 @@ npm run start:src  # tsx server.ts — run the server from source without buildi
 npm run lint       # ESLint over **/*.{ts,tsx}
 npm test           # Vitest — time-window, fleet-store, registry coherence + contract, navigation invariants
 npm run check:tokens        # token gate: semantic-only zones + face --face-* rule (scripts/check-tokens.mjs)
+npm run check:rules         # rule catalogue report: rules/superclock.json via scripts/rulecheck.mjs (exit 1 on any hit; npm test enforces the policy)
 npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction, born consuming its schema
 npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-* and its schema)
 ./scripts/gates.sh          # the local CI mirror — lint → check:tokens → test → build, in ci.yml's order
@@ -59,7 +60,7 @@ Classification is split into two pure, unit-tested functions; `src/core/hooks/us
 
 Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → quick-settings**, with peek-follow (`nav.peek` tracks the finger) and commit at `COMMIT_PROGRESS` (40% of sheet height, min `ARC_MIN_TRAVEL` 80px); **left-arc swipe right → back**, dispatched through registerable `backCallback` (Calendar is the reference consumer; `BackChevron` is deleted — apps never render their own back chrome); **right-arc is unassigned**, falls through to inner behavior. **An assigned-arc origin owns its gesture**: sub-threshold travel is a snap-back no-op, it never falls through to the app gesture underneath — one gesture, one outcome. Unclaimed inner-disc vertical swipe (no `verticalSwipeCallback` registered) is a **strict no-op**, there is no grid fallback anymore. 3-finger tap and pinch-in are unchanged and still open the grid (pinch-in kept deliberately as a redundant entry point alongside the top-arc swipe).
 
-`backCallback` follows the **same registration/cleanup contract as `verticalSwipeCallback`** below — copy it exactly, including the guarded cleanup.
+`backCallback` follows the **same registration/cleanup contract as `verticalSwipeCallback`** below — copy it exactly, including the guarded cleanup. Both are gated as `NAV-1`/`NAV-2` in `rules/superclock.json`.
 
 `settingsOpen` is a boolean **flag**, deliberately not a `NavMode`: mutually exclusive with `grid`, but it must never touch the `mode: 'transitioning'` contract above (opening/closing the sheet can't strand a swipe transition). Its brightness/night writes go through `src/core/local-overrides.ts`, which yields to the admin/scheduled base: an override wins only until the base it was set against changes, then it's silently spent. `src/core/hooks/useIdleReturn.ts` dismisses overlays after 20s idle and returns to the home app after 5min, **deferring only the home-return** (not overlay dismissal) while `isPlaylistDriving()`.
 
@@ -67,7 +68,8 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 
 ### Conventions
 
-- **Active-aware effects:** gate `setInterval`/rAF on `props.isActive` — background apps must not tick (the grid overlay deactivates the app under it). Kiosks run for weeks; leaked timers and per-second re-renders are real heat on a Pi.
+- **Design rules are records, not prose.** `rules/superclock.json` holds every rule with its severity and its detector: `grep`/`heuristic`/`requires` rules run mechanically, `judgment`/`rendered` rules are printed as unchecked on every run, `delegated` rules name the gate that enforces them (the token gate, ESLint). Schema in `scripts/lib/rule-schema.mjs`; every mechanical rule proves itself on a bad/good fixture pair under `scripts/lib/__fixtures__/rules/`. Add a rule there, never as a new bullet here without a record.
+- **Active-aware effects:** gate `setInterval`/rAF on `props.isActive` — background apps must not tick (the grid overlay deactivates the app under it). Kiosks run for weeks; leaked timers and per-second re-renders are real heat on a Pi. Gated as `KIO-1`.
 - **Clock hands:** `useClockHands` is the single source of truth for hand angles; ESLint bans `setInterval` in `src/apps/clock/`.
 - **Honest offline:** apps that fetch must show an explicit offline tell (see WeatherApp/GithubApp) — never render fallback/mock data as if live.
 - **Secrets are server-side.** `VITE_`-prefixed env vars are inlined into the public bundle — never put a token in one; add a server proxy route instead (github/claude-usage pattern).
@@ -90,13 +92,14 @@ Each of these cost a debugging session once. Don't pay again.
 - **Issue refs like `#1234` parse as hex** in the token gate — write `GH-1234` in gated sources.
 - **ESLint runs the full react-hooks v7 Compiler ruleset** — hooks fixes must satisfy it, not just the classic two rules.
 - **An unconditional cleanup that nulls a shared nav-store slot stomps the incoming app's registration** (SwipeContainer's `popLayout` keeps the exiting app mounted) — copy HabitsApp's guarded cleanup exactly.
+- **A grep for a rule's keyword is satisfied by a comment that merely mentions it.** `useCalendarEvents.ts` says `isActive` only in its doc comment while gating through `enabled`; a plain grep read it as gated. `scripts/rulecheck.mjs` strips comments before matching for exactly this reason, so measure with `npm run check:rules`, not with a raw grep, before calling a rule "clean on the tree".
 
 ## Known gaps — port, don't reinvent
 
 - **No Storybook / a11y-contrast gate.** Contrast is checked by eye. The proven pattern (every story an axe test in real Chromium — jsdom silently skips `color-contrast`) lives in the sibling `Minimal-Design-System` repo; port it, don't rebuild it.
-- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated.** The planned fix is the shared JSON face-spec above.
+- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated** (`FCE-1`/`FCE-2` in `rules/superclock.json`, declared `judgment` so every `check:rules` run prints them as unchecked instead of passing them). The planned fix is the shared JSON face-spec above.
+- **Rule severities are earned, not declared.** `NAV-1` (guarded cleanup) ships at `review` because Agents and Weather still null the shared slot unconditionally; `STA-3` and `LAY-4` carry baseline rows too. `scripts/lib/rulecheck-tree.test.ts` holds every row two-way (no growth, and a fixed row must be deleted). Fix the debt, delete the row, promote the rule to `blocker`.
 - **Seven legacy faces are exempt from the `--face-*` night rule** (`FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`). The list may only shrink: retrofit a face, delete its line.
-- **The unslop skill's Phase 2 greps are run by hand** (`.claude/skills/unslop/SKILL.md`); only the token-gate slice is scripted.
 
 ## Open decisions — flag, don't silently pick
 
