@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { defineConfig, type Plugin } from 'vite';
+import type { Plugin } from 'vite';
+// vitest/config re-exports Vite's defineConfig with the `test` block typed.
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { buildApiApp } from './server/api-mount';
@@ -41,5 +43,10 @@ export default defineConfig({
         admin: join(__dirname, 'admin/index.html'),
       },
     },
+  },
+  test: {
+    // Component tests opt into jsdom per file with `// @vitest-environment
+    // jsdom`; everything else stays on the faster node environment.
+    setupFiles: [join(__dirname, 'src/test/memory-storage.ts')],
   },
 });
