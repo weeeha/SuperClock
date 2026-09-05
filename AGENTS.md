@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SuperClock is a smart-clock dashboard for a fleet of four Raspberry Pis driving Waveshare round/square LCDs. Per-device hardware specs live in `superclock-{fast,small,square,slow}/device.json` (fast is a Pi 5; the others are Pi 4-class; `slow` runs a separate native LVGL binary — not Chromium). The UI is laid out for a circular 1080×1080 viewport on the round devices, so most full-screen surfaces assume a 1:1 aspect ratio. Two SPAs ship from one Vite build: the **kiosk** (`index.html`, full-screen touch UI) and the **admin** (`admin/index.html`, fleet management at `/admin`), both served by the bundled Express server on every Pi.
 
+**Agent log:** parallel worktree sessions hand work over through `AGENT-LOG.md`, not PRs. Append an entry (what changed, files, verified, decisions, open) before finishing a chunk of work.
+
 ## Commands
 
 ```bash
@@ -16,12 +18,12 @@ npm run start:src  # tsx server.ts — run the server from source without buildi
 npm run lint       # ESLint over **/*.{ts,tsx}
 npm test           # Vitest — time-window, fleet-store, registry coherence + contract, navigation invariants
 npm run check:tokens        # token gate: semantic-only zones + face --face-* rule (scripts/check-tokens.mjs)
-npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction
-npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-*)
+npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction, born consuming its schema
+npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-* and its schema)
 ./scripts/gates.sh          # the local CI mirror — lint → check:tokens → test → build, in ci.yml's order
 ```
 
-The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins the app/face/schema registries together — if you add an app or face and `npm test` fails, it is telling you which list you forgot (see Conventions). Its sibling `registry-contract.test.ts` catches what coherence can't: files that reached NO registry (a forgotten side-import, an unregistered schema file, missing preview art). Prefer the scaffolders — they emit every touchpoint at once plus a todo test that stays red until the component is implemented.
+The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins the app/face/schema registries together — if you add an app or face and `npm test` fails, it is telling you which list you forgot (see Conventions). Its sibling `registry-contract.test.ts` catches what coherence can't: files that reached NO registry (a forgotten side-import, an unregistered schema file, missing preview art). The third, `schema-liveness.test.ts`, checks the direction neither of those can: a schema the admin renders a form for must be value-imported by the component that owns it (the Calendar pattern, `schema.safeParse(config ?? {})`), or sit on the shrink-only `SCHEMA_UNREAD` ledger with a reason (14 rows on 2026-09-05: decision D4's debt made visible; `import type` does not count). Prefer the scaffolders — they emit every touchpoint at once plus a todo test that stays red until the component is implemented.
 
 ### Pi deployment
 

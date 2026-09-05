@@ -54,6 +54,12 @@ describe('app templates', () => {
     expect(src).toContain('SCAFFOLD-TODO');
   });
 
+  it('component: born schema-live — value-imports app.<id> and safeParses config (Calendar pattern)', () => {
+    const src = appComponentTemplate(ID);
+    expect(src).toContain(`import { testScaffoldAppSchema } from '../../shared/schemas/app.${ID}';`);
+    expect(src).toContain('testScaffoldAppSchema.safeParse(config ?? {})');
+  });
+
   it('index: registers the app id and lazy-imports the component', () => {
     const src = appIndexTemplate(ID);
     expect(src).toContain("id: 'test-scaffold'");
@@ -76,6 +82,14 @@ describe('face templates', () => {
     expect(src).toContain('FaceProps');
     expect(src).toContain('--face-bg');
     expect(src).toContain('SCAFFOLD-TODO');
+  });
+
+  it('component: born schema-live — value-imports face.<id> and safeParses faceConfig', () => {
+    const src = faceComponentTemplate(ID);
+    expect(src).toContain(
+      `import { testScaffoldFaceSchema } from '../../shared/schemas/face.${ID}';`,
+    );
+    expect(src).toContain('testScaffoldFaceSchema.safeParse(faceConfig ?? {})');
   });
 
   it('schema: exports <camel>FaceSchema/<camel>FaceMeta', () => {
