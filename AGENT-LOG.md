@@ -5,6 +5,27 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 2, batch b: four accent-only faces wired (Square, Floral, Complications Light, Complications Dark)
+
+- **What:** each face now takes `FaceProps`, parses `faceConfig` against its schema with the
+  defaults as fallback (AnalogClock pattern), and draws its accent from the parsed value.
+- **Defaults aligned to what the face has always drawn**, so an unconfigured instance is
+  pixel-identical: `face.square` #22c55e → #e94560 (sub-dial ring + hub), `face.floral`
+  #f59e0b → #fbbf24 (hands). Complications Light/Dark already defaulted to their habit-ring
+  green #22c55e; only the green is bound to `accent` (the amber weather sub-dial, the light
+  face's amber second hand and the dark face's purple second hand are separate decisions and
+  stay literal). A saved instance that stored the OLD default will now render that stored
+  colour, which is what the admin has been displaying for it all along.
+- **Changed:** `SquareClock.tsx`, `FloralClock.tsx`, `ComplicationsLight.tsx`,
+  `ComplicationsDark.tsx`, `face.square.ts`, `face.floral.ts`, `schema-liveness.test.ts`
+  (ledger 10 → 6). These four stay on FACE_TOKEN_EXEMPT: night tokens are a separate retrofit.
+- **Verified:** gate red on exactly the four, green after; 37 files / 472 tests, tsc, lint,
+  check:tokens green. Dev preview (5181): cycled the clock faces via the registered swipe
+  callback; Complications Dark, Complications Light, Floral and Square each rendered with their
+  default accent present in the DOM; no console errors.
+- **Open:** ledger rows for productivity, world, flip (batch c) and claude-usage, fireplace,
+  github (batch d).
+
 ## 2026-09-05 · item 2, batch a: four schemas wired (Agents, Breathing, Date, Temperature)
 
 - **What:** the four mechanical rows of SCHEMA_UNREAD. Each component now value-imports its

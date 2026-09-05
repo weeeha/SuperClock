@@ -45,12 +45,6 @@ export const SCHEMA_UNREAD: Record<string, string> = {
     'never reads config: username / colorScheme / refreshMinutes come from env and constants',
   'face.productivity':
     'legacy face (predates the config contract, also on FACE_TOKEN_EXEMPT); retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.square': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.floral': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.complications-light':
-    'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
-  'face.complications-dark':
-    'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
   'face.world': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
   'face.flip': 'legacy face; retrofit = safeParse(faceConfig), AnalogClock is the reference',
 };

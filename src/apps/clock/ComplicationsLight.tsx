@@ -1,5 +1,6 @@
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { complicationsLightFaceSchema } from '../../shared/schemas/face.complications-light';
 import { useHabitsToday } from './complications-data';
 
 // Complication circle centers (1000×1000 SVG space)
@@ -16,7 +17,10 @@ function arcDash(r: number, pct: number) {
   return `${c * pct} ${c}`;
 }
 
-export default function ComplicationsLight({ isActive }: AppProps) {
+export default function ComplicationsLight({ isActive, faceConfig }: FaceProps) {
+  // Face options validated against face.complications-light, defaults otherwise.
+  const parsedFace = complicationsLightFaceSchema.safeParse(faceConfig ?? {});
+  const { accent } = parsedFace.success ? parsedFace.data : complicationsLightFaceSchema.parse({});
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   const habits = useHabitsToday(time);
   const habitPct = habits.total > 0 ? habits.done / habits.total : 0;
@@ -72,7 +76,7 @@ export default function ComplicationsLight({ isActive }: AppProps) {
         {/* Progress arc outside the circle */}
         <circle
           cx={COMPS.left.cx} cy={COMPS.left.cy} r={COMP_R + 14}
-          fill="none" stroke="#22c55e" strokeWidth="12" strokeLinecap="round"
+          fill="none" stroke={accent} strokeWidth="12" strokeLinecap="round"
           strokeDasharray={arcDash(COMP_R + 14, habitPct)}
           transform={`rotate(-90 ${COMPS.left.cx} ${COMPS.left.cy})`}
         />
@@ -84,13 +88,13 @@ export default function ComplicationsLight({ isActive }: AppProps) {
             cx={COMPS.left.cx}
             cy={COMPS.left.cy - 28}
             rx="13" ry="26"
-            fill="#22c55e"
+            fill={accent}
             opacity="0.85"
             transform={`rotate(${i * 60} ${COMPS.left.cx} ${COMPS.left.cy})`}
           />
         ))}
-        <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r="16" fill="#22c55e" />
-        <text x={COMPS.left.cx} y={COMPS.left.cy + 92} textAnchor="middle" fill="#22c55e" fontSize="28" fontWeight="700" fontFamily="system-ui">{habits.done}/{habits.total}</text>
+        <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r="16" fill={accent} />
+        <text x={COMPS.left.cx} y={COMPS.left.cy + 92} textAnchor="middle" fill={accent} fontSize="28" fontWeight="700" fontFamily="system-ui">{habits.done}/{habits.total}</text>
 
         {/* ── Right complication: weather (no real data source yet) ── */}
         <circle cx={COMPS.right.cx} cy={COMPS.right.cy} r={COMP_R} fill="#1a1a1a" />
