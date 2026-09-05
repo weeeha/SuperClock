@@ -24,7 +24,19 @@ export type FeatureFlag =
   | 'sleep_schedule'
   | 'theme'
   | 'accent'
-  | 'night_mode';
+  | 'night_mode'
+  // Hardware a device actually has (fleet.md, device.json). Apps declare what
+  // they need in src/shared/app-capabilities.ts; app-capabilities.test.ts
+  // holds the two together so a "no mic on this device" tell has a flag to read.
+  | 'audio'
+  | 'mic'
+  | 'radar';
+
+/** What a kiosk app does (fetches, ticks, multiView) and needs (audio, mic,
+ *  radar). Declared per app in src/shared/app-capabilities.ts and CHECKED
+ *  against the code by app-capabilities.test.ts, never trusted. The hardware
+ *  members are FeatureFlags a device must provide. */
+export type AppCapability = 'fetches' | 'ticks' | 'multiView' | 'audio' | 'mic' | 'radar';
 
 export interface ComplicationSlot {
   id: string;
@@ -51,6 +63,9 @@ export interface AppDescriptor {
   id: string;
   configSchemaId?: string;
   faces?: FaceDescriptor[];
+  /** From src/shared/app-capabilities.ts; optional on the wire so an LVGL
+   *  device's hand-written capability JSON stays valid without it. */
+  capabilities?: readonly AppCapability[];
 }
 
 export interface DeviceCapabilities {

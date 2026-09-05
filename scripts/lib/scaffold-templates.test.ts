@@ -20,6 +20,7 @@ import {
   todoTestTemplate,
   insertAppSideImport,
   insertKioskAppId,
+  insertAppCapabilities,
   insertSchemaRegistryImport,
   insertSchemaRegistryEntry,
   insertFaceComponent,
@@ -122,6 +123,15 @@ describe('insertions against the live registry files', () => {
     expect(arr).toContain(`'${ID}',`);
     expect(() => insertKioskAppId(real('src/shared/capabilities.ts'), 'quote')).toThrow(/already/);
     expect(() => insertKioskAppId('const x = 1;', ID)).toThrow(/anchor/);
+  });
+
+  it('app-capabilities.ts: an empty, SCAFFOLD-TODO row lands inside APP_CAPABILITIES; duplicates throw', () => {
+    const out = insertAppCapabilities(real('src/shared/app-capabilities.ts'), ID);
+    const map = out.slice(out.indexOf('APP_CAPABILITIES'), out.indexOf('};', out.indexOf('APP_CAPABILITIES')));
+    expect(map).toContain(`'${ID}': [], // SCAFFOLD-TODO`);
+    expect(() => insertAppCapabilities(out, ID)).toThrow(/already/);
+    expect(() => insertAppCapabilities(real('src/shared/app-capabilities.ts'), 'quote')).toThrow(/already/);
+    expect(() => insertAppCapabilities('const x = 1;', ID)).toThrow(/anchor/);
   });
 
   it('schema-registry.ts: app import + entry land in the app section', () => {

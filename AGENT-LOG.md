@@ -5,6 +5,38 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 3: app capability contract + device hardware flags
+
+- **What:** structured metadata that is checked, never trusted. `src/shared/app-capabilities.ts`
+  declares per app what it does (`fetches`, `ticks`, `multiView`) and needs (`audio`, `mic`,
+  `radar`); `app-capabilities.test.ts` (54 checks) holds every row to the code: fetches ⇔ the
+  directory calls fetch() and carries an honest tell, ticks ⇔ it owns a timer/rAF, multiView ⇔ it
+  registers the swipe slot; every hardware need is a `FeatureFlag` some device provides; the wire
+  descriptor carries the list. Declarations were derived from a grep table, not guessed:
+  agents mic (voice design, mock today), breathing radar, fitness audio (circuit cues),
+  time-tracking radar (presence), every fetching app has its tell.
+- **Device flags:** `FeatureFlag` gains `audio` | `mic` | `radar`; `capabilities.ts` declares
+  them from fleet.md and device.json (fast: Fusion HAT mic + speaker, hosts the A121; small and
+  square: USB mic; slow: none). Admin Settings reads flags by name, so the new ones are inert
+  there. `AppDescriptor.capabilities` is optional on the wire (LVGL JSON stays valid).
+  `devicesProviding(flag)` lives in capabilities.ts (app-capabilities.ts is a leaf on purpose:
+  importing capabilities.ts back would be a module cycle).
+- **Scaffolder:** `new:app` now inserts an empty `'<id>': [] // SCAFFOLD-TODO` row
+  (`insertAppCapabilities`, pinned in scaffold-templates.test.ts); the contract test then holds
+  the row to the code as the app is implemented.
+- **Changed:** `src/shared/types.ts`, `app-capabilities.ts` (new), `app-capabilities.test.ts`
+  (new), `capabilities.ts`, `scripts/lib/scaffold-templates.mjs`, `scaffold-templates.test.ts`,
+  `scripts/new-app.mjs`, `AGENTS.md` (adding-an-app list + Conventions bullet).
+- **Verified:** contract red on the missing module, green first run (facts matched the table);
+  scaffold test red on the missing insertion, green after; scaffold smoke `new:app cap-smoke`
+  passed contract + coherence + registry-contract + liveness with only the by-design todo test
+  red, tsc clean, smoke removed surgically (git checkout would have wiped the uncommitted
+  capabilities.ts edits: reverted by line instead). 42 files / 556 tests, tsc, lint green.
+- **Decisions to flag, not taken:** whether a device without `mic` should stop OFFERING Agents
+  (supportedAppIds), and whether the kiosk should show "no mic on this device" tells; both are
+  product calls now backed by data. Radar is declared on fast only (the sidecar runs there).
+- **Open:** none for item 3.
+
 ## 2026-09-05 · item 2, batch d: the last three apps wired (Claude usage, Fireplace, GitHub) — SCHEMA_UNREAD is empty
 
 - **What:** item 2 complete. Every declared schema (27) is value-imported by its component; the

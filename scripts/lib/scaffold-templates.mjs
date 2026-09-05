@@ -197,6 +197,23 @@ export function insertKioskAppId(source, id) {
   return `${source.slice(0, end)}  '${id}',\n${source.slice(end)}`;
 }
 
+/** src/shared/app-capabilities.ts — an empty row (with a SCAFFOLD-TODO) that
+ *  app-capabilities.test.ts then holds to the code as the app is implemented:
+ *  add fetch() and the row must say `fetches`, and so on. Keys are quoted
+ *  (valid for every id); the duplicate check accepts the bare form too. */
+export function insertAppCapabilities(source, id) {
+  const anchor = 'export const APP_CAPABILITIES';
+  const start = findAnchor(source, anchor, 'app-capabilities.ts');
+  const end = source.indexOf('};', start);
+  if (end === -1) throw new Error('anchor not found: APP_CAPABILITIES closing };');
+  const region = source.slice(start, end);
+  if (new RegExp(`^\\s*(?:'${id}'|${id}):`, 'm').test(region)) {
+    throw new Error(`app capabilities row already present: ${id}`);
+  }
+  const row = `  '${id}': [], // SCAFFOLD-TODO: declare what it does (fetches/ticks/multiView) and needs (audio/mic/radar)\n`;
+  return `${source.slice(0, end)}${row}${source.slice(end)}`;
+}
+
 const KIND_SUFFIX = { app: 'App', face: 'Face' };
 
 /** src/shared/schema-registry.ts — import line, appended to its kind's group. */
