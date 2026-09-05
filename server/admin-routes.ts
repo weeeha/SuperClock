@@ -1,7 +1,8 @@
 import { Router, type Response } from 'express';
 import { ulid } from 'ulid';
 import { readFleet, readDevice, updateDevice } from './fleet-store';
-import { pushToDevice, getReachability } from './device-push';
+import { pushToDevice, getReachability, probeFleet } from './device-push';
+import { withNewInstance } from './config-edits';
 import { adminTokenMiddleware, getAdminToken, compareToken } from './admin-token';
 import {
   deviceConfigPatchSchema,
@@ -84,7 +85,10 @@ router.get('/fleet', async (_req, res) => {
   res.json(fleet);
 });
 
-router.get('/health', (_req, res) => {
+router.get('/health', async (_req, res) => {
+  // Active probe (bounded ~2s, parallel) so the dots report the fleet, not
+  // the push history. The 30s UI poll is the cadence.
+  await probeFleet();
   const reach = getReachability();
   const payload: FleetHealth = {
     devices: ALL_DEVICE_IDS.map((id) => {
@@ -115,8 +119,8 @@ router.patch('/fleet/:deviceId', async (req, res) => {
   }
   const patch = parsed.data;
   const updated = await updateDevice(deviceId, (current) => ({ ...current, ...patch }));
-  void pushToDevice(deviceId, updated);
-  res.json(updated);
+  const push = await pushToDevice(deviceId, updated);
+  res.json({ config: updated, pushOutcome: push.outcome });
 });
 
 const instanceCreateSchema = screenInstanceSchema.partial({ id: true, config: true });
@@ -136,12 +140,9 @@ router.post('/fleet/:deviceId/instances', async (req, res) => {
     config: body.config ?? {},
     label: body.label,
   };
-  const updated = await updateDevice(deviceId, (current) => ({
-    ...current,
-    instances: [...current.instances, instance],
-  }));
-  void pushToDevice(deviceId, updated);
-  res.json(instance);
+  const updated = await updateDevice(deviceId, (current) => withNewInstance(current, instance));
+  const push = await pushToDevice(deviceId, updated);
+  res.json({ instance, pushOutcome: push.outcome });
 });
 
 const instancePatchSchema = screenInstanceSchema.partial();
@@ -169,8 +170,8 @@ router.patch('/fleet/:deviceId/instances/:id', async (req, res) => {
     res.status(404).json({ error: 'instance not found' });
     return;
   }
-  void pushToDevice(deviceId, updated);
-  res.json(nextInstance);
+  const push = await pushToDevice(deviceId, updated);
+  res.json({ instance: nextInstance, pushOutcome: push.outcome });
 });
 
 router.delete('/fleet/:deviceId/instances/:id', async (req, res) => {
@@ -182,8 +183,8 @@ router.delete('/fleet/:deviceId/instances/:id', async (req, res) => {
     instances: current.instances.filter((i) => i.id !== id),
     playlist: { ...current.playlist, items: current.playlist.items.filter((x) => x !== id) },
   }));
-  void pushToDevice(deviceId, updated);
-  res.status(204).end();
+  const push = await pushToDevice(deviceId, updated);
+  res.json({ pushOutcome: push.outcome });
 });
 
 const reorderSchema = z.object({ order: z.array(z.string()) });
@@ -201,8 +202,8 @@ router.post('/fleet/:deviceId/playlist/reorder', async (req, res) => {
     ...current,
     playlist: { ...current.playlist, items: order },
   }));
-  void pushToDevice(deviceId, updated);
-  res.json(updated);
+  const push = await pushToDevice(deviceId, updated);
+  res.json({ config: updated, pushOutcome: push.outcome });
 });
 
 export default router;
