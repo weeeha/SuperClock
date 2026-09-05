@@ -278,7 +278,7 @@
     {
       "id": "NAV-1",
       "title": "Shared nav-store slots are released with a guarded cleanup",
-      "severity": "review",
+      "severity": "blocker",
       "detect": {
         "method": "requires",
         "when": "setVerticalSwipeCallback\\(",
@@ -287,7 +287,7 @@
         "scope": ["src/apps"],
         "include": [".tsx"],
         "exempt": [],
-        "falsePositives": "A file that guards through a helper defined elsewhere would read as unguarded; none exists today. Ships at review with two baseline rows (Agents, Weather); promote to blocker when they are fixed."
+        "falsePositives": "A file that guards through a helper defined elsewhere would read as unguarded; none exists today. Shipped at review on 2026-09-05 with two baseline rows (Agents, Weather); promoted to blocker the same day once both adopted the HabitsApp shape."
       },
       "fix": "Copy HabitsApp exactly: capture the callback in a const, register it, and in cleanup null the slot only if useNavigation.getState().verticalSwipeCallback === cb.",
       "why": "SwipeContainer's popLayout keeps the exiting app mounted after the next app registers, so an unconditional null in cleanup stomps the incoming app's registration and every gesture dies (AGENTS.md, Traps already paid for)."

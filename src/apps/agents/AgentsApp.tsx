@@ -33,8 +33,13 @@ export default function AgentsApp({ isActive, config }: AppProps) {
       setVerticalSwipeCallback(null);
       return;
     }
-    setVerticalSwipeCallback(() => setView((v) => onVerticalSwipe(v)));
-    return () => setVerticalSwipeCallback(null);
+    const cb = () => setView((v) => onVerticalSwipe(v));
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours (HabitsApp's guarded cleanup).
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [isActive, view, setVerticalSwipeCallback]);
 
   // Mock mic-state machine: cycles every 4s so all four ring states are

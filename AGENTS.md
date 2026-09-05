@@ -98,7 +98,7 @@ Each of these cost a debugging session once. Don't pay again.
 
 - **No Storybook / a11y-contrast gate.** Contrast is checked by eye. The proven pattern (every story an axe test in real Chromium — jsdom silently skips `color-contrast`) lives in the sibling `Minimal-Design-System` repo; port it, don't rebuild it.
 - **The one-accent-quantity rule and LVGL parity are review-enforced, not gated** (`FCE-1`/`FCE-2` in `rules/superclock.json`, declared `judgment` so every `check:rules` run prints them as unchecked instead of passing them). The planned fix is the shared JSON face-spec above.
-- **Rule severities are earned, not declared.** `NAV-1` (guarded cleanup) ships at `review` because Agents and Weather still null the shared slot unconditionally; `STA-3` and `LAY-4` carry baseline rows too. `scripts/lib/rulecheck-tree.test.ts` holds every row two-way (no growth, and a fixed row must be deleted). Fix the debt, delete the row, promote the rule to `blocker`.
+- **Rule severities are earned, not declared.** A rule with debt on the tree ships at `review` with a `BASELINE` row per (rule, file) in `scripts/lib/rulecheck-tree.test.ts`, held two-way (no growth, and a fixed row must be deleted), and is promoted to `blocker` when its rows reach zero. `NAV-1` walked that path on 2026-09-05 (Agents and Weather adopted HabitsApp's guard); the baseline is empty and meant to stay so.
 - **Seven legacy faces are exempt from the `--face-*` night rule** (`FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`). The list may only shrink: retrofit a face, delete its line.
 
 ## Open decisions — flag, don't silently pick

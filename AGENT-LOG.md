@@ -5,6 +5,30 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 1: baseline debt paid, NAV-1 promoted to blocker (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** the five BASELINE rows from option 2 are fixed and deleted; the baseline is empty
+  and documented as the steady state. NAV-1 is now a `blocker`.
+- **Changed:** `AgentsApp.tsx` and `WeatherApp.tsx` adopt HabitsApp's exact shape (inactive
+  branch nulls, captured `cb`, cleanup nulls only if the slot is still ours).
+  `src/admin/lib/array-fields.tsx`: the list-editor input gains
+  `focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]` (neither the input nor its row
+  had any focus treatment). `TodoApp.tsx`: `border-[3px]` becomes Tailwind v4's `border-3`
+  (compiles to the same 3px, verified in both built CSS bundles). `src/admin/routes/Apps.tsx`:
+  the instance-count pill snaps from `text-[10px]` to `text-xs` (12px; the only visual change,
+  admin-only). `rules/superclock.json`: NAV-1 severity blocker, provenance note.
+  `rulecheck-tree.test.ts`: BASELINE = {}. `AGENTS.md` Known-gaps bullet rewritten.
+  `.claude/launch.json`: new `dev-alt` config on 5181 so a worktree can preview while another
+  session holds 5180 (5180 was held by a vite for pegbo-proto-starter, left running).
+- **Verified:** tree gate red with exactly the five rows after emptying the baseline, green after
+  the fixes; gates.sh green (lint, check:tokens, 37 files / 472 tests, build). Dev preview on
+  5181: Weather → Habits → Weather → Todo via `window.__nav` + `finishTransition()`, the
+  swipe slot stayed registered after every transition, mode returned to `app`, no console errors.
+  Not exercised: Agents' per-agent view registration (needs an in-app tap; same shape as
+  Weather), the Todo row (list empty in dev, covered by the CSS check), keyboard focus on the
+  admin input (hidden tab cannot deliver keyboard focus).
+- **Open:** none for this item.
+
 ## 2026-09-05 · option 2: rule catalogue + runner (branch `claude/agentic-design-system-arch-ac2da8`)
 
 - **What:** every design rule is one record with its severity and its detector, in

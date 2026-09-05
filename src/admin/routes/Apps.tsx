@@ -90,7 +90,7 @@ export default function Apps() {
                         <span className="text-xs opacity-60">{app.faces.length} faces</span>
                       )}
                       {instanceCount > 0 && (
-                        <span className="rounded-full bg-[hsl(var(--primary))] px-1.5 py-0.5 text-[10px] font-medium text-[hsl(var(--primary-foreground))]">
+                        <span className="rounded-full bg-[hsl(var(--primary))] px-1.5 py-0.5 text-xs font-medium text-[hsl(var(--primary-foreground))]">
                           {instanceCount}
                         </span>
                       )}

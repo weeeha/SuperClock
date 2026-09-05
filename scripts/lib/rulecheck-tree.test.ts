@@ -25,20 +25,12 @@ import { loadRules, scan, walk } from '../rulecheck.mjs';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
-/** Frozen 2026-09-05. Key = `<rule id> <repo-relative file>`, value = hits.
- *  May only shrink; a fixed row must be deleted (the stale-row test fails
- *  otherwise). */
-export const BASELINE: Record<string, number> = {
-  // Arbitrary px values: off-scale literals awaiting a scale decision.
-  'LAY-4 src/apps/todo/TodoApp.tsx': 1,
-  'LAY-4 src/admin/routes/Apps.tsx': 1,
-  // outline-none without a focus-visible pairing on the same line.
-  'STA-3 src/admin/lib/array-fields.tsx': 1,
-  // Guarded cleanup missing: the two registrants that null the shared slot
-  // unconditionally. Fix both, delete the rows, promote NAV-1 to blocker.
-  'NAV-1 src/apps/agents/AgentsApp.tsx': 1,
-  'NAV-1 src/apps/weather/WeatherApp.tsx': 1,
-};
+/** Key = `<rule id> <repo-relative file>`, value = hits. May only shrink; a
+ *  fixed row must be deleted (the stale-row test fails otherwise). Frozen
+ *  2026-09-05 with five rows (NAV-1 x2, STA-3 x1, LAY-4 x2); emptied the same
+ *  day once the debt was paid. Empty is the intended steady state: a new row
+ *  here is a decision to carry debt, and it says why. */
+export const BASELINE: Record<string, number> = {};
 
 interface Violation {
   id: string;
