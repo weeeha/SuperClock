@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Session handoffs live in `docs/agent-log.md` (what previous sessions did, newest first): read it before starting work and append an entry when you finish a chunk. Work lands as local changes, not PRs, unless Nick asks for one.
+
 ## Project context
 
 SuperClock is a smart-clock dashboard for a fleet of four Raspberry Pis driving Waveshare round/square LCDs. Per-device hardware specs live in `superclock-{fast,small,square,slow}/device.json` (fast is a Pi 5; the others are Pi 4-class; `slow` runs a separate native LVGL binary — not Chromium). The UI is laid out for a circular 1080×1080 viewport on the round devices, so most full-screen surfaces assume a 1:1 aspect ratio. Two SPAs ship from one Vite build: the **kiosk** (`index.html`, full-screen touch UI) and the **admin** (`admin/index.html`, fleet management at `/admin`), both served by the bundled Express server on every Pi.
@@ -91,8 +93,9 @@ Each of these cost a debugging session once. Don't pay again.
 
 ## Known gaps — port, don't reinvent
 
+- **Every rule this repo enforces or only claims is one record in `scripts/lib/rules.mjs`**: `checkedBy` names the script or test that runs it, `unchecked` says why none exists. `npm run check:tokens` prints the unchecked ones at the end of every run, and `scripts/lib/rules.test.ts` fails on a detector that does not exist. Tokens declared but read by nothing are ledgered in `UNCONSUMED_LEDGER` (`scripts/lib/token-liveness.mjs`, shrink-only) and gated by `src/shared/token-liveness.test.ts`.
 - **No Storybook / a11y-contrast gate.** Contrast is checked by eye. The proven pattern (every story an axe test in real Chromium — jsdom silently skips `color-contrast`) lives in the sibling `Minimal-Design-System` repo; port it, don't rebuild it.
-- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated.** The planned fix is the shared JSON face-spec above.
+- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated** (R09 and R10 in the catalog). The planned fix is the shared JSON face-spec above.
 - **Seven legacy faces are exempt from the `--face-*` night rule** (`FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`). The list may only shrink: retrofit a face, delete its line.
 - **The unslop skill's Phase 2 greps are run by hand** (`.claude/skills/unslop/SKILL.md`); only the token-gate slice is scripted.
 
