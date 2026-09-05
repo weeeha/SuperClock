@@ -5,6 +5,31 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 4: docs drift gate + the stale entry docs
+
+- **What:** `scripts/lib/docs-drift.test.ts` (117 checks) holds the claims AGENTS.md and the entry
+  docs make about the tree to the tree: every backticked repo path exists (brace-expanded,
+  basename search for bare filenames), every backticked identifier appears in the code roots,
+  every `--token` prefix is declared in a stylesheet, every rule id is in `rules/*.json`, every
+  `npm run` script is in package.json; README's app list and the "N apps registered" counts in
+  `directive/foundation.md` and `docs/architecture.md` match the registry parsed from
+  `src/apps/index.ts`. It catches stale names and counts, never wrong advice.
+- **Ledgers:** `NOT_IN_TREE` (dist/, server.mjs, build-info.json, .env, superclock.service,
+  config/fleet.json, config/admin.json) with reasons, checked two-way against `git ls-files` (a
+  name that becomes tracked must leave); `MUST_NOT_EXIST_IN_CODE` (BackChevron) asserts a
+  deletion AGENTS.md relies on stays deleted.
+- **Docs fixed (the gate's first red):** README app list 10 → 14 with registry descriptions,
+  `VITE_GITHUB_TOKEN` row replaced by the server-side `GITHUB_TOKEN` (docs-site gap 08, open since
+  July), "falls back to mock" wording removed, scripts block gains test + gates.sh, pointer to
+  AGENTS.md; foundation.md and architecture.md 11 → 14 apps; AGENTS.md's hand-kept "Users:" list
+  of swipe registrants (7 of 10, stale) replaced by a pointer to the `multiView` declarations the
+  capability contract already holds to the code.
+- **Gate bugs found on the first run:** dist/ exists on a developer disk after a build, so
+  "in the tree" now means tracked by git; the gate was reading its own ledger as code (excluded).
+- **Verified:** red on exactly the four stale docs plus the two gate bugs; green after.
+  43 files / 673 tests, lint, tsc.
+- **Open:** none for item 4.
+
 ## 2026-09-05 · item 3: app capability contract + device hardware flags
 
 - **What:** structured metadata that is checked, never trusted. `src/shared/app-capabilities.ts`

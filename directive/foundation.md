@@ -11,7 +11,7 @@ For subsystem-specific scope see:
 
 A smart-clock OS for round-LCD Raspberry Pis. Each Pi runs full-screen as a kiosk. Apps are mini React components on the Chromium-based Pis; the Slow Pi runs a native LVGL binary against the same wire contract. Users navigate by swipe: down for the app grid, left/right between apps; apps can host their own internal navigation.
 
-Today: 4 Pis around the house (Fast, Small, Square, Slow). 11 apps registered. An admin panel manages per-device config. Built by [@weeeha](https://github.com/weeeha), for [@weeeha](https://github.com/weeeha).
+Today: 4 Pis around the house (Fast, Small, Square, Slow). 14 apps registered (the count is pinned to `src/apps/index.ts` by `scripts/lib/docs-drift.test.ts`). An admin panel manages per-device config. Built by [@weeeha](https://github.com/weeeha), for [@weeeha](https://github.com/weeeha).
 
 ## The three horizons
 
