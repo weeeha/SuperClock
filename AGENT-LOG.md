@@ -5,6 +5,43 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 2, batch d: the last three apps wired (Claude usage, Fireplace, GitHub) — SCHEMA_UNREAD is empty
+
+- **What:** item 2 complete. Every declared schema (27) is value-imported by its component; the
+  ledger is empty and AGENTS.md says so.
+- **Claude usage:** `refreshSeconds` drives the poll (default aligned 60 → 30, the historical
+  interval); `moodEnabled=false` leaves the metrics without the sprite and stops its rotation
+  tick. `scope` cannot be honoured (the daemon reports one rollup), so it is the first user of
+  a new `FieldMeta.unimplemented` note: the admin renders the control disabled with
+  "Not applied on the glass yet: …" (string, number, enum, boolean branches of schema-form;
+  never hidden, never silently broken).
+- **Fireplace:** `src/apps/fireplace/fire-params.ts` (pure, 11 tests): `spawnPerFrame`
+  (calm 1 / medium 3 / roaring 6), `flameColor` (classic reproduces the original gradient
+  verbatim; cool/blue/purple are a first cut to tune on glass), `emberColor`. The effect
+  restarts on a config push.
+- **GitHub:** `src/apps/github/github-config.ts` (pure, 9 tests): `paletteFor` (default = the
+  historical greens; monochrome greys; accent ramps into `var(--color-accent)` via color-mix),
+  `cacheKeyFor` (blank keeps the historical key so an existing cache still seeds the boot
+  paint; a username gets its own key), `contributionsUrl`. The app is now `GithubApp` (parses
+  config) → `GithubGraph` keyed on the cache key, so a username change remounts with that
+  user's cache instead of briefly painting another user's graph; sub-views take `colors`;
+  `refreshMinutes` drives the interval (default 30 = historical). `server/github-proxy.ts`:
+  `?username=` switches the GraphQL subject from viewer to `user(login:)`, validated by
+  `isValidLogin` before interpolation (400 otherwise), cache and single-flight per login
+  (`server/github-proxy.test.ts`, 4 tests).
+- **Changed:** the files above plus `src/shared/types.ts` (FieldMeta.unimplemented),
+  `src/admin/lib/schema-form.tsx`, `app.claude-usage.ts`, `schema-liveness.test.ts` (3 → 0).
+- **Verified:** gate red on exactly the three; pure suites red on missing modules/exports, green
+  after. 41 files / 501 tests, tsc, lint, check:tokens green; check:rules 0 violations.
+  Dev preview (5181): Fireplace canvas mounted; GitHub honest empty state ("set GITHUB_TOKEN on
+  the server") painting 364 level-0 dots from the palette; Claude usage metrics + sprite +
+  "auth expired" tell. Console carried 17 stale HMR errors from mid-edit churn (Invalid hook
+  call while modules were half-updated); a reload added none. Not exercised in the browser:
+  the disabled `scope` control in the admin form (needs an instance; the change is JSX only),
+  the non-default hues/intensity/palettes, a non-blank username against real GitHub.
+- **Open:** none for item 2. Follow-ups noted, not started: tune the cool/blue/purple flames on
+  glass; the seven legacy faces still on FACE_TOKEN_EXEMPT (night tokens, a separate retrofit).
+
 ## 2026-09-05 · item 2, batch c: three faces with behaviour wired (Productivity, Flip, World)
 
 - **What:** the last three legacy face schemas. Defaults aligned to today's rendering:

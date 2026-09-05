@@ -25,15 +25,25 @@ function FieldShell({
   label,
   description,
   error,
+  unimplemented,
   children,
   inline,
 }: {
   label: string;
   description?: string;
   error?: string;
+  /** FieldMeta.unimplemented: the option is saved but not honoured on the
+   *  glass yet. Rendered as a note next to the (disabled) control — never
+   *  hidden, never silently broken. */
+  unimplemented?: string;
   children: React.ReactNode;
   inline?: boolean;
 }) {
+  const note = unimplemented && (
+    <p className="text-xs text-[hsl(var(--warning-foreground))]">
+      Not applied on the glass yet: {unimplemented}
+    </p>
+  );
   if (inline) {
     return (
       <div className="flex items-center justify-between gap-3">
@@ -42,6 +52,7 @@ function FieldShell({
           {description && (
             <p className="text-xs opacity-60">{description}</p>
           )}
+          {note}
         </div>
         {children}
       </div>
@@ -52,13 +63,14 @@ function FieldShell({
       <label className="text-sm font-medium">{label}</label>
       {description && <p className="text-xs opacity-60 -mt-1">{description}</p>}
       {children}
+      {note}
       {error && <p className="text-xs text-[hsl(var(--destructive))]">{error}</p>}
     </div>
   );
 }
 
 const inputClass =
-  'w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-1.5 text-sm';
+  'w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50';
 
 export function SchemaForm({ schema, meta, value, onChange }: Props) {
   const shape = schema.shape;
@@ -73,16 +85,24 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
         const inner = unwrap(fieldSchema);
         const current = value[key];
         const label = fmeta.label ?? humanize(key);
+        const disabled = Boolean(fmeta.unimplemented);
 
         if (inner instanceof z.ZodString) {
           if (fmeta.format === 'color') {
             const hex = typeof current === 'string' && current ? current : '#000000'; // token-gate:allow color-input fallback value, not styling
             return (
-              <FieldShell key={key} label={label} description={fmeta.description} inline>
+              <FieldShell
+                key={key}
+                label={label}
+                description={fmeta.description}
+                unimplemented={fmeta.unimplemented}
+                inline
+              >
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={hex}
+                    disabled={disabled}
                     onChange={(e) => set(key, e.target.value)}
                     className="h-8 w-10 cursor-pointer rounded border border-[hsl(var(--border))] bg-transparent p-0"
                     aria-label={label}
@@ -93,8 +113,14 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
             );
           }
           return (
-            <FieldShell key={key} label={label} description={fmeta.description}>
+            <FieldShell
+              key={key}
+              label={label}
+              description={fmeta.description}
+              unimplemented={fmeta.unimplemented}
+            >
               <input
+                disabled={disabled}
                 type={fmeta.format === 'url' ? 'url' : fmeta.format === 'time' ? 'time' : 'text'}
                 value={(current as string) ?? ''}
                 placeholder={fmeta.placeholder}
@@ -108,8 +134,14 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
         if (inner instanceof z.ZodNumber) {
           const num = typeof current === 'number' ? current : '';
           return (
-            <FieldShell key={key} label={label} description={fmeta.description}>
+            <FieldShell
+              key={key}
+              label={label}
+              description={fmeta.description}
+              unimplemented={fmeta.unimplemented}
+            >
               <input
+                disabled={disabled}
                 type="number"
                 value={num}
                 min={fmeta.min}
@@ -130,8 +162,14 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
         if (inner instanceof z.ZodEnum) {
           const options = inner.options as readonly string[];
           return (
-            <FieldShell key={key} label={label} description={fmeta.description}>
+            <FieldShell
+              key={key}
+              label={label}
+              description={fmeta.description}
+              unimplemented={fmeta.unimplemented}
+            >
               <select
+                disabled={disabled}
                 value={(current as string) ?? options[0]}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => set(key, e.target.value)}
                 className={inputClass}
@@ -153,8 +191,13 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
               label={label}
               description={fmeta.description}
               inline
+              unimplemented={fmeta.unimplemented}
             >
-              <Switch checked={Boolean(current)} onCheckedChange={(v) => set(key, v)} />
+              <Switch
+                checked={Boolean(current)}
+                onCheckedChange={(v) => set(key, v)}
+                disabled={disabled}
+              />
             </FieldShell>
           );
         }

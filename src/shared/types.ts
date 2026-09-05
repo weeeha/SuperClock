@@ -135,6 +135,10 @@ export interface FieldMeta {
    *  existed before the editing session is renamed. Case/whitespace-only
    *  changes don't re-key, so they don't warn. */
   identityKeyed?: boolean;
+  /** The option is declared and saved but nothing on the glass honours it yet
+   *  (a backend that cannot serve it, a renderer not built). The admin renders
+   *  the control disabled with this note: never hidden, never silently broken. */
+  unimplemented?: string;
 }
 
 export type FieldMetaMap = Record<string, FieldMeta>;

@@ -37,13 +37,7 @@ import { SCHEMAS } from './schema-registry';
  *  One reason each. May only SHRINK: wire the component to the Calendar
  *  pattern, then delete its line here. Frozen 2026-09-05 at 14 of 27 and
  *  shrinking the same day, batch by batch. */
-export const SCHEMA_UNREAD: Record<string, string> = {
-  'app.claude-usage':
-    'never reads config: scope / refreshSeconds / moodEnabled are admin fiction until wired',
-  'app.fireplace': 'never reads config: intensity / hue are admin fiction until wired',
-  'app.github':
-    'never reads config: username / colorScheme / refreshMinutes come from env and constants',
-};
+export const SCHEMA_UNREAD: Record<string, string> = {};
 
 /** Every schema kind must have an owner mapping in consumerOf(). A new kind
  *  fails the classification test until it is placed here. */
