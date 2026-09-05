@@ -1,0 +1,745 @@
+{
+  "fleetSchemaVersion": 2,
+  "schemas": {
+    "app.agents": {
+      "properties": {
+        "defaultAgent": {
+          "default": "main",
+          "type": "string"
+        },
+        "enabledAgents": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "app.breathing": {
+      "properties": {
+        "showDistance": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "app.calendar": {
+      "properties": {
+        "defaultView": {
+          "default": "cover",
+          "enum": [
+            "cover",
+            "week",
+            "month",
+            "year"
+          ],
+          "type": "string"
+        },
+        "source": {
+          "default": "default",
+          "type": "string"
+        },
+        "timeFormat": {
+          "default": "24h",
+          "enum": [
+            "24h",
+            "12h"
+          ],
+          "type": "string"
+        },
+        "weekStart": {
+          "default": "monday",
+          "enum": [
+            "monday",
+            "sunday"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.claude-usage": {
+      "properties": {
+        "moodEnabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "refreshSeconds": {
+          "default": 60,
+          "maximum": 600,
+          "minimum": 30,
+          "type": "integer"
+        },
+        "scope": {
+          "default": "all",
+          "enum": [
+            "all",
+            "this-machine",
+            "directory"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.fireplace": {
+      "properties": {
+        "hue": {
+          "default": "classic",
+          "enum": [
+            "classic",
+            "cool",
+            "blue",
+            "purple"
+          ],
+          "type": "string"
+        },
+        "intensity": {
+          "default": "medium",
+          "enum": [
+            "calm",
+            "medium",
+            "roaring"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.fitness": {
+      "properties": {
+        "beeps": {
+          "default": true,
+          "type": "boolean"
+        },
+        "keepBright": {
+          "default": true,
+          "type": "boolean"
+        },
+        "restSeconds": {
+          "maximum": 60,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rounds": {
+          "maximum": 5,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "voiceCues": {
+          "default": true,
+          "type": "boolean"
+        },
+        "workSeconds": {
+          "maximum": 120,
+          "minimum": 10,
+          "type": "integer"
+        },
+        "workoutId": {
+          "default": "full-body",
+          "enum": [
+            "full-body",
+            "core",
+            "lower"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.github": {
+      "properties": {
+        "colorScheme": {
+          "default": "default",
+          "enum": [
+            "default",
+            "monochrome",
+            "accent"
+          ],
+          "type": "string"
+        },
+        "refreshMinutes": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 5,
+          "type": "integer"
+        },
+        "username": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.habits": {
+      "properties": {
+        "habits": {
+          "default": [
+            "Health",
+            "Read",
+            "Fitness",
+            "Code",
+            "Water",
+            "Nature",
+            "Creative"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "theme": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "type": "string"
+        },
+        "weekStart": {
+          "default": "monday",
+          "enum": [
+            "monday",
+            "sunday"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.photo-frame": {
+      "properties": {
+        "intervalSeconds": {
+          "default": 8,
+          "maximum": 300,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "source": {
+          "default": "local",
+          "enum": [
+            "local",
+            "url",
+            "unsplash"
+          ],
+          "type": "string"
+        },
+        "sourcePath": {
+          "default": "",
+          "type": "string"
+        },
+        "transition": {
+          "default": "fade",
+          "enum": [
+            "fade",
+            "cut",
+            "zoom"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.quote": {
+      "properties": {
+        "rotation": {
+          "default": "daily",
+          "enum": [
+            "daily",
+            "hourly",
+            "every-visit"
+          ],
+          "type": "string"
+        },
+        "source": {
+          "default": "builtin",
+          "enum": [
+            "builtin",
+            "url"
+          ],
+          "type": "string"
+        },
+        "sourceUrl": {
+          "default": "",
+          "type": "string"
+        },
+        "theme": {
+          "default": "light",
+          "enum": [
+            "light",
+            "dark"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.time-tracking": {
+      "properties": {
+        "dailyTargetHours": {
+          "default": 8,
+          "maximum": 24,
+          "minimum": 0,
+          "type": "number"
+        },
+        "defaultProject": {
+          "default": "",
+          "type": "string"
+        },
+        "projects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "weekStart": {
+          "default": "monday",
+          "enum": [
+            "monday",
+            "sunday"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "app.todo": {
+      "properties": {
+        "maxItems": {
+          "default": 50,
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "showCompleted": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "app.weather": {
+      "properties": {
+        "idleReturnSeconds": {
+          "default": 60,
+          "maximum": 600,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "location": {
+          "default": "",
+          "type": "string"
+        },
+        "pages": {
+          "default": [
+            "now",
+            "temp",
+            "conditions",
+            "precip",
+            "wind",
+            "uv"
+          ],
+          "items": {
+            "enum": [
+              "now",
+              "temp",
+              "conditions",
+              "precip",
+              "wind",
+              "uv"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "unit": {
+          "default": "celsius",
+          "enum": [
+            "celsius",
+            "fahrenheit"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "complication.date": {
+      "properties": {
+        "format": {
+          "default": "day-month",
+          "enum": [
+            "day-month",
+            "weekday-day",
+            "iso"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "complication.temperature": {
+      "properties": {
+        "showCondition": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unit": {
+          "default": "celsius",
+          "enum": [
+            "celsius",
+            "fahrenheit"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "device.config": {
+      "additionalProperties": false,
+      "properties": {
+        "deviceId": {
+          "enum": [
+            "superclock-fast",
+            "superclock-small",
+            "superclock-square",
+            "superclock-slow"
+          ],
+          "type": "string"
+        },
+        "enabledApps": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "instances": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "appId": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "config": {
+                "additionalProperties": {},
+                "propertyNames": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "appId",
+              "config"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "playlist": {
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "rotationSeconds": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "rotationSeconds"
+          ],
+          "type": "object"
+        },
+        "settings": {
+          "additionalProperties": false,
+          "properties": {
+            "accent": {
+              "type": "string"
+            },
+            "brightness": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "night": {
+              "additionalProperties": false,
+              "properties": {
+                "brightness": {
+                  "maximum": 100,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "end": {
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "type": "string"
+                },
+                "start": {
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "type": "object"
+            },
+            "sleepSchedule": {
+              "additionalProperties": false,
+              "properties": {
+                "sleep": {
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "type": "string"
+                },
+                "wake": {
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "wake",
+                "sleep"
+              ],
+              "type": "object"
+            },
+            "theme": {
+              "enum": [
+                "light",
+                "dark",
+                "system"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "theme",
+            "accent"
+          ],
+          "type": "object"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "deviceId",
+        "enabledApps",
+        "instances",
+        "playlist",
+        "settings",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "face.analog": {
+      "properties": {
+        "accent": {
+          "default": "#FFD700",
+          "type": "string"
+        },
+        "numeralStyle": {
+          "default": "none",
+          "enum": [
+            "none",
+            "arabic",
+            "roman"
+          ],
+          "type": "string"
+        },
+        "showSeconds": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "face.aperture": {
+      "properties": {
+        "format": {
+          "default": "24h",
+          "enum": [
+            "24h",
+            "12h"
+          ],
+          "type": "string"
+        },
+        "secondsBar": {
+          "default": true,
+          "type": "boolean"
+        },
+        "showDate": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "face.complications-dark": {
+      "properties": {
+        "accent": {
+          "default": "#22c55e",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.complications-light": {
+      "properties": {
+        "accent": {
+          "default": "#22c55e",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.daylight": {
+      "properties": {
+        "latitude": {
+          "default": 0,
+          "maximum": 90,
+          "minimum": -90,
+          "type": "number"
+        },
+        "longitude": {
+          "default": 0,
+          "maximum": 180,
+          "minimum": -180,
+          "type": "number"
+        },
+        "showTimes": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "face.depletion": {
+      "properties": {
+        "cycle": {
+          "default": "calendar-day",
+          "enum": [
+            "calendar-day",
+            "awake"
+          ],
+          "type": "string"
+        },
+        "readout": {
+          "default": "remaining",
+          "enum": [
+            "remaining",
+            "none"
+          ],
+          "type": "string"
+        },
+        "ticks": {
+          "default": "hours",
+          "enum": [
+            "hours",
+            "quarters",
+            "none"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.flip": {
+      "properties": {
+        "accent": {
+          "default": "#f97316",
+          "type": "string"
+        },
+        "hour24": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "face.floral": {
+      "properties": {
+        "accent": {
+          "default": "#f59e0b",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.productivity": {
+      "properties": {
+        "accent": {
+          "default": "#ffcc00",
+          "type": "string"
+        },
+        "showSeconds": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "face.square": {
+      "properties": {
+        "accent": {
+          "default": "#22c55e",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.strokes": {
+      "properties": {
+        "format": {
+          "default": "24",
+          "enum": [
+            "12",
+            "24"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.world": {
+      "properties": {
+        "accent": {
+          "default": "#3b82f6",
+          "type": "string"
+        },
+        "primaryTimezone": {
+          "default": "local",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

@@ -18,10 +18,14 @@ npm test           # Vitest — time-window, fleet-store, registry coherence + c
 npm run check:tokens        # token gate: semantic-only zones + face --face-* rule (scripts/check-tokens.mjs)
 npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction
 npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-*)
+npm run snapshot:schemas    # refresh src/shared/schemas.snapshot.json; REFUSES breaking config-schema changes until FLEET_SCHEMA_VERSION moves
+npm run analyze -- --write  # refresh docs/analysis/declared-vs-read.md: which schema fields / --face-* tokens / slots each app+face really reads
 ./scripts/gates.sh          # the local CI mirror — lint → check:tokens → test → build, in ci.yml's order
 ```
 
 The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins the app/face/schema registries together — if you add an app or face and `npm test` fails, it is telling you which list you forgot (see Conventions). Its sibling `registry-contract.test.ts` catches what coherence can't: files that reached NO registry (a forgotten side-import, an unregistered schema file, missing preview art). Prefer the scaffolders — they emit every touchpoint at once plus a todo test that stays red until the component is implemented.
+
+Two more gates read the same registries from the other side. The **schema snapshot** (`src/shared/schema-snapshot.test.ts`) pins `src/shared/schemas.snapshot.json`, a JSON Schema dump of every config contract (`app.*`, `face.*`, `complication.*`, `device.config`), and classifies each diff breaking / minor / patch. A removed field, a dropped enum value or a narrowed bound is breaking: configs already stored on every Pi fail `safeParse`, every consumer falls back to `schema.parse({})`, and the user's settings silently revert on-glass. `npm run snapshot:schemas` refuses to write a breaking change until `FLEET_SCHEMA_VERSION` (`src/shared/device-config-schema.ts`) has moved, which forces the `migrateFleet` rewrite step into the same PR. The **declared-vs-read report** (`docs/analysis/declared-vs-read.md`, pinned exact-text by `scripts/lib/analyze.test.ts`) answers what coherence cannot: which schema fields, `--face-*` tokens and slots each app and face actually reads. It is heuristic (whole-word identifier grep; parse style keyed off the `<camelId>AppSchema` naming convention), so it is a report and a ratchet, never a hard gate on the numbers: a PR that adds a field nobody reads has to regenerate it, the diff shows the unread list growing, and that list may only shrink.
 
 ### Pi deployment
 
@@ -73,6 +77,7 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 - **TypeScript:** `verbatimModuleSyntax` + `erasableSyntaxOnly` (type-only imports must use `import type`; no enums), `noUnusedLocals`/`noUnusedParameters` on.
 - **Static assets** are hashed PNG/SVG files in `public/` referenced by absolute path — the grid map in `AppGrid.tsx` and face previews in `face-registry.ts` point at them; don't rename without updating both.
 - **Touch/scroll is locked globally** in `src/index.css`; anything scrollable inside an app opts back in locally.
+- **Config schemas are versioned contracts.** Renaming a field, dropping an enum value or narrowing a bound in `src/shared/schemas/*` or `device-config-schema.ts` breaks configs already stored on every Pi. The snapshot gate blocks it until `FLEET_SCHEMA_VERSION` is bumped together with a `migrateFleet` step that rewrites the stored values (see Commands). Adding a defaulted field is minor and needs only `npm run snapshot:schemas`.
 
 ### React ↔ LVGL face parity
 
