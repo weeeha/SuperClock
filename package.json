@@ -11,6 +11,8 @@
     "check:tokens": "node scripts/check-tokens.mjs",
     "new:app": "node scripts/new-app.mjs",
     "new:face": "node scripts/new-face.mjs",
+    "snapshot:schemas": "node --import tsx scripts/snapshot-schemas.ts",
+    "analyze": "node --import tsx scripts/analyze.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs",

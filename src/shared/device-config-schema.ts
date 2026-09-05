@@ -11,6 +11,13 @@
 import { z } from 'zod';
 import { ALL_DEVICE_IDS, type DeviceConfig } from './types';
 
+// Fleet schema version, bumped alongside a migrateFleet step in
+// server/fleet-store.ts whenever stored config must be rewritten. Lives here
+// (not in the server) because the schema snapshot gate reads it: a BREAKING
+// change to any config schema refuses to snapshot until this moves, so every
+// such change ships together with the migration that keeps fleet.json valid.
+export const FLEET_SCHEMA_VERSION = 2;
+
 const hhmm = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM (24h)');
