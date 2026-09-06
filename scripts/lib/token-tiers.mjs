@@ -53,13 +53,18 @@ export function missingModes({ light, dark }) {
   return out;
 }
 
-/** Tier 2 roles whose value is not a reference to a ramp. A literal here is
- *  a value the mode flip cannot reach and the ramps cannot rebrand. */
-export function tierViolations({ light, dark }) {
+/** Tier 2 roles whose value is not a reference to a declared tier 1 ramp. A
+ *  literal here is a value the mode flip cannot reach and the ramps cannot
+ *  rebrand; a var() pointing at a name outside `ramps` is a typo or a
+ *  dangling reference that resolves to nothing at render time, so it is
+ *  reported the same way. */
+export function tierViolations({ ramps, light, dark }) {
+  const knownRamps = new Set(ramps);
   const bad = new Set();
   for (const block of [light, dark]) {
     for (const [name, value] of Object.entries(block)) {
-      if (!/^var\(--[\w-]+\)$/.test(value)) bad.add(name);
+      const ref = /^var\((--[\w-]+)\)$/.exec(value);
+      if (!ref || !knownRamps.has(ref[1])) bad.add(name);
     }
   }
   return [...bad];
