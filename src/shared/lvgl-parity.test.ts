@@ -19,11 +19,15 @@ describe('React ↔ LVGL parity', () => {
   });
 
   for (const meta of parityFaces) {
-    const cSource = readFileSync(meta.parity.lvgl!, 'utf8');
+    // parityFaces is already filtered to parity.lvgl !== null, but .filter()
+    // does not narrow the array's element type, so meta.parity.lvgl is still
+    // string | null here. Recheck the raw path rather than asserting it away.
+    if (meta.parity.lvgl === null) continue;
+    const cSource = readFileSync(meta.parity.lvgl, 'utf8');
     const { geom, missing } = parseGeom(cSource);
     const colors = parseColors(cSource);
     const schemaId = FACES.find((f) => f.id === meta.id)?.configSchemaId;
-    const defaults = schemaId ? (SCHEMAS[schemaId].schema.parse({}) as Record<string, unknown>) : {};
+    const defaults = schemaId ? SCHEMAS[schemaId].schema.parse({}) : {};
     const mismatches = compareToSpec(geom, colors, meta.spec, defaults);
     const ledgered = new Set(PARITY_DRIFT_LEDGER.map((e) => e.field));
 

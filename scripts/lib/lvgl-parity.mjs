@@ -125,6 +125,8 @@ export function compareToSpec(geom, colors, spec, options) {
   }
   check('face.background', specColor(spec.face.background, options), colors.face);
   check('face.ink', specColor(spec.face.ink, options), colors.hands.hour ?? null);
+  check('face.ink.tick', specColor(spec.face.ink, options), colors.tick);
+  check('face.ink.minute', specColor(spec.face.ink, options), colors.hands.min ?? null);
   return out;
 }
 
@@ -137,6 +139,8 @@ export function compareToSpec(geom, colors, spec, options) {
 export const PARITY_DRIFT_LEDGER = [
   { field: 'face.background', reason: 'React draws a black dial, the C a white one; the two renderers were never reconciled' },
   { field: 'face.ink', reason: 'React ink is white on black, C ink is black on white; follows the background decision' },
+  { field: 'face.ink.tick', reason: 'React draws tick marks in ink (white), the C ticks are drawn black; follows the background decision' },
+  { field: 'face.ink.minute', reason: 'React draws the minute hand in ink (white), the C minute hand is drawn black; follows the background decision' },
   { field: 'radius', reason: 'React fills the whole 1000 disc; the C draws a 460 face inside a black backdrop' },
   { field: 'ticks.hour.outer', reason: 'the C ticks sit 40 units inside the React ones because its face radius is 460' },
   { field: 'ticks.hour.inner', reason: 'the C ticks sit 40 units inside the React ones because its face radius is 460' },

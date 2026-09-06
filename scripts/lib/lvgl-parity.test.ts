@@ -89,7 +89,17 @@ describe('compareToSpec', () => {
 
   it('reports the known Analog drift and nothing else', () => {
     expect(fields).toEqual(
-      ['face.background', 'face.ink', 'radius', 'ticks.hour.inner', 'ticks.hour.outer', 'ticks.minute.inner', 'ticks.minute.outer'].sort(),
+      [
+        'face.background',
+        'face.ink',
+        'face.ink.minute',
+        'face.ink.tick',
+        'radius',
+        'ticks.hour.inner',
+        'ticks.hour.outer',
+        'ticks.minute.inner',
+        'ticks.minute.outer',
+      ].sort(),
     );
   });
 
@@ -107,6 +117,22 @@ describe('compareToSpec', () => {
   it('reports a missing C colour as a mismatch against null', () => {
     const noFace = { ...colors, face: null };
     expect(compareToSpec(geom, noFace, SPEC, { accent: '#FFD700' }).find((m) => m.field === 'face.background')?.lvgl).toBeNull();
+  });
+
+  // Proves face.ink.tick and face.ink.minute each read their own C colour
+  // rather than piggy-backing on the hour hand's. Without these, a change to
+  // only the tick or only the minute-hand colour in the C file would never
+  // surface a mismatch (the reviewer's empirical finding on Task 5).
+  it('flags a mismatched tick colour on its own field, independent of the hour hand', () => {
+    const blueTick = { ...colors, tick: '#0000ff' };
+    const m = compareToSpec(geom, blueTick, SPEC, { accent: '#FFD700' }).find((mm) => mm.field === 'face.ink.tick');
+    expect(m).toEqual({ field: 'face.ink.tick', react: '#ffffff', lvgl: '#0000ff' });
+  });
+
+  it('flags a mismatched minute-hand colour on its own field, independent of the hour hand', () => {
+    const redMinute = { ...colors, hands: { ...colors.hands, min: '#ff0000' } };
+    const m = compareToSpec(geom, redMinute, SPEC, { accent: '#FFD700' }).find((mm) => mm.field === 'face.ink.minute');
+    expect(m).toEqual({ field: 'face.ink.minute', react: '#ffffff', lvgl: '#ff0000' });
   });
 });
 
