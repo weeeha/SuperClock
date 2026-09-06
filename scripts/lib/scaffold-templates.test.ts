@@ -17,6 +17,7 @@ import {
   appSchemaTemplate,
   faceComponentTemplate,
   faceSchemaTemplate,
+  faceMetaTemplate,
   todoTestTemplate,
   insertAppSideImport,
   insertKioskAppId,
@@ -26,6 +27,7 @@ import {
   insertFaceRegistryEntry,
 } from './scaffold-templates.mjs';
 import { parseFaceComponentFiles } from './token-rules.mjs';
+import { faceMetaSchema } from '../../src/shared/part-meta';
 
 const ID = 'test-scaffold';
 const real = (p: string) => readFileSync(p, 'utf8');
@@ -147,5 +149,26 @@ describe('insertions against the live registry files', () => {
     expect(faces).toContain(`id: '${ID}',`);
     expect(faces).toContain(`configSchemaId: 'face.${ID}',`);
     expect(faces).toContain(`preview: '/${ID}-preview.png',`);
+  });
+});
+
+describe('face meta template (red-by-construction contract)', () => {
+  it('is valid JSON with kind face and the scaffolded id', () => {
+    const meta = JSON.parse(faceMetaTemplate(ID));
+    expect(meta.kind).toBe('face');
+    expect(meta.id).toBe(ID);
+  });
+
+  it('claims exactly the tokens the scaffolded component reads', () => {
+    const meta = JSON.parse(faceMetaTemplate(ID));
+    const component = faceComponentTemplate(ID);
+    for (const token of meta.night.tokens) expect(component).toContain(`var(${token})`);
+  });
+
+  it('fails the contract schema for the TODO reason and no other', () => {
+    const r = faceMetaSchema.safeParse(JSON.parse(faceMetaTemplate(ID)));
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.length).toBeGreaterThan(0);
+    for (const issue of r.error?.issues ?? []) expect(issue.message, issue.path.join('.')).toContain('TODO');
   });
 });

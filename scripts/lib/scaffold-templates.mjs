@@ -131,6 +131,35 @@ export type ${pascal}FaceConfig = z.infer<typeof ${camel}FaceSchema>;
 `;
 }
 
+/** The usage contract stub. Every judgment string begins with TODO, which the
+ *  contract schema rejects, so a scaffolded face stays red until its
+ *  judgments are written (the same way its todo test keeps it red until it
+ *  is implemented). The night tokens match what faceComponentTemplate reads.
+ *  specless is the safe default: replace it with spec numbers when the face
+ *  is drawn from hands and ticks. */
+export function faceMetaTemplate(id) {
+  const meta = {
+    kind: 'face',
+    id,
+    purpose: 'TODO: what this face is for and what it refuses to be (40 characters or more)',
+    accent: { where: 'TODO: where the one saturated quantity sits', color: '--color-accent' },
+    night: {
+      recipe: 'TODO: how the --face-* palette flip reaches this face',
+      tokens: ['--face-bg', '--face-ink'],
+    },
+    options: [],
+    antiPatterns: [
+      {
+        rule: 'TODO: the first thing this face must never do',
+        why: 'TODO: the reason, because a bare rule gets rationalised away',
+      },
+    ],
+    parity: { lvgl: null },
+    specless: 'TODO: replace with a spec block of numbers, or say why this face has no hand geometry',
+  };
+  return JSON.stringify(meta, null, 2) + '\n';
+}
+
 export function todoTestTemplate(id, componentPath) {
   return `import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
