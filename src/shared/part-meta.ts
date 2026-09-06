@@ -117,7 +117,6 @@ export type PartMeta = z.infer<typeof partMetaSchema>;
 // A listed face that already carries spec or specless fails the gate as
 // stale. A new face never enters this list; it is born with spec or specless.
 export const SPEC_PENDING: readonly string[] = [
-  'minimalismo',
   'productivity',
   'square',
   'floral',

@@ -12,5 +12,17 @@
     { "rule": "Do not add ticks, numerals or a centre pip", "why": "the face is defined by their absence; the moment one returns it is Analog" },
     { "rule": "Never rotate the hands with CSS transforms or transitions", "why": "handPoints geometry is what makes a backsweep and a float32 jump impossible by construction" }
   ],
-  "parity": { "lvgl": null }
+  "parity": { "lvgl": null },
+  "spec": {
+    "space": 1000,
+    "radius": 500,
+    "face": { "background": "--face-bg", "ink": "--face-ink" },
+    "hands": {
+      "hour": { "tip": 280, "width": 28 },
+      "minute": { "tip": 380, "width": 20 },
+      "second": { "tip": 350, "tail": 80, "width": 6, "color": "#FFD700" }
+    },
+    "ticks": null,
+    "dot": null
+  }
 }
