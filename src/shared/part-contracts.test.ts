@@ -3,12 +3,12 @@
 // it is true of the source. Same shape as registry-contract.test.ts: the
 // judgments are prose, the facts around them cannot drift.
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, readdirSync } from 'node:fs';
 import { FACE_COMPONENTS } from '../apps/clock/face-components';
 import { FACES } from './face-registry';
 import { SCHEMAS } from './schema-registry';
 import { faceMetaSchema, widgetMetaSchema, SPEC_PENDING } from './part-meta';
-import type { FaceMeta, WidgetMeta } from './part-meta';
+import type { FaceMeta, FaceSpec, WidgetMeta } from './part-meta';
 import { FACE_TOKEN_EXEMPT } from '../../scripts/lib/token-rules.mjs';
 import { WIDGET_META_PATHS } from '../../scripts/lib/parts-index.mjs';
 
@@ -36,6 +36,63 @@ function schemaKeys(id: string): string[] {
   const schemaId = FACES.find((f) => f.id === id)?.configSchemaId;
   if (!schemaId) return [];
   return Object.keys(SCHEMAS[schemaId].schema.shape).sort();
+}
+
+// Finding 3: the import check below only proves a migrated face reads its
+// meta once, at module scope; nothing stops a later edit from hardcoding a
+// spec number straight back into the JSX and staying green. These three
+// helpers detect that.
+
+/** SVG attributes a hand-and-tick face actually writes numbers into: the
+ *  x1/y1/x2/y2/cx/cy/r/strokeWidth a <line> or <circle> takes for a hand,
+ *  tick, dot or the face radius. Deliberately an allowlist, not a denylist:
+ *  Analog's numeral ring writes its own count and label as plain arguments
+ *  (Array.from({ length: 12 }), i === 0 ? 12 : i) and its type size as
+ *  fontSize/fontWeight, none of them in this list, so 12 (also a tick width
+ *  and the dot's outer radius) and 500 (also the radius) are excluded by
+ *  construction, not by naming every unrelated attribute that could
+ *  coincidentally carry a spec number. */
+const GEOMETRY_ATTRS = new Set(['x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'strokeWidth']);
+
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
+
+/** Every `attr="123"` or `attr={123}` in source whose attr is a geometry
+ *  attribute and whose value is nothing but digits. An expression such as
+ *  strokeWidth={width} or y2={C - tip} does not match: only a bare number
+ *  does, which is what a reintroduced literal looks like. Comments are
+ *  stripped first so a number mentioned in prose never counts. */
+function bareGeometryLiterals(source: string): Array<{ name: string; value: number }> {
+  const stripped = stripComments(source);
+  const found: Array<{ name: string; value: number }> = [];
+  for (const m of stripped.matchAll(/\b([A-Za-z][A-Za-z0-9]*)=(?:"(\d+)"|\{\s*(\d+)\s*\})/g)) {
+    const name = m[1];
+    const raw = m[2] ?? m[3];
+    if (raw === undefined || !GEOMETRY_ATTRS.has(name)) continue;
+    found.push({ name, value: Number(raw) });
+  }
+  return found;
+}
+
+/** Every numeric leaf spec carries, except space: space is always 1000 and
+ *  is read as `${spec.space}` inside the viewBox template, never written as
+ *  a bare literal by a correctly migrated face, so searching for it would
+ *  only ever find a false alarm or nothing. */
+function specLeafNumbers(spec: FaceSpec): Set<number> {
+  const nums = [spec.radius, spec.hands.hour.tip, spec.hands.hour.width, spec.hands.minute.tip, spec.hands.minute.width];
+  if (spec.hands.second) {
+    nums.push(spec.hands.second.tip, spec.hands.second.width);
+    if (spec.hands.second.tail !== undefined) nums.push(spec.hands.second.tail);
+  }
+  if (spec.ticks) {
+    nums.push(spec.ticks.hour.inner, spec.ticks.hour.outer, spec.ticks.hour.width);
+    nums.push(spec.ticks.minute.inner, spec.ticks.minute.outer, spec.ticks.minute.width);
+  }
+  if (spec.dot) {
+    nums.push(spec.dot.outer, spec.dot.inner);
+  }
+  return new Set(nums);
 }
 
 describe('face contracts', () => {
@@ -124,6 +181,20 @@ describe('face contracts', () => {
       }
     }
   });
+
+  it('a face carrying spec has no hand, tick, dot or radius number hardcoded back into its TSX (the import check alone does not see a literal that returns)', () => {
+    for (const part of faceParts) {
+      const meta = loadFace(part);
+      if (!meta.spec) continue;
+      const nums = specLeafNumbers(meta.spec);
+      const source = readFileSync(part.tsx, 'utf8');
+      const literals = bareGeometryLiterals(source).filter((l) => nums.has(l.value));
+      expect(
+        literals,
+        `${part.id}: ${part.tsx} hardcodes ${literals.map((l) => `${l.name}="${l.value}"`).join(', ')}, a number meta.spec already carries; read it from spec instead of a literal`,
+      ).toEqual([]);
+    }
+  });
 });
 
 describe('widget contracts', () => {
@@ -132,6 +203,31 @@ describe('widget contracts', () => {
   function loadWidget(metaPath: string): WidgetMeta {
     return widgetMetaSchema.parse(JSON.parse(readFileSync(metaPath, 'utf8')));
   }
+
+  // Finding 2: WIDGET_META_PATHS is a hand-kept literal (scripts/lib/parts-index.mjs),
+  // not derived from a registry the way FACE_COMPONENTS drives the face half above.
+  // A new widget file with no meta is invisible to every check that only iterates
+  // `widgets`, including the index's own "lists every part once" test, which compares
+  // against collectMetaPaths and is therefore circular for this exact gap.
+  it('every component under src/core/widgets/ appears in WIDGET_META_PATHS (a new widget cannot dodge the gate by omission)', () => {
+    const known = new Set(widgets.map((w) => w.tsx));
+    for (const file of globSync('src/core/widgets/*.tsx')) {
+      if (file.endsWith('.test.tsx')) continue;
+      expect(
+        known.has(file),
+        `${file} has no entry in WIDGET_META_PATHS (scripts/lib/parts-index.mjs): add its meta path there and give it a .meta.json before this widget can pass the contract gate`,
+      ).toBe(true);
+    }
+  });
+
+  it('no meta file under src/core/widgets/ belongs to a widget that is not registered', () => {
+    const known = new Set(WIDGET_META_PATHS);
+    for (const file of readdirSync('src/core/widgets')) {
+      if (!file.endsWith('.meta.json')) continue;
+      const path = `src/core/widgets/${file}`;
+      expect(known.has(path), `orphan contract ${path}: add it to WIDGET_META_PATHS in scripts/lib/parts-index.mjs`).toBe(true);
+    }
+  });
 
   it('every widget has a meta that validates beside an existing component', () => {
     for (const w of widgets) {
