@@ -77,8 +77,7 @@ export const RULES = [
     id: 'R10',
     statement: 'a face shipped on both React and LVGL keeps geometry, palette and night behaviour in sync',
     why: 'the Slow Pi renders natively; a React-only change silently forks the one face both sides share',
-    unchecked:
-      'two renderers and no shared face spec to diff; the face-spec-as-data step is the fix. Review checklist item until then, capped at Minimalismo.',
+    checkedBy: 'src/shared/lvgl-parity.test.ts',
   },
   {
     id: 'R11',
