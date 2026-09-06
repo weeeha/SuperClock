@@ -19,6 +19,7 @@ npm run lint       # ESLint over **/*.{ts,tsx}
 npm test           # Vitest — time-window, fleet-store, registry coherence + contract, navigation invariants
 npm run check:tokens        # token gate: semantic-only zones + face --face-* rule (scripts/check-tokens.mjs)
 npm run check:rules         # rule catalogue report: rules/superclock.json via scripts/rulecheck.mjs (exit 1 on any hit; npm test enforces the policy)
+npm run report              # regenerate docs/health.md from the registries, ledgers and rule catalogue (npm test fails when it is stale)
 npm run new:app -- <id>     # scaffold a kiosk app across every registry touchpoint, red-by-construction, born consuming its schema
 npm run new:face -- <id>    # scaffold a clock face likewise (born consuming --face-* and its schema)
 ./scripts/gates.sh          # the local CI mirror — lint → check:tokens → test → build, in ci.yml's order
@@ -68,6 +69,7 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 
 ### Conventions
 
+- **`docs/health.md` is the map, and it is generated.** Apps with their capabilities and schema-read state, faces with their night-token state, all 27 schemas, the rule catalogue with its unchecked and delegated rules and every sanctioned exemption, the four devices with their hardware flags — rendered by `npm run report` from the registries themselves. It asserts nothing (the gates do that) and `npm test` fails when the committed copy is stale, so read it instead of counting things by hand, and never edit it.
 - **App capabilities are declared, then checked.** `src/shared/app-capabilities.ts` says what each app does (`fetches`, `ticks`, `multiView`) and needs (`audio`, `mic`, `radar`); `app-capabilities.test.ts` holds every row to the code (fetch(), timers, swipe registration, an honest tell for fetching apps) and every hardware need to a device `FeatureFlag` in `capabilities.ts`, which now declares `audio`/`mic`/`radar` per device from fleet.md. The lists ride the capability wire as `AppDescriptor.capabilities`; gating UI on them (a "no mic on this device" tell, hiding an app a device cannot run) is a follow-up decision, not implied.
 - **Design rules are records, not prose.** `rules/superclock.json` holds every rule with its severity and its detector: `grep`/`heuristic`/`requires` rules run mechanically, `judgment`/`rendered` rules are printed as unchecked on every run, `delegated` rules name the gate that enforces them (the token gate, ESLint). Schema in `scripts/lib/rule-schema.mjs`; every mechanical rule proves itself on a bad/good fixture pair under `scripts/lib/__fixtures__/rules/`. Add a rule there, never as a new bullet here without a record.
 - **Active-aware effects:** gate `setInterval`/rAF on `props.isActive` — background apps must not tick (the grid overlay deactivates the app under it). Kiosks run for weeks; leaked timers and per-second re-renders are real heat on a Pi. Gated as `KIO-1`.

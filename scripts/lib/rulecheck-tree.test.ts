@@ -22,15 +22,15 @@ import { fileURLToPath } from 'node:url'; // never URL.pathname — this checkou
 import { resolve } from 'node:path';
 // @ts-expect-error — .mjs, deliberately untyped
 import { loadRules, scan, walk } from '../rulecheck.mjs';
+// @ts-expect-error — .mjs data module shared with the health report
+import { BASELINE as BASELINE_ROWS } from './rule-baseline.mjs';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
-/** Key = `<rule id> <repo-relative file>`, value = hits. May only shrink; a
- *  fixed row must be deleted (the stale-row test fails otherwise). Frozen
- *  2026-09-05 with five rows (NAV-1 x2, STA-3 x1, LAY-4 x2); emptied the same
- *  day once the debt was paid. Empty is the intended steady state: a new row
- *  here is a decision to carry debt, and it says why. */
-export const BASELINE: Record<string, number> = {};
+/** Key = `<rule id> <repo-relative file>`, value = hits. Lives in
+ *  rule-baseline.mjs (shared with the health report); see its header for the
+ *  shrink-only contract. */
+const BASELINE: Record<string, number> = BASELINE_ROWS;
 
 interface Violation {
   id: string;

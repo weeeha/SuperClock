@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "check:tokens": "node scripts/check-tokens.mjs",
     "check:rules": "node scripts/rulecheck.mjs",
+    "report": "REPORT_EMIT=1 vitest run scripts/lib/health-report.test.ts",
     "new:app": "node scripts/new-app.mjs",
     "new:face": "node scripts/new-face.mjs",
     "preview": "vite preview",

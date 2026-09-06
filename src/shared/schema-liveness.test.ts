@@ -8,8 +8,8 @@
 // control for a device that is mostly not listening". Structural consistency
 // was automated; semantic consistency was not. This gate walks the chain one
 // link further: declared schema → a VALUE import of that schema module from
-// the component that owns it (the Calendar pattern:
-// `schema.safeParse(config ?? {})` with a defaults fallback).
+// the component that owns it. Ledger and predicate live in ./schema-liveness.ts
+// so the health report reads the same implementation.
 //
 // Lineage: ds-architecture starter-kit `liveness.test.ts` (token → alias →
 // consumer), retargeted from tokens to schemas. Two directions, both gated:
@@ -18,120 +18,30 @@
 //     finding: delete the line the day the component starts reading it.
 // The ledger may only shrink. New apps and faces never enter it: the
 // scaffolders emit components born consuming their schema.
-//
-// Predicate limits, stated so nobody trusts them further than they go: a value
-// import proves the schema object reaches the component's module graph, not
-// that safeParse runs on the live config. `import type` is erased at build
-// time and does not count — BreathingApp's raw `as Partial<T>` cast is exactly
-// the case D4 named, and both complication renderers read `config?.x ?? d`
-// the same way. Owners by kind: app.<id> → anything under src/apps/<id>/,
-// face.<id> → its component per face-components.ts, complication.<id> → its
-// renderer in src/shared/complications/.
 
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { SCHEMAS } from './schema-registry';
-
-/** Schemas the admin renders a form for that nothing on the glass reads yet.
- *  One reason each. May only SHRINK: wire the component to the Calendar
- *  pattern, then delete its line here. Frozen 2026-09-05 at 14 of 27 and
- *  shrinking the same day, batch by batch. */
-export const SCHEMA_UNREAD: Record<string, string> = {};
-
-/** Every schema kind must have an owner mapping in consumerOf(). A new kind
- *  fails the classification test until it is placed here. */
-const KINDS = ['app.', 'face.', 'complication.'] as const;
-
-function sourcesUnder(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...sourcesUnder(full));
-    else if (/\.tsx?$/.test(entry.name) && !entry.name.includes('.test.')) out.push(full);
-  }
-  return out;
-}
-
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function kebabToPascal(id: string): string {
-  return id
-    .split('-')
-    .map((p) => p[0].toUpperCase() + p.slice(1))
-    .join('');
-}
-
-/** A statement-level value import whose specifier ENDS with `modulePath`
- *  (any relative prefix). `import type …` is excluded on purpose: erased at
- *  build time, it proves nothing about runtime validation. Mixed imports
- *  (`{ schema, type Config }`) are value imports and count. */
-export function valueImportsModule(source: string, modulePath: string): boolean {
-  const re = new RegExp(
-    `^\\s*import\\s+(?!type\\s)[^;]*?from\\s+['"][^'"]*${escapeRe(modulePath)}['"]`,
-    'm',
-  );
-  return re.test(source);
-}
-
-/** face id → component file, parsed from face-components.ts (never
- *  hand-listed — the token gate reconciles faces from the same file). */
-export function faceComponentFiles(source: string): Record<string, string> {
-  const nameToFile = new Map<string, string>();
-  for (const m of source.matchAll(/^import\s+(\w+)\s+from\s+'\.\/(\w+)';?$/gm)) {
-    nameToFile.set(m[1], m[2]);
-  }
-  const start = source.indexOf('FACE_COMPONENTS');
-  const block = source.slice(start, source.indexOf('};', start));
-  const out: Record<string, string> = {};
-  for (const m of block.matchAll(/^\s*'?([\w-]+)'?:\s*(\w+),?\s*$/gm)) {
-    const file = nameToFile.get(m[2]);
-    if (file) out[m[1]] = `src/apps/clock/${file}.tsx`;
-  }
-  return out;
-}
-
-const FACE_FILES = faceComponentFiles(readFileSync('src/apps/clock/face-components.ts', 'utf8'));
-
-/** Where a schema's consumer must live, and the module it must import. */
-function consumerOf(id: string): { where: string; files: string[]; module: string } {
-  const module = `schemas/${id}`;
-  if (id.startsWith('app.')) {
-    const dir = `src/apps/${id.slice('app.'.length)}`;
-    return { where: `${dir}/**`, files: sourcesUnder(dir), module };
-  }
-  if (id.startsWith('face.')) {
-    const file = FACE_FILES[id.slice('face.'.length)];
-    if (!file) throw new Error(`no face component maps to schema '${id}' in face-components.ts`);
-    return { where: file, files: [file], module };
-  }
-  if (id.startsWith('complication.')) {
-    const file = `src/shared/complications/${kebabToPascal(id.slice('complication.'.length))}.tsx`;
-    if (!existsSync(file)) throw new Error(`no renderer ${file} for schema '${id}'`);
-    return { where: file, files: [file], module };
-  }
-  throw new Error(`unclassified schema kind: '${id}' — add its owner mapping to consumerOf()`);
-}
-
-function isConsumed(id: string): boolean {
-  const { files, module } = consumerOf(id);
-  return files.some((f) => valueImportsModule(readFileSync(f, 'utf8'), module));
-}
+import {
+  SCHEMA_KINDS,
+  SCHEMA_UNREAD,
+  consumerOf,
+  faceFiles,
+  isConsumed,
+  valueImportsModule,
+} from './schema-liveness';
 
 const ALL = Object.keys(SCHEMAS);
 
 describe('schema liveness (declared schema → value import in its component)', () => {
   it('every schema id has a classified kind (a new kind needs an owner mapping in consumerOf)', () => {
     for (const id of ALL) {
-      expect(KINDS.some((k) => id.startsWith(k)), `unclassified schema kind: '${id}'`).toBe(true);
+      expect(SCHEMA_KINDS.some((k) => id.startsWith(k)), `unclassified schema kind: '${id}'`).toBe(true);
     }
   });
 
   it('every face schema maps to a component file via face-components.ts', () => {
     for (const id of ALL.filter((i) => i.startsWith('face.'))) {
-      expect(FACE_FILES[id.slice('face.'.length)], `no component for '${id}'`).toBeDefined();
+      expect(faceFiles()[id.slice('face.'.length)], `no component for '${id}'`).toBeDefined();
     }
   });
 

@@ -5,6 +5,32 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 5: regenerable health report (docs/health.md)
+
+- **What:** `npm run report` renders `docs/health.md` from the registries, the ledgers and the
+  rule catalogue: 14 apps with capabilities, config schema and whether it is read; 13 faces with
+  night-token state; all 27 schemas plus the SCHEMA_UNREAD ledger; the 25 rules with their method
+  and severity counts, the live tree scan, the BASELINE, the unchecked and delegated lists and
+  every sanctioned exemption with its reason; the 4 devices with features and hardware flags.
+  It asserts nothing — the gates do that — and the committed copy is held to a fresh render by
+  `npm test`, so nobody reads a stale map.
+- **Refactors it forced (both good):** the schema-liveness ledger and predicate moved out of the
+  test into `src/shared/schema-liveness.ts`, and the rule BASELINE into
+  `scripts/lib/rule-baseline.mjs`, so the report and the gates read one implementation each
+  instead of the report re-deriving them.
+- **Changed:** `scripts/lib/health-report.ts` + `.test.ts` (new), `src/shared/schema-liveness.ts`
+  (new), `scripts/lib/rule-baseline.mjs` (new), `schema-liveness.test.ts` and
+  `rulecheck-tree.test.ts` (import the shared modules), `package.json` (`report` script),
+  `AGENTS.md` (command + a Conventions bullet), `docs/health.md` (generated).
+- **Verified:** gate red on the missing module, then red again for naming FACE_TOKEN_EXEMPT only
+  implicitly (the fix names the ledger and its shrink-only contract in the report, which is the
+  more useful output); determinism asserted by rendering twice; a hand-edited copy fails and a
+  regenerated one passes. gates.sh green: lint, check:tokens, 44 files / 679 tests, build.
+- **What the first report shows:** every schema read (27/27), both ledgers empty, 0 rule
+  violations over 165 files, 7 rules permanently unchecked (4 judgment, 3 rendered), 3 delegated,
+  8 sanctioned exemptions, and the fleet's hardware split (audio and radar on fast only).
+- **Open:** none for item 5.
+
 ## 2026-09-05 · item 4: docs drift gate + the stale entry docs
 
 - **What:** `scripts/lib/docs-drift.test.ts` (117 checks) holds the claims AGENTS.md and the entry
