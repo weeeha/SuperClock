@@ -169,3 +169,4 @@ Fixture tests for the schema (every rejection reason, including `TODO`), for eac
 ## Changelog
 
 - 2026-09-05: initial draft from the approved section-level design.
+- 2026-09-06: implemented per `docs/superpowers/plans/2026-09-05-face-contracts.md`; meta filenames are `<ComponentFunctionName>.meta.json` (`AnalogClock.meta.json`, not `Analog.meta.json`). Tasks 3, 4 and 5 each hit the same TypeScript gap in the plan's own code: a value read from an optional field, or from an array narrowed by `.filter()`, is not narrowed at its point of use under this repo's strict settings; each was fixed by checking the raw field again right before use, not with a cast or a non-null assertion.

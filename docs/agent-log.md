@@ -6,6 +6,50 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-06 · branch claude/project-brainstorming-e32502 · design-system step 3: face and widget contracts built
+
+**Changed:**
+- `src/shared/part-meta.ts` (new): `faceMetaSchema`/`widgetMetaSchema` (zod), `SPEC_PENDING` (shrink-only, 6 entries), `resolveSpecColor`, `specOf`. `src/shared/part-meta.test.ts` (new, 155 lines): fixture coverage for every field and gate, including every schema rejection reason.
+- `src/shared/part-contracts.test.ts` (new): the real-tree gate (R16), one check per row of the spec's gates table: meta validity, one meta per part, every claim (night tokens, option keys, parity path, `insteadUse`), geometry state, and structural read for a face carrying `spec`.
+- Fifteen meta files (new), one per part: thirteen faces (`src/apps/clock/{MinimalismoClock,AnalogClock,ProductivityClock,SquareClock,FloralClock,ComplicationsLight,ComplicationsDark,WorldClock,FlipClock,DepletionClock,ApertureClock,DaylightClock,StrokesClock}.meta.json`) and two widgets (`src/core/widgets/RoundList.meta.json`, `src/apps/agents/StateRing.meta.json`). `scripts/lib/token-rules.d.mts` (new): hand-kept types so the contract test can import `token-rules.mjs` under strict `src/` typechecking.
+- `src/apps/clock/AnalogClock.tsx` + `AnalogClock.meta.json`: Analog now draws every hand, tick and dot number from `meta.spec`; the numeral ring radius (340) stays a literal on purpose, outside the spec vocabulary.
+- `src/apps/clock/MinimalismoClock.tsx` + `MinimalismoClock.meta.json`: the same move, six numbers and the gold second-hand colour.
+- `scripts/lib/lvgl-parity.mjs`/`.d.mts`, `scripts/lib/lvgl-parity.test.ts` (new, fixtures), `src/shared/lvgl-parity.test.ts` (new, real tree): `parseGeom`/`parseColors` read `slow-native/src/clock_face.c`, `compareToSpec` diffs it against the Analog spec, `PARITY_DRIFT_LEDGER` names the 9 known mismatches.
+- `scripts/lib/parts-index.mjs`/`.d.mts`, `scripts/build-index.mjs`, `index/parts.toon` (new, 15 rows), `scripts/lib/parts-index.test.ts` (fixtures), `src/shared/parts-index.test.ts` (new, drift gate, R17). `package.json`: `build:index` script.
+- `scripts/lib/scaffold-templates.mjs` (`faceMetaTemplate`), `scripts/new-face.mjs`, `scripts/lib/scaffold-templates.test.ts`: `npm run new:face` now writes a `TODO`-stubbed meta alongside the component, so a scaffolded face is red on the contract gate until its judgments are filled in, the same way its todo test is red until implemented.
+- `scripts/lib/rules.mjs`: R10 gains `checkedBy: src/shared/lvgl-parity.test.ts`; new R16 (`src/shared/part-contracts.test.ts`) and R17 (`src/shared/parts-index.test.ts`).
+- `AGENTS.md`: a new Conventions bullet ("Parts carry contracts"), the LVGL parity line corrected from "currently Minimalismo" (doc drift, recorded in the previous entry) to Analog, and the Known-gaps R09/R10 bullet rewritten to say R09 is now declared as data and R10 is gated.
+- `docs/superpowers/specs/2026-09-05-face-contracts-design.md`: changelog line for this implementation.
+
+**Verified:** `./scripts/gates.sh` green end to end, the first full run of this script on this branch: lint clean; check:tokens (47 semantic-zone files and 13 faces clean, 7 legacy faces exempt, 7 tokens ledgered, 6 rules with no detector: R09, R11, R12, R13, R14, R15; R10 is no longer among them); 504 tests across 42 files; both-SPA production build, `build-info.json` stamped `fed4d1c`.
+
+Mutation-checked four of the new gates, each file restored to its committed state afterward and the full suite re-run green (504/504): a phantom night token added to `AnalogClock.meta.json` fails `part-contracts.test.ts`, naming the part, the token, and the file that does not read it; deleting the `radius` line from `PARITY_DRIFT_LEDGER` fails `lvgl-parity.test.ts` as an unledgered drift, printing the exact react/lvgl values; hand-editing one field of the `analog` row in `index/parts.toon` fails `parts-index.test.ts` with a line-level diff against a fresh emit; re-adding `analog` to `SPEC_PENDING` (it now carries `spec`) fails `part-contracts.test.ts`, naming it stale.
+
+Pixel identity for Analog and Minimalismo: verified, by two methods instead of the stash-and-diff the plan suggested (stashing is off-limits here, the stack is shared across worktrees). First, analytically: every literal removed from each TSX in Tasks 3 and 4 was traced to the exact meta number it now reads, against the pre-migration source (`git show <parent commit>:<path>`). Second, live: `npm run dev` on port 5180, driving `window.__nav.getState().verticalSwipeCallback('down')` from the browser console to cycle ClockApp from its default face to each target, then reading `document.querySelector('svg').outerHTML`.
+- Minimalismo: byte-identical. `handPoints` still receives the same 280/380/350-tip, 80-tail, 6/28/20-width numbers, and the second hand's colour is the same literal `"#FFD700"` string before and after. The only difference between two readings is the hand-angle trig, which moves with real time regardless of this change.
+- Analog: every position, width, and the second hand and both dot fills (which resolve through the same `accent` config value either way) match exactly: 60 ticks plus 3 hands render as 63 `<line>` elements, 3 `<circle>` elements, and numerals are off by default so their colour is not in play. The one textual difference is how the ink colour is written: the old tick, hour-hand and minute-hand strokes read `stroke="currentColor"` inherited from a `<g className="text-white">` wrapper (the hands used the literal `"white"` keyword directly); the new code writes the resolved `"#ffffff"` literal on each element and the wrapper class is gone. The rendered colour is identical: `getComputedStyle` on a `color: white` node and a `color: #ffffff` node in the running page both report `rgb(255, 255, 255)`.
+
+**Decisions:**
+- The parity ledger carries 9 mismatches between React Analog and the LVGL `clock_face.c`, none fixed here (AGENTS.md: a red check on a deliberate design is a conversation, not a fix-forward; which renderer is right is Nick's call):
+  - `face.background`: React draws a black dial, the C a white one.
+  - `face.ink`: React ink is white on black, C ink is black on white (follows the background decision).
+  - `face.ink.tick`: React draws tick marks in ink (white), the C ticks are black (follows the background decision).
+  - `face.ink.minute`: React's minute hand is ink (white), the C minute hand is black (follows the background decision).
+  - `radius`: React fills the whole 1000 disc; the C draws a 460 face inside a black backdrop.
+  - `ticks.hour.outer`, `ticks.hour.inner`, `ticks.minute.outer`, `ticks.minute.inner`: all four sit 40 units inside the React ticks because the C face radius is 460, not 500.
+- Six faces stay on `SPEC_PENDING`, numbers still in the TSX, each its own future change: `productivity`, `square`, `floral`, `complications-light`, `complications-dark`, `world`.
+
+**Found:**
+- Task 5's own review round found that `compareToSpec` read the hour hand's colour but never the tick colour or the minute hand's, so a C-only edit to either one would never surface as a mismatch (shown empirically, by mutating each independently). Both checks were added, against the same `spec.face.ink`; two more real mismatches (`face.ink.tick`, `face.ink.minute`) surfaced and are ledgered above, taking the ledger from 7 entries to 9. Neither renderer was touched to chase green.
+- The plan's own prescribed code hit the same TypeScript gap three times (Tasks 3, 4, 5): a value read from an optional or nullable field (`spec.hands.second`, `spec.ticks`, `spec.dot`), or from an array element narrowed by `.filter()` (`meta.parity.lvgl`), is not narrowed at the point it is later used, under this repo's strict settings. Each was fixed the same way, checking the raw path again immediately before use, never a cast, never a non-null assertion. Worth remembering before copying this plan's code again.
+
+**Open:**
+- Nick's review of the fifteen contract files: their judgments (`purpose`, `accent`, `night.recipe`, `options[].intent`, `antiPatterns`) are drafted from the specs, the archetype study and the board notes; they are proposals until he reads each one.
+- Which Analog is right: the black dial with white ticks React draws, or the white dial with black ticks the C file draws. The ledger holds the mismatch either way; nothing here leans toward one.
+- StateRing's eventual home, `src/apps/agents/` or alongside RoundList in `src/core/widgets/`. The contract works from either location; moving the file is a separate refactor.
+
+---
+
 ## 2026-09-05 · branch claude/project-brainstorming-e32502 · design-system step 3: face and widget contracts, spec written
 
 **Changed:** `docs/superpowers/specs/2026-09-05-face-contracts-design.md` (new, 171 lines). Docs only; nothing built, nothing committed.

@@ -67,6 +67,7 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 
 ### Conventions
 
+- **Parts carry contracts.** Before adding or changing a face or widget, read `index/parts.toon`, then the part's `.meta.json` beside its component. The meta is the contract (judgments, the night recipe, the one accent, and for hand-and-tick faces the numbers it is drawn from); the TSX is the implementation. Run `npm run build:index` after editing a meta; `src/shared/part-contracts.test.ts` gates every claim, `src/shared/lvgl-parity.test.ts` diffs the LVGL C constants against the Analog spec, with known drift ledgered in `PARITY_DRIFT_LEDGER` (shrink-only; which renderer is right is a design decision, not a fix-forward).
 - **Active-aware effects:** gate `setInterval`/rAF on `props.isActive` — background apps must not tick (the grid overlay deactivates the app under it). Kiosks run for weeks; leaked timers and per-second re-renders are real heat on a Pi.
 - **Clock hands:** `useClockHands` is the single source of truth for hand angles; ESLint bans `setInterval` in `src/apps/clock/`.
 - **Honest offline:** apps that fetch must show an explicit offline tell (see WeatherApp/GithubApp) — never render fallback/mock data as if live.
@@ -78,7 +79,7 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 
 ### React ↔ LVGL face parity
 
-The `slow` device renders faces natively (LVGL, C — `slow-native/`, PRs #23/#24). Any face that exists on both sides (currently Minimalismo) has **two implementations kept in sync by hand**: if you change a shared face's geometry, palette, or night behavior in React, update `slow-native/src/clock_face.c` in the same PR or file a follow-up. Longer term the intent is a shared JSON face-spec (colors, hand geometry, tick layout — the same data `face.*` schemas and `handPoints` already encode) consumed by both renderers; until that exists, treat visual parity as part of face-change review.
+The `slow` device renders faces natively (LVGL, C — `slow-native/`, PRs #23/#24). Any face that exists on both sides (currently Analog: the C file is the Swiss-railway face, and the parity test says where the two disagree) has **two implementations kept in sync by hand**: if you change a shared face's geometry, palette, or night behavior in React, update `slow-native/src/clock_face.c` in the same PR or file a follow-up. Longer term the intent is a shared JSON face-spec (colors, hand geometry, tick layout — the same data `face.*` schemas and `handPoints` already encode) consumed by both renderers; until that exists, treat visual parity as part of face-change review.
 
 ## Traps already paid for
 
@@ -95,7 +96,7 @@ Each of these cost a debugging session once. Don't pay again.
 
 - **Every rule this repo enforces or only claims is one record in `scripts/lib/rules.mjs`**: `checkedBy` names the script or test that runs it, `unchecked` says why none exists. `npm run check:tokens` prints the unchecked ones at the end of every run, and `scripts/lib/rules.test.ts` fails on a detector that does not exist. Tokens declared but read by nothing are ledgered in `UNCONSUMED_LEDGER` (`scripts/lib/token-liveness.mjs`, shrink-only) and gated by `src/shared/token-liveness.test.ts`.
 - **No Storybook / a11y-contrast gate.** Contrast is checked by eye. The proven pattern (every story an axe test in real Chromium — jsdom silently skips `color-contrast`) lives in the sibling `Minimal-Design-System` repo; port it, don't rebuild it.
-- **The one-accent-quantity rule and LVGL parity are review-enforced, not gated** (R09 and R10 in the catalog). The planned fix is the shared JSON face-spec above.
+- **The one-accent-quantity rule is declared as data (`accent` in each face meta) but its rendered check is still review-enforced** (R09). LVGL parity is gated (R10, `src/shared/lvgl-parity.test.ts`); the ledgered drift is a decision waiting on Nick.
 - **Seven legacy faces are exempt from the `--face-*` night rule** (`FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`). The list may only shrink: retrofit a face, delete its line.
 - **The unslop skill's Phase 2 greps are run by hand** (`.claude/skills/unslop/SKILL.md`); only the token-gate slice is scripted.
 
