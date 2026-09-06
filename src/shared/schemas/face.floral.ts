@@ -2,7 +2,9 @@ import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
 
 export const floralFaceSchema = z.object({
-  accent: z.string().default('#f59e0b'),
+  // Default = the hand colour the face has always drawn, so an unconfigured
+  // instance looks exactly as before the schema was wired.
+  accent: z.string().default('#fbbf24'),
 });
 
 export const floralFaceMeta: FieldMetaMap = {

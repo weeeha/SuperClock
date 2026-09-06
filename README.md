@@ -11,18 +11,22 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 
 ## Built-in apps
 
-`src/apps/`:
+`src/apps/`, one directory per app (this list is pinned to the registry by `scripts/lib/docs-drift.test.ts`):
 
-- `clock` — primary time face
-- `weather` — current conditions / forecast
-- `calendar` — upcoming events
-- `fitness` — activity rings / stats
-- `github` — contributions and activity
-- `habits` — daily habit tracking
-- `fireplace` — ambient mode
+- `agents` — chat with your life-OS agents (mock provider today)
+- `breathing` — respiration rate from the A121 mmWave radar
+- `calendar` — today's date and upcoming events from an iCal feed
+- `claude-usage` — session and weekly Claude Code rate-limit utilization, with the Clawd sprite
+- `clock` — watch faces (13 today), swipe to cycle
+- `fireplace` — ambient fireplace animation
+- `fitness` — 7-minute workout circuits with a guided timer
+- `github` — GitHub contribution heatmap as a radial watch face
+- `habits` — daily habit tracker with streaks
 - `photo-frame` — photo slideshow
-- `quote` — rotating quotes
-- `time-tracking` — focus / timer
+- `quote` — quote of the day
+- `time-tracking` — pomodoro focus timer
+- `todo` — one flat list: tap to complete, swipe up for done
+- `weather` — current conditions and forecast
 
 ## Tech stack
 
@@ -40,7 +44,11 @@ npm run build     # type-check + production build
 npm run start     # serve the built app via Express
 npm run preview   # preview the production build
 npm run lint      # ESLint
+npm test          # Vitest (registry, schema, capability and docs gates included)
+./scripts/gates.sh # the local CI mirror: lint, token gate, tests, build
 ```
+
+Architecture, fleet deployment and the house rules live in [AGENTS.md](AGENTS.md); the admin panel at `/admin` and the fleet config pipeline are described there.
 
 ## Quickstart
 
@@ -63,8 +71,8 @@ All config lives in `.env` (see `.env.example`). Variables prefixed `VITE_` are 
 
 | Variable | Used by | Notes |
 |---|---|---|
-| `VITE_GITHUB_TOKEN` | GitHub app | PAT with `read:user`. Falls back to mock data when unset. |
-| `VITE_WEATHER_LAT`, `VITE_WEATHER_LON` | Weather app | Open-Meteo lat/lon. No API key needed. Used only when the instance's `location` is blank; falls back to mock when both are unset. |
+| `GITHUB_TOKEN` | GitHub app | PAT with `read:user`. Server-only: the kiosk calls the `/api/github/contributions` proxy, so the token never reaches the browser and rotating it is a service restart, not a rebuild. Unset shows an honest "not connected" state. |
+| `VITE_WEATHER_LAT`, `VITE_WEATHER_LON` | Weather app | Open-Meteo lat/lon. No API key needed. Used only when the instance's `location` is blank. |
 | `VITE_WEATHER_TZ` | Weather app | IANA tz, defaults to `auto`. |
 | `VITE_WEATHER_UNIT` | Weather app | `fahrenheit` to switch units; anything else = celsius. Used only when the instance's `unit` was never set. |
 | `CALENDAR_ICS_URL` | Calendar app | Any iCal URL (Google Calendar secret address, iCloud, Outlook). Read server-side; the browser only sees the parsed event list. |

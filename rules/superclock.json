@@ -1,0 +1,489 @@
+{
+  "catalogueVersion": 1,
+  "layer": "superclock",
+  "about": "SuperClock's design rules as records: rule + severity + how (or whether) it is detected. Schema: scripts/lib/rule-schema.mjs. Runner: scripts/rulecheck.mjs (npm run check:rules). Policy under npm test: scripts/lib/rulecheck-tree.test.ts (zero tolerance off the baseline, two-way baseline for frozen debt). Portable ids (COL/MOT/CPY/CHT/ICO/LAY/STA/SYS) keep the anti-slop corpus meaning; NAV/KIO/FCE are this repo's own. Severity is earned: a rule with baseline rows ships at review and is promoted to blocker when its rows reach zero.",
+  "rules": [
+    {
+      "id": "COL-1",
+      "title": "Zero gradient utilities in kiosk and admin chrome",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "bg-gradient-|bg-clip-text",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
+        "exempt": []
+      },
+      "fix": "Flat token (the accent, a --face-* or admin semantic surface); emphasis through size, weight and position; at most one word in the accent colour.",
+      "why": "A gradient is emphasis faked where hierarchy was the need, and gradient text is the single clearest AI tell (unslop Phase 1 #1). CSS gradient FUNCTIONS used as masks or ambient content (RoundList's edge fade, Breathing's halo, StateRing's conic ring) are not chrome decoration and are not in this pattern."
+    },
+    {
+      "id": "COL-4",
+      "title": "Glass only over real content",
+      "severity": "review",
+      "detect": {
+        "method": "heuristic",
+        "pattern": "backdrop-blur|backdrop-filter",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
+        "exempt": [
+          {
+            "path": "src/core/components/QuickSettings.tsx",
+            "reason": "the quick-settings sheet blurs the live app beneath it: real content, sanctioned 2026-09-05"
+          },
+          {
+            "path": "src/admin/App.tsx",
+            "reason": "sticky admin header blurring scrolled content beneath it: real content, sanctioned 2026-09-05"
+          }
+        ],
+        "falsePositives": "Blur over real underlying content (a sheet, a sticky header) is sanctioned glass; every hit needs a look at what sits beneath it, hence review."
+      },
+      "fix": "If nothing real sits beneath the surface, delete the blur and separate via spacing, hairline, then surface tint. If something does, exempt the file here with the reason.",
+      "why": "Glassmorphism without underlying content, blurred orbs, spotlights and grain layers are decoration standing in for a decision (unslop Phase 1 #1, corpus COL-4)."
+    },
+    {
+      "id": "COL-6",
+      "title": "Indigo, violet and purple are not this system's hues",
+      "severity": "warning",
+      "detect": {
+        "method": "heuristic",
+        "pattern": "(bg|text|border|from|via|to)-(indigo|violet|purple)-[0-9]{2,3}",
+        "flags": "i",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
+        "exempt": [],
+        "falsePositives": "Matches the utility inside a string that quotes or discusses the banned class rather than applying it. Every hit still needs a look, hence warning."
+      },
+      "fix": "Remove it. The kiosk's colour is the configured accent plus the --face-* palette; the admin's is its semantic tokens. A second categorical hue is a token decision, not a Tailwind class.",
+      "why": "Nothing in SuperClock is purple. Its presence is machine provenance rather than a decision."
+    },
+    {
+      "id": "ICO-2",
+      "title": "Zero emoji in chrome",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "[\\u{1F300}-\\u{1FAFF}\\u{2728}]",
+        "flags": "u",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
+        "exempt": []
+      },
+      "fix": "lucide-react at one weight and two or three sizes, or nothing. Emoji live only inside user-generated content.",
+      "why": "The model's default is to reach for one; it never belongs in nav, labels, buttons or tiles (unslop Phase 1 #5). Known blind spot: `\\u{...}` escapes in registration files (metadata.icon) are not codepoints in source and do not trip this pattern."
+    },
+    {
+      "id": "MOT-1",
+      "title": "Looping animation only as sanctioned ambient content or a bound progress indicator",
+      "severity": "review",
+      "detect": {
+        "method": "heuristic",
+        "pattern": "\\banimate-(?!none\\b)",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
+        "exempt": [
+          {
+            "path": "src/core/components/SwipeContainer.tsx",
+            "reason": "Suspense fallback spinner: a loading indicator bound to a real pending state"
+          },
+          {
+            "path": "src/apps/breathing/",
+            "reason": "ambient carve-out (unslop Phase 0): the animation IS the app"
+          },
+          {
+            "path": "src/apps/fireplace/",
+            "reason": "ambient carve-out (unslop Phase 0): the animation IS the app"
+          },
+          {
+            "path": "src/apps/clock/",
+            "reason": "ambient carve-out (unslop Phase 0): clock hands are content"
+          }
+        ],
+        "falsePositives": "animate-spin or animate-pulse bound to a real loading state is the sanctioned recipe; a hit needs a look at what binds it, hence review."
+      },
+      "fix": "Bind the loop to a real pending state, or render static. Chrome, overlays and every admin surface animate only on state change.",
+      "why": "Kiosks run for weeks; an unbound loop is heat on a Pi and motion nobody asked for (unslop Phase 0 and Phase 1 #6)."
+    },
+    {
+      "id": "MOT-2",
+      "title": "Named transition properties, never transition-all",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "transition-all|transition:\\s*all",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
+        "exempt": []
+      },
+      "fix": "Name the properties that change: transition-colors, transition-transform, transition-opacity. Transform and opacity only.",
+      "why": "transition-all animates layout properties by accident: a jank source and an unstated decision (unslop Phase 1 #6)."
+    },
+    {
+      "id": "CPY-1",
+      "title": "Verb plus object labels, never generic CTAs",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "Get Started|Learn More",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": []
+      },
+      "fix": "Name the object and the outcome the control leads to: \"Add screen\", \"Push to clock\". The label predicts the next screen.",
+      "why": "\"Get Started\" and \"Learn More\" predict nothing (unslop Phase 1 #7)."
+    },
+    {
+      "id": "CPY-2",
+      "title": "Banned marketing register",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "\\b(elevate|unlock)\\b|empower|supercharge|seamless|effortless",
+        "flags": "i",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
+        "exempt": []
+      },
+      "fix": "Delete the adjective or claim, or replace it with the concrete mechanism it stands in for. Say what it does.",
+      "why": "Marketing filler fakes confidence a real description would earn (unslop Phase 1 #7). elevate/unlock are word-bounded so lock-state words like \"unlocked\" pass."
+    },
+    {
+      "id": "CPY-4",
+      "title": "Zero fabrication: mock or fallback data is never rendered as live",
+      "severity": "blocker",
+      "detect": {
+        "method": "judgment",
+        "how": "For every app that fetches, find the rendered tell for offline, stale and not-configured (WeatherApp and GithubApp are the reference; CalendarApp separates \"not configured\" from \"offline\"). Mock data, fake device names or fake fleet health shown as live is a violation. A file-level grep was tried and rejected: Claude-usage's tell lives in the App, not in the hook that fetches."
+      },
+      "fix": "Show the honest tell (\"weather offline\", \"calendar not configured\", amber stale chip) and keep the last-good cache visibly labelled as such.",
+      "why": "Honest offline is a house rule (AGENTS.md Conventions); fabrication pressure is one of the four root causes of slop (unslop)."
+    },
+    {
+      "id": "CHT-1",
+      "title": "Chart colours from the project palette, never library defaults",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "#8884d8|#82ca9d|#ffc658",
+        "flags": "i",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
+        "exempt": []
+      },
+      "fix": "The configured accent (--color-accent) for the series answering the question; --face-* or admin semantic tokens for context series.",
+      "why": "#8884d8 is recharts' default and the clearest single tell of an unguided chart (unslop Phase 1 #8)."
+    },
+    {
+      "id": "CHT-3",
+      "title": "Flat marks, never the recharts dash default",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "strokeDasharray=\"3 3\"",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
+        "exempt": []
+      },
+      "fix": "Delete the dash prop or set an explicit hairline solid gridline.",
+      "why": "The dashed \"3 3\" pattern is recharts' unstyled default leaking through, the same tell as the default palette (unslop Phase 1 #8)."
+    },
+    {
+      "id": "LAY-4",
+      "title": "Arbitrary pixel values snap to the scale",
+      "severity": "warning",
+      "detect": {
+        "method": "heuristic",
+        "pattern": "\\[[0-9.]+px\\]",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": [
+          {
+            "path": "src/admin/components/ui/",
+            "reason": "vendored shadcn primitives keep their literals on purpose; retuning them is a primitive change, not a cleanup"
+          }
+        ],
+        "falsePositives": "An optical nudge (an icon pulled back over a border) can be legitimate; each hit needs a look before snapping, hence warning."
+      },
+      "fix": "Snap to the nearest step of the project's scale; a value nothing on the scale fits is a missing step to propose, never an inline literal.",
+      "why": "Off-scale values are Figma pixel-tracing rather than a system decision, and they grow the ratchet (unslop Phase 1 #3)."
+    },
+    {
+      "id": "STA-1",
+      "title": "Every state designed: empty, loading, error, populated, and offline or stale",
+      "severity": "blocker",
+      "detect": {
+        "method": "judgment",
+        "how": "For each screen, find the empty (sentence plus creating action), loading (matched skeleton), error (cause plus retry) and populated renders, plus SuperClock's fifth state, offline/stale with its honest tell. A state named in prose but never drawn is a violation (2026-08-15 audit: 21 of 97 slots designed)."
+      },
+      "fix": "Design the missing state before calling the screen done; the States kit on the Figma board is the pattern source.",
+      "why": "Happy-path-only is the default output of an unguided model (unslop Phase 1 #9)."
+    },
+    {
+      "id": "STA-3",
+      "title": "outline-none never ships without a focus-visible replacement",
+      "severity": "review",
+      "detect": {
+        "method": "heuristic",
+        "pattern": "^(?!.*focus-visible).*outline-none",
+        "flags": "",
+        "scope": [
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": [],
+        "falsePositives": "Fires on outline-none whose focus-visible pairing lives on another line or on a wrapping element, and on non-interactive containers that were never focusable. Both need a look before treating a hit as a violation. Admin only: the kiosk is touch-only by non-negotiable #4 and has no keyboard focus."
+      },
+      "fix": "Pair outline-none with a focus-visible ring on the same element, or drop outline-none if the element was never interactive.",
+      "why": "outline-none without a :focus-visible replacement is the single most common way a control goes keyboard-invisible (unslop Phase 1 #9, corpus STA-3)."
+    },
+    {
+      "id": "STA-5",
+      "title": "AA contrast on the surface the text actually sits on, in both palettes",
+      "severity": "blocker",
+      "detect": {
+        "method": "rendered",
+        "how": "Sample the rendered surface at 4.5:1 or better in the day palette AND after the night --face-* flip. jsdom cannot sample paint, so this stays a rendered check until the Storybook-in-Chromium axe gate is ported from Minimal-Design-System (AGENTS.md Known gaps)."
+      },
+      "fix": "Move up the ink or tone ramp or lighten the surface; never a one-off darker hex.",
+      "why": "Contrast is checked by eye today (AGENTS.md Known gaps); the token gate's muted-on-muted rule covers one pairing, not the rest."
+    },
+    {
+      "id": "STA-7",
+      "title": "The admin passes at 375px",
+      "severity": "blocker",
+      "detect": {
+        "method": "rendered",
+        "how": "Open every admin surface at 375px: no horizontal scroll, tap targets at least 24px (44px in sticky bars), no hover-only actions, dvh not vh."
+      },
+      "fix": "Restructure the surface for the phone-first frame before widening it for desktop.",
+      "why": "The admin is phone-first by decision (Admin IA v2); the kiosk has its own frame rule, KIO-2."
+    },
+    {
+      "id": "SYS-1",
+      "title": "Tokens only in the semantic zones; faces consume --face-*",
+      "severity": "blocker",
+      "detect": {
+        "method": "delegated",
+        "gate": "scripts/check-tokens.mjs",
+        "how": "npm run check:tokens (in CI between lint and test): no raw hex, colour functions or palette classes in src/admin and src/core; no muted-on-muted pairing; every face imported by face-components.ts reads a --face-* token (legacy exemptions on FACE_TOKEN_EXEMPT, shrink-only)."
+      },
+      "fix": "Use the project tokens (admin: .admin-root semantics; kiosk: src/index.css @theme; faces: --face-*); a value nothing fits is a missing token to propose.",
+      "why": "Two token systems, never mixed (unslop Phase 0); night mode is a --face-* flip that a hex-painted face silently ignores."
+    },
+    {
+      "id": "NAV-1",
+      "title": "Shared nav-store slots are released with a guarded cleanup",
+      "severity": "blocker",
+      "detect": {
+        "method": "requires",
+        "when": "setVerticalSwipeCallback\\(",
+        "must": "verticalSwipeCallback === ",
+        "flags": "",
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": [],
+        "falsePositives": "A file that guards through a helper defined elsewhere would read as unguarded; none exists today. Shipped at review on 2026-09-05 with two baseline rows (Agents, Weather); promoted to blocker the same day once both adopted the HabitsApp shape."
+      },
+      "fix": "Copy HabitsApp exactly: capture the callback in a const, register it, and in cleanup null the slot only if useNavigation.getState().verticalSwipeCallback === cb.",
+      "why": "SwipeContainer's popLayout keeps the exiting app mounted after the next app registers, so an unconditional null in cleanup stomps the incoming app's registration and every gesture dies (AGENTS.md, Traps already paid for)."
+    },
+    {
+      "id": "NAV-2",
+      "title": "The back-gesture slot follows the same guarded contract",
+      "severity": "blocker",
+      "detect": {
+        "method": "requires",
+        "when": "setBackCallback\\(",
+        "must": "backCallback === ",
+        "flags": "",
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": []
+      },
+      "fix": "Same shape as NAV-1: guarded cleanup that nulls the slot only if it is still yours (CalendarApp is the reference consumer).",
+      "why": "backCallback follows the registration and cleanup contract of verticalSwipeCallback exactly (AGENTS.md Gestures)."
+    },
+    {
+      "id": "KIO-1",
+      "title": "Timers tick only while the app is active",
+      "severity": "blocker",
+      "detect": {
+        "method": "requires",
+        "when": "setInterval\\(|requestAnimationFrame\\(",
+        "must": "isActive|\\bactive\\b",
+        "flags": "",
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".ts",
+          ".tsx"
+        ],
+        "exempt": [
+          {
+            "path": "src/apps/calendar/useCalendarEvents.ts",
+            "reason": "gated through its `enabled` parameter (`if (!enabled) return`), which CalendarApp feeds from isActive; the word isActive appears only in its doc comment, which the runner strips"
+          }
+        ],
+        "falsePositives": "A file that mentions `active` for another reason passes without gating: this is a floor, not proof. A file that receives the gate through a parameter named otherwise (useCalendarEvents' `enabled`) reads as ungated and is exempted by name with the reason."
+      },
+      "fix": "Gate the effect on props.isActive (or an `active` parameter derived from it) and clear the timer in cleanup; useCircuitTimer is the reference.",
+      "why": "Background apps must not tick: the grid overlay deactivates the app under it, kiosks run for weeks, and leaked timers are heat on a Pi (AGENTS.md Conventions)."
+    },
+    {
+      "id": "KIO-2",
+      "title": "Nothing load-bearing outside the disc",
+      "severity": "blocker",
+      "detect": {
+        "method": "rendered",
+        "how": "View the kiosk surface in the 1080x1080 circular crop: anything a user must read or touch that sits in a corner is a violation, and the arc gesture zones must stay unobstructed."
+      },
+      "fix": "Move the element inside the disc or onto RoundList's centre column; corners are invisible on round devices.",
+      "why": "Round-screen first is non-negotiable #1; the kiosk responsive pass is the circle crop, not 375px (unslop Phase 1 #10)."
+    },
+    {
+      "id": "KIO-3",
+      "title": "Clock faces never run their own timer",
+      "severity": "blocker",
+      "detect": {
+        "method": "delegated",
+        "gate": "eslint.config.js",
+        "how": "no-restricted-syntax bans setInterval under src/apps/clock/; hand angles come from useClockHands(isActive), the single source of truth."
+      },
+      "fix": "Consume useClockHands; never an inline `seconds * 6`.",
+      "why": "The second-hand wrap fix lives in one place; a copy-pasted face that rolls its own timer regresses it (AGENTS.md Conventions)."
+    },
+    {
+      "id": "FCE-1",
+      "title": "One saturated accent quantity per face",
+      "severity": "blocker",
+      "detect": {
+        "method": "judgment",
+        "how": "Render the face in the day and night palettes and count saturated quantities on the dial; more than one is a violation. A red check on a deliberate design is a conversation, not a fix-forward (AGENTS.md Open decisions)."
+      },
+      "fix": "Demote the second quantity to the ink ramp or remove it; the face's look is the product, so propose before changing.",
+      "why": "The one-accent-quantity rule from the three-faces study (2026-07-24) is review-enforced until the shared JSON face-spec exists (AGENTS.md Known gaps)."
+    },
+    {
+      "id": "FCE-2",
+      "title": "React and LVGL siblings stay in parity",
+      "severity": "blocker",
+      "detect": {
+        "method": "delegated",
+        "gate": "src/shared/lvgl-parity.test.ts",
+        "how": "npm test: the parity gate parses slow-native/src/clock_face.c (its geom_t initializer and its colour calls) and diffs it against the spec block in src/apps/clock/AnalogClock.meta.json. A mismatch fails unless PARITY_DRIFT_LEDGER (scripts/lib/lvgl-parity.mjs, shrink-only) names the field with a reason, and a ledger entry that no longer mismatches fails as stale. The parser also fails when it cannot read a geometry field or a colour, so an unreadable C file cannot report clean."
+      },
+      "fix": "Change slow-native/src/clock_face.c together with the React face, or ledger the difference in PARITY_DRIFT_LEDGER with the reason each renderer does what it does. Never edit the C file or the face meta to turn the gate green.",
+      "why": "Analog, not Minimalismo, is the face both renderers draw, and until 2026-09-06 nothing compared them: the two disagree on the dial colour, the ink, the tick and minute-hand colours, the face radius and all four tick edges. Nine mismatches are ledgered; which renderer is right is a design decision, not a fix-forward."
+    },
+    {
+      "id": "FCE-3",
+      "title": "Every face reads the --face-* palette so night mode reaches it",
+      "severity": "blocker",
+      "detect": {
+        "method": "delegated",
+        "gate": "scripts/check-tokens.mjs",
+        "how": "The face rule of npm run check:tokens, reconciled from face-components.ts's real imports; FACE_TOKEN_EXEMPT lists the seven legacy faces and may only shrink."
+      },
+      "fix": "Consume --face-bg and --face-ink at minimum; never fork a night variant of the component.",
+      "why": "Night is a token flip, not per-face logic (unslop Phase 0)."
+    }
+  ]
+}

@@ -1,4 +1,7 @@
-import type { TemperatureComplicationConfig } from '../schemas/complication.temperature';
+import {
+  temperatureComplicationSchema,
+  type TemperatureComplicationConfig,
+} from '../schemas/complication.temperature';
 
 interface Props {
   config?: Partial<TemperatureComplicationConfig>;
@@ -8,8 +11,10 @@ interface Props {
 }
 
 export default function TemperatureComplication({ config, value }: Props) {
-  const unit = config?.unit ?? 'celsius';
-  const showCondition = config?.showCondition ?? true;
+  const parsed = temperatureComplicationSchema.safeParse(config ?? {});
+  const { unit, showCondition } = parsed.success
+    ? parsed.data
+    : temperatureComplicationSchema.parse({});
   const temp = value?.tempC == null
     ? '—'
     : unit === 'fahrenheit'

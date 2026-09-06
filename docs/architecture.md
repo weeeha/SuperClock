@@ -7,7 +7,7 @@ For admin / face / complication subsystem details, see [docs/admin/foundation.md
 
 ## App catalog
 
-11 apps registered today + ~15 in design. Grouped by **layout archetype**:
+14 apps registered today (count pinned by `scripts/lib/docs-drift.test.ts`) + ~15 in design. Grouped by **layout archetype**:
 
 | Archetype | Apps (have + planned) | What it is |
 |---|---|---|

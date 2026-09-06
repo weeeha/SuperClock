@@ -17,7 +17,7 @@ const ACCENT = 'var(--color-accent)';
 function ActiveRow({ item }: { item: TodoItem }) {
   return (
     <div className="h-full flex items-center gap-6 px-4 rounded-3xl active:bg-neutral-900">
-      <div className="w-11 h-11 rounded-full border-[3px] border-neutral-600 shrink-0" />
+      <div className="w-11 h-11 rounded-full border-3 border-neutral-600 shrink-0" />
       <div className="flex-1 min-w-0 text-2xl leading-tight truncate text-white">{item.title}</div>
     </div>
   );

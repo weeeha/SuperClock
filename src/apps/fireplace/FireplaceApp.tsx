@@ -1,5 +1,7 @@
 import { useRef, useEffect } from 'react';
 import type { AppProps } from '../../core/types';
+import { fireplaceAppSchema } from '../../shared/schemas/app.fireplace';
+import { emberColor, flameColor, spawnPerFrame } from './fire-params';
 
 interface Particle {
   x: number;
@@ -12,7 +14,10 @@ interface Particle {
 }
 
 /** Fireplace ambient screen — Canvas particle fire simulation */
-export default function FireplaceApp({ isActive }: AppProps) {
+export default function FireplaceApp({ isActive, config }: AppProps) {
+  // Calendar pattern: the admin's config validated against app.fireplace, defaults otherwise.
+  const parsed = fireplaceAppSchema.safeParse(config ?? {});
+  const { intensity, hue } = parsed.success ? parsed.data : fireplaceAppSchema.parse({});
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
@@ -31,9 +36,10 @@ export default function FireplaceApp({ isActive }: AppProps) {
     canvas.height = H;
 
     const particles = particlesRef.current;
+    const perFrame = spawnPerFrame(intensity);
 
     function spawn() {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < perFrame; i++) {
         particles.push({
           x: W / 2 + (Math.random() - 0.5) * 300,
           y: H - 50,
@@ -75,27 +81,20 @@ export default function FireplaceApp({ isActive }: AppProps) {
           continue;
         }
 
-        // Color gradient: yellow → orange → red → dark
-        let r: number, g: number, b: number;
-        if (t < 0.2) {
-          r = 255; g = 255; b = 100;
-        } else if (t < 0.5) {
-          r = 255; g = Math.floor(180 - t * 200); b = 0;
-        } else {
-          r = Math.floor(255 - (t - 0.5) * 400); g = 0; b = 0;
-        }
+        // Colour by life phase for the configured hue (classic = yellow → orange → red → dark)
+        const { r, g, b } = flameColor(hue, t);
 
         const alpha = Math.max(0, 1 - t);
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(${Math.max(0, r)}, ${Math.max(0, g)}, ${b}, ${alpha})`;
+        ctx!.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
         ctx!.fill();
       }
 
       // Glowing embers at base
       const gradient = ctx!.createRadialGradient(W / 2, H, 0, W / 2, H, 200);
-      gradient.addColorStop(0, 'rgba(255, 100, 0, 0.3)');
-      gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+      gradient.addColorStop(0, emberColor(hue, 0.3));
+      gradient.addColorStop(1, emberColor(hue, 0));
       ctx!.fillStyle = gradient;
       ctx!.fillRect(0, H - 200, W, 200);
 
@@ -108,7 +107,8 @@ export default function FireplaceApp({ isActive }: AppProps) {
       cancelAnimationFrame(animRef.current);
       particles.length = 0;
     };
-  }, [isActive]);
+    // A config push mid-session restarts the simulation with the new numbers.
+  }, [isActive, intensity, hue]);
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">

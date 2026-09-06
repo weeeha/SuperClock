@@ -24,7 +24,19 @@ export type FeatureFlag =
   | 'sleep_schedule'
   | 'theme'
   | 'accent'
-  | 'night_mode';
+  | 'night_mode'
+  // Hardware a device actually has (fleet.md, device.json). Apps declare what
+  // they need in src/shared/app-capabilities.ts; app-capabilities.test.ts
+  // holds the two together so a "no mic on this device" tell has a flag to read.
+  | 'audio'
+  | 'mic'
+  | 'radar';
+
+/** What a kiosk app does (fetches, ticks, multiView) and needs (audio, mic,
+ *  radar). Declared per app in src/shared/app-capabilities.ts and CHECKED
+ *  against the code by app-capabilities.test.ts, never trusted. The hardware
+ *  members are FeatureFlags a device must provide. */
+export type AppCapability = 'fetches' | 'ticks' | 'multiView' | 'audio' | 'mic' | 'radar';
 
 export interface ComplicationSlot {
   id: string;
@@ -51,6 +63,9 @@ export interface AppDescriptor {
   id: string;
   configSchemaId?: string;
   faces?: FaceDescriptor[];
+  /** From src/shared/app-capabilities.ts; optional on the wire so an LVGL
+   *  device's hand-written capability JSON stays valid without it. */
+  capabilities?: readonly AppCapability[];
 }
 
 export interface DeviceCapabilities {
@@ -116,6 +131,11 @@ export interface FleetHealth {
   }>;
 }
 
+// How an admin write's push to the target device actually ended: delivered,
+// persisted-but-undelivered (retry drain will re-push), or skipped by the
+// dev-safety guard. Every admin write response reports one honestly.
+export type PushOutcome = 'applied' | 'queued' | 'dev-suppressed';
+
 // UI metadata for schema-driven forms. Schemas stay pure-zod (data); meta
 // describes labels, descriptions, ranges, and conditional visibility (form).
 // Lives in shared/ so both admin and any future kiosk-side settings UI can
@@ -135,6 +155,10 @@ export interface FieldMeta {
    *  existed before the editing session is renamed. Case/whitespace-only
    *  changes don't re-key, so they don't warn. */
   identityKeyed?: boolean;
+  /** The option is declared and saved but nothing on the glass honours it yet
+   *  (a backend that cannot serve it, a renderer not built). The admin renders
+   *  the control disabled with this note: never hidden, never silently broken. */
+  unimplemented?: string;
 }
 
 export type FieldMetaMap = Record<string, FieldMeta>;

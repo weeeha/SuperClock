@@ -12,7 +12,11 @@ export interface UsagePayload {
 const ENDPOINT = '/api/claude-usage';
 const POLL_MS = 30_000;
 
-export function useClaudeUsage(isActive: boolean): {
+/** Polls the proxy every `pollMs` (app.claude-usage refreshSeconds) while active. */
+export function useClaudeUsage(
+  isActive: boolean,
+  pollMs: number = POLL_MS,
+): {
   data: UsagePayload | null;
   loading: boolean;
 } {
@@ -38,12 +42,12 @@ export function useClaudeUsage(isActive: boolean): {
     }
 
     load();
-    const id = setInterval(load, POLL_MS);
+    const id = setInterval(load, pollMs);
     return () => {
       aborted.current = true;
       clearInterval(id);
     };
-  }, [isActive]);
+  }, [isActive, pollMs]);
 
   return { data, loading };
 }

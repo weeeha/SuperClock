@@ -2,7 +2,9 @@ import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
 
 export const productivityFaceSchema = z.object({
-  accent: z.string().default('#ffcc00'),
+  // Default = the orange the face has always drawn for its digital time,
+  // second hand and hub, so an unconfigured instance looks exactly as before.
+  accent: z.string().default('#ff8826'),
   showSeconds: z.boolean().default(true),
 });
 

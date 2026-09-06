@@ -7,13 +7,13 @@ import {
   type DeviceId,
   type FleetConfig,
 } from '../src/shared/types';
+import { FLEET_SCHEMA_VERSION } from '../src/shared/device-config-schema';
 import { STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { resolveDeviceId } from './resolve-device';
 import { applyDisplaySettings } from './display-adapter';
 
 const FLEET_PATH = join(process.cwd(), 'config', 'fleet.json');
 const FLEET_EXAMPLE_PATH = join(process.cwd(), 'config', 'fleet.example.json');
-const FLEET_SCHEMA_VERSION = 2;
 
 // Serializes every read-modify-write cycle, not just the final file write:
 // two overlapping mutations would otherwise read the same base snapshot and

@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { defineConfig, type Plugin } from 'vite';
+import type { Plugin } from 'vite';
+// vitest/config re-exports Vite's defineConfig with the `test` block typed.
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { buildApiApp } from './server/api-mount';
@@ -41,5 +43,18 @@ export default defineConfig({
         admin: join(__dirname, 'admin/index.html'),
       },
     },
+  },
+  test: {
+    // Component tests opt into jsdom per file with `// @vitest-environment
+    // jsdom`; everything else stays on the faster node environment.
+    setupFiles: [join(__dirname, 'src/test/memory-storage.ts')],
+    // Other branches live in .claude/worktrees/ under this checkout, so the
+    // default glob walks straight into them: `npm test` in the main checkout
+    // was collecting thousands of foreign test files and reporting THEIR
+    // failures as this tree's (found while merging, 2026-09-05). A worktree
+    // runs its own suite from its own root; this one only ever sees its own
+    // files. Vitest replaces the default exclude wholesale, so the two
+    // standard entries are restated here rather than lost.
+    exclude: ['**/node_modules/**', '**/dist/**', '.claude/worktrees/**'],
   },
 });

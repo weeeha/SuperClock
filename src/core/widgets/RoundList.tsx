@@ -33,6 +33,9 @@ export default function RoundList<T>({
     <div className="w-full h-full flex flex-col items-center">
       {header}
       <div
+        // Marks the scroll area so tests can assert the header stays outside
+        // it (the header must not scroll away). No styling attached.
+        data-roundlist-scroll=""
         className="flex-1 min-h-0 overflow-y-auto"
         style={{
           width: 'min(62%, 680px)',

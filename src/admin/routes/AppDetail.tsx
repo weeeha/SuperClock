@@ -1,115 +1,172 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Plus, RotateCcw } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FaceCard } from '../components/FaceCard';
+import { PushOutcomeChip } from '../components/PushOutcomeChip';
 import { SchemaForm } from '../lib/schema-form';
 import { adminApi } from '../lib/api';
-import { useActiveDevice } from '../store/active-device';
+import { useDeviceId, useDeviceStatus, deviceDisplayName } from '../lib/device-scope';
+import { appDisplayName } from '../lib/app-names';
+import { buildCapabilities } from '../../shared/capabilities';
 import { getSchema, defaultsFor } from '../../shared/schema-registry';
-import type { ScreenInstance } from '../../shared/types';
+import { cn } from '../lib/cn';
+import type { DeviceId, PushOutcome, ScreenInstance } from '../../shared/types';
 
-function APP_TITLES(appId: string): string {
-  const map: Record<string, string> = {
-    'photo-frame': 'Photos',
-    'time-tracking': 'Timer',
-    'claude-usage': 'Claude Usage',
-  };
-  return map[appId] ?? appId.charAt(0).toUpperCase() + appId.slice(1);
-}
+// App Detail (wf/6-app-detail): one app on one clock. Clock lists face
+// instances (screens) linking to Screen Config; other apps edit their
+// app-level schema here. Face deletion moved to Screen Config's danger row.
 
 export default function AppDetail() {
   const { appId = '' } = useParams();
-  const { activeDeviceId } = useActiveDevice();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const deviceId = useDeviceId();
+  const status = useDeviceStatus(deviceId);
 
   const deviceQ = useQuery({
-    queryKey: ['device', activeDeviceId],
-    queryFn: () => adminApi.getDevice(activeDeviceId),
+    queryKey: ['device', deviceId],
+    queryFn: () => adminApi.getDevice(deviceId),
   });
 
-  const deleteInstance = useMutation({
-    mutationFn: (id: string) => adminApi.deleteInstance(activeDeviceId, id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['device', activeDeviceId] });
-    },
-  });
+  const caps = buildCapabilities(deviceId);
+  if (!caps.apps.some((a) => a.id === appId)) {
+    return <Navigate to={`/clock/${deviceId}/apps`} replace />;
+  }
 
-  const instances = (deviceQ.data?.instances ?? []).filter((i) => i.appId === appId);
+  const offline = status.known && !status.reachable;
+  const cfg = deviceQ.data;
+  const instances = (cfg?.instances ?? []).filter((i) => i.appId === appId);
+  // Empty stored list = all apps enabled (kiosk semantics).
+  const isOn = cfg ? cfg.enabledApps.length === 0 || cfg.enabledApps.includes(appId) : null;
+
+  if (!deviceQ.isPending && !cfg) {
+    return (
+      <div className="space-y-4">
+        <DetailHeader deviceId={deviceId} appId={appId} on={null} />
+        <div className="rounded-lg border border-[hsl(var(--border))] p-4">
+          <p className="text-sm opacity-70">Couldn&apos;t load this clock&apos;s config.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => deviceQ.refetch()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (appId === 'clock') {
+    const playlistSet = new Set(cfg?.playlist.items ?? []);
     return (
-      <div className="space-y-6 p-6 pb-24">
-        <Header appId={appId} />
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>My Faces ({instances.length})</CardTitle>
-              <Button size="sm" onClick={() => navigate(`/apps/${appId}/gallery`)}>
-                <Plus className="h-4 w-4" /> Add Face
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {instances.length === 0 && (
-              <p className="text-sm opacity-60">
-                No faces yet. Tap "Add Face" to pick one from the gallery.
-              </p>
+      <div className="space-y-4">
+        <DetailHeader deviceId={deviceId} appId={appId} on={isOn} />
+
+        <section>
+          <h2 className="text-xs font-medium uppercase tracking-wide opacity-60">
+            My faces · {instances.length}
+          </h2>
+          <div className="mt-2 space-y-2">
+            {deviceQ.isPending && (
+              <div aria-busy="true" className="space-y-2">
+                <p className="sr-only">Loading faces</p>
+                {[0, 1].map((i) => (
+                  <div
+                    key={i}
+                    className="h-16 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]"
+                  />
+                ))}
+              </div>
+            )}
+            {!deviceQ.isPending && instances.length === 0 && (
+              <p className="text-sm opacity-60">No faces yet — add one from the gallery.</p>
             )}
             {instances.map((instance) => (
               <FaceCard
                 key={instance.id}
                 instance={instance}
-                appId={appId}
-                onDelete={(id) => deleteInstance.mutate(id)}
+                to={`/clock/${deviceId}/screens/${instance.id}`}
+                inPlaylist={playlistSet.has(instance.id)}
               />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
+
+        {!caps.readOnly && (
+          <Link
+            to={`/clock/${deviceId}/apps/clock/gallery`}
+            className="flex items-center justify-center gap-2 rounded-lg border border-[hsl(var(--border))] p-3 text-sm font-medium transition-colors hover:bg-[hsl(var(--muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Add face — browse gallery
+          </Link>
+        )}
+
+        <aside className="rounded-lg bg-[hsl(var(--muted))] p-3 text-xs">
+          <p className="font-medium">Faces are screens</p>
+          <p className="mt-1 opacity-70">
+            Each face instance is playlist-eligible on its own, equal to a Habits or Weather
+            screen. Deleting the instance removes it from the playlist too.
+          </p>
+        </aside>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6 pb-32">
-      <Header appId={appId} />
-      <AppSettingsCard
-        appId={appId}
-        instance={instances[0]}
-      />
+    <div className="space-y-4">
+      <DetailHeader deviceId={deviceId} appId={appId} on={isOn} />
+      <AppSettingsSection appId={appId} instance={instances[0]} writesDisabled={offline} />
     </div>
   );
 }
 
-function Header({ appId }: { appId: string }) {
+function DetailHeader({
+  deviceId,
+  appId,
+  on,
+}: {
+  deviceId: DeviceId;
+  appId: string;
+  on: boolean | null;
+}) {
   return (
-    <header className="flex items-center gap-3">
+    <header className="flex items-center gap-2">
       <Link
-        to="/apps"
-        className="rounded-md p-1 hover:bg-[hsl(var(--muted))]"
-        aria-label="Back"
+        to={`/clock/${deviceId}/apps`}
+        aria-label="Back to apps"
+        className="rounded-md p-1 hover:bg-[hsl(var(--muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-5 w-5" aria-hidden />
       </Link>
-      <div className="flex-1">
-        <h1 className="text-3xl font-bold tracking-tight">{APP_TITLES(appId)}</h1>
-      </div>
+      <h1 className="min-w-0 flex-1 truncate text-xl font-bold tracking-tight">
+        {appDisplayName(appId)} on {deviceDisplayName(deviceId)}
+      </h1>
+      {on !== null && (
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-0.5 text-xs font-medium',
+            on
+              ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+              : 'bg-[hsl(var(--muted))] opacity-80',
+          )}
+        >
+          {on ? 'on' : 'off'}
+        </span>
+      )}
     </header>
   );
 }
 
-function AppSettingsCard({
+function AppSettingsSection({
   appId,
   instance,
+  writesDisabled,
 }: {
   appId: string;
   instance: ScreenInstance | undefined;
+  writesDisabled: boolean;
 }) {
-  const { activeDeviceId } = useActiveDevice();
+  const deviceId = useDeviceId();
   const queryClient = useQueryClient();
+  const [lastOutcome, setLastOutcome] = useState<PushOutcome | null>(null);
 
   const schemaId = `app.${appId}`;
   const entry = useMemo(() => getSchema(schemaId), [schemaId]);
@@ -130,12 +187,13 @@ function AppSettingsCard({
   const save = useMutation({
     mutationFn: async () => {
       if (instance) {
-        return adminApi.patchInstance(activeDeviceId, instance.id, { config: working });
+        return adminApi.patchInstance(deviceId, instance.id, { config: working });
       }
-      return adminApi.createInstance(activeDeviceId, { appId, config: working });
+      return adminApi.createInstance(deviceId, { appId, config: working });
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['device', activeDeviceId] });
+    onSuccess: async (result) => {
+      setLastOutcome(result.pushOutcome);
+      await queryClient.invalidateQueries({ queryKey: ['device', deviceId] });
     },
   });
 
@@ -145,51 +203,47 @@ function AppSettingsCard({
 
   if (!entry) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>App settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm opacity-60">
-            No configurable options for {appId} yet — this app ships with a fixed config.
-          </p>
-        </CardContent>
-      </Card>
+      <section>
+        <h2 className="text-xs font-medium uppercase tracking-wide opacity-60">App settings</h2>
+        <p className="mt-2 text-sm opacity-60">
+          No configurable options for {appDisplayName(appId)} yet — this app ships with a fixed
+          config.
+        </p>
+      </section>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>App settings</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={reset}
-              disabled={JSON.stringify(working) === JSON.stringify(defaults)}
-              aria-label="Reset to defaults"
-            >
-              <RotateCcw className="h-4 w-4" /> Reset
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <SchemaForm
-            schema={entry.schema}
-            meta={entry.meta}
-            value={working}
-            onChange={setWorking}
-          />
-        </CardContent>
-      </Card>
-
-      <div className="fixed bottom-20 left-1/2 z-20 -translate-x-1/2">
-        <Button onClick={() => save.mutate()} disabled={!dirty || save.isPending}>
-          {save.isPending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+    <section>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-medium uppercase tracking-wide opacity-60">App settings</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={reset}
+          disabled={JSON.stringify(working) === JSON.stringify(defaults)}
+          aria-label="Reset to defaults"
+        >
+          <RotateCcw className="h-4 w-4" /> Reset
         </Button>
       </div>
-    </>
+      <div className="mt-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
+        <SchemaForm schema={entry.schema} meta={entry.meta} value={working} onChange={setWorking} />
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <PushOutcomeChip outcome={lastOutcome} />
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!dirty || save.isPending || writesDisabled}
+          >
+            {save.isPending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+          </Button>
+        </div>
+        {save.isError && (
+          <p className="mt-2 text-right text-sm text-[hsl(var(--destructive))]">
+            Couldn&apos;t save — {(save.error as Error).message}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }

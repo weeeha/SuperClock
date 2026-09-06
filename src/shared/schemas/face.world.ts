@@ -2,7 +2,9 @@ import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
 
 export const worldFaceSchema = z.object({
-  accent: z.string().default('#3b82f6'),
+  // Default = the red second hand and hub ring the primary dial has always
+  // drawn, so an unconfigured instance looks exactly as before.
+  accent: z.string().default('#ee0000'),
   primaryTimezone: z.string().default('local'),
 });
 

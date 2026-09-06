@@ -58,7 +58,7 @@ export default function WeatherApp({ isActive, config }: AppProps) {
       setVerticalSwipeCallback(null);
       return;
     }
-    setVerticalSwipeCallback((dir) => {
+    const cb = (dir: 'up' | 'down') => {
       if (dir === 'up') {
         setPage((p) => Math.min(p + 1, pages.length - 1));
       } else if (safePage > 0) {
@@ -66,8 +66,13 @@ export default function WeatherApp({ isActive, config }: AppProps) {
       } else {
         showGrid();
       }
-    });
-    return () => setVerticalSwipeCallback(null);
+    };
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours (HabitsApp's guarded cleanup).
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [isActive, safePage, pages.length, setVerticalSwipeCallback, showGrid]);
 
   // A kiosk never swipes itself home. Without this, checking the UV dial on

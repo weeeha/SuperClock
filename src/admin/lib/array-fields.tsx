@@ -12,7 +12,7 @@
 // enabled row is pinned (min-1); refine errors surface via FieldShell.
 //
 // Both own a per-field DndContext. Reorder wiring mirrors Playlist.tsx /
-// PlaylistRow.tsx (PointerSensor distance 6 so taps don't start drags).
+// the original playlist rows (PointerSensor distance 6 so taps don't start drags).
 
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
@@ -259,7 +259,7 @@ function StringListRow({
         onChange={(e) => onEdit(row.id, e.target.value)}
         placeholder="Empty — dropped on save"
         aria-label={`Entry ${index + 1}`}
-        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
+        className="min-w-0 flex-1 bg-transparent text-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] placeholder:opacity-40"
       />
       {renamed && (
         <TriangleAlert
