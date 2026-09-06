@@ -32,3 +32,65 @@ describe('token tiers', () => {
     ).toEqual([]);
   });
 });
+
+// The nine face roles as src/index.css declared them before the token layer
+// (commit prior to this work). A face that resolves to anything else is a
+// pixel change on thirteen faces, which this sub-project forbids.
+const FACE_BEFORE = {
+  light: {
+    '--face-bg': '#ffffff',
+    '--face-ink': '#000000',
+    '--face-ink-muted': '#52525b',
+    '--face-tick': '#444444',
+    '--face-plate': '#f1f1ef',
+    '--face-dusk': '#8fa9c4',
+    '--face-spent': '#e4e4e1',
+    '--face-ghost': '#d9d9d4',
+  },
+  dark: {
+    '--face-bg': '#000000',
+    '--face-ink': '#ffffff',
+    '--face-ink-muted': '#a1a1aa',
+    '--face-tick': '#8a8a8a',
+    '--face-plate': '#15171a',
+    '--face-dusk': '#2b3d52',
+    '--face-spent': '#111316',
+    '--face-ghost': '#2c2f35',
+  },
+} as const;
+
+describe('face values survive the move into the layer', () => {
+  const css = readFileSync(TOKENS, 'utf8');
+  const parsed = parseTiers(css);
+
+  /** Resolve a role one hop through its ramp, which is all the layer allows. */
+  function resolve(mode: 'light' | 'dark', role: string): string {
+    const ref = parsed[mode][role];
+    const ramp = /^var\((--[\w-]+)\)$/.exec(ref ?? '');
+    if (!ramp) return ref ?? '(undeclared)';
+    const decl = new RegExp(`^\\s*${ramp[1]}\\s*:\\s*([^;]+);`, 'm').exec(css);
+    return decl ? decl[1].trim() : '(ramp missing)';
+  }
+
+  for (const mode of ['light', 'dark'] as const) {
+    for (const [role, expected] of Object.entries(FACE_BEFORE[mode])) {
+      it(`${mode}: ${role} still resolves to ${expected}`, () => {
+        expect(
+          resolve(mode, role),
+          `${role} changed value in ${mode} mode. Thirteen faces and their contracts depend on it.`,
+        ).toBe(expected);
+      });
+    }
+  }
+
+  it('src/index.css no longer declares a face role itself', () => {
+    const entry = readFileSync('src/index.css', 'utf8');
+    for (const role of Object.keys(FACE_BEFORE.light)) {
+      expect(
+        new RegExp(`^\\s*${role}\\s*:`, 'm').test(entry),
+        `src/index.css still declares ${role}; the layer is the only place a role is written.`,
+      ).toBe(false);
+    }
+    expect(entry).toContain("@import './styles/tokens.css'");
+  });
+});
