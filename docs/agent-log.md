@@ -6,6 +6,33 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-06 · branch claude/project-brainstorming-e32502 · face contracts: review round and closing state
+
+Appended by the session controller after the entry below. That entry describes the branch at commit `90ff162`; three commits landed after it, all test-only or documentation, and this records them plus what the reviews found.
+
+**Changed after `90ff162`:**
+- `72cc761`: two corrections to the entry below. It claimed its gates run was the first on this branch, which the step-1 entry further down contradicts, and it paraphrased a mutation-check failure message with a word the assertion does not use.
+- `adefcf7`: five new assertions in `src/shared/lvgl-parity.test.ts` and `src/shared/part-contracts.test.ts`, closing four defects a whole-branch review found. No component, meta, C source or production file changed.
+
+**What the whole-branch review found.** Every task passed its own review, and the branch still carried three places where a gate could report green on the defect it exists to catch:
+1. The parity gate treated an unreadable colour as ledgered drift. `parseColors` returns null for a colour it cannot parse and four ledger entries swallowed that null, so renaming the C dial object, or writing its colour in a form the parser does not recognise, kept the gate green. The damaging case: if the C clock were actually reconciled with React but written unrecognisably, the gate would pass while the ledger kept asserting a difference that no longer existed, and the shrink-only list would never shrink. Closed by two checks that every C colour resolves to a string and that every `make_hand` and `make_dot` call the spec expects has a match, the second because a renamed call leaves its key absent rather than null.
+2. Widget contract coverage rested on a hardcoded list, so a new file under `src/core/widgets/` with no contract was invisible to the gate, to the index, and to the index's own coverage assertion, which compared against the same list and was therefore circular. Closed by globbing the directory, plus an orphan check for a stray meta there.
+3. Nothing kept a migrated face free of geometry literals after day one. The gate checked only that the face imports its contract, so hardcoding `strokeWidth="28"` back into Analog while keeping the import stayed green, and the meta would have become a lie about React that the parity test structurally cannot see. Closed by asserting no spec number appears as a bare geometry attribute value in the face's own source.
+4. Minor, same class: nulling a spec section stopped it being compared. `ticks` was caught indirectly through stale ledger entries, `dot` by nothing. Closed by asserting a parity face carries both.
+
+Each new assertion was demonstrated failing on the defect it names, then the tree restored.
+
+**Verified:** `./scripts/gates.sh` green on this final state: lint clean; check:tokens (47 semantic-zone files and 13 faces clean, 7 legacy faces exempt, 7 tokens ledgered, 6 rules with no detector); 510 tests across 42 files; both-SPA production build.
+
+**Open, and deliberately not fixed here:**
+- `hands.second` in `src/shared/lvgl-parity.test.ts` has the same silent-skip exposure that item 4 closed for `ticks` and `dot`: no ledger entry references it, and the comparison skips its whole block when null. The guard's own cited precedent in `AnalogClock.tsx` covers all three fields, so this is a one-line, same-shape addition. Left as a follow-up rather than a second fix wave.
+- Twelve Minor findings from the per-task reviews were triaged by the whole-branch reviewer as non-blocking. The largest is that the four shrink-only lists (`FACE_TOKEN_EXEMPT`, `UNCONSUMED_LEDGER`, `SPEC_PENDING`, `PARITY_DRIFT_LEDGER`) do not share one idiom: two carry a reason per entry and a staleness check, `SPEC_PENDING` is a bare string array, and `FACE_TOKEN_EXEMPT` has neither. Giving all four the same shape is the single largest thing between this and a layer the next session can read as one thing.
+- The plan at `docs/superpowers/plans/2026-09-05-face-contracts.md` prescribes code that does not compile under this repo's strict settings in three places, each the same narrowing mistake. Anyone copying from it will hit it again.
+
+**Waiting on Nick:** the fifteen contract files' judgments are drafts written from the specs and the board, and none has been read by a human. Which renderer is right in the nine ledgered React-versus-LVGL mismatches is his call, not the gate's. StateRing's eventual home is still open.
+
+---
+
 ## 2026-09-06 · branch claude/project-brainstorming-e32502 · design-system step 3: face and widget contracts built
 
 **Changed:**
