@@ -1,0 +1,16 @@
+{
+  "kind": "widget",
+  "id": "state-ring",
+  "purpose": "The always-on-mic indicator: a ring just inside the bezel whose state is the whole message. Idle is near invisible, listening breathes, thinking rotates a conic gap, speaking holds steady.",
+  "tokens": [],
+  "states": [
+    { "state": "idle", "recipe": "The ring at 8 percent opacity; present but not read." },
+    { "state": "listening", "recipe": "A 2.4s ease-in-out breathe on the ring." },
+    { "state": "thinking", "recipe": "A conic gradient with a 60 degree gap rotating over 3s, masked to the ring width." },
+    { "state": "speaking", "recipe": "The ring at full opacity, still." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not mount it while the app is inactive", "why": "the parent gates rendering on isActive; an unmounted ring is the cheapest ring on a Pi that runs for weeks" },
+    { "rule": "Do not show it on a device without a microphone", "why": "only Fast carries the Fusion HAT mic; a ring on Small or Square promises listening that cannot happen" }
+  ]
+}

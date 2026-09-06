@@ -1,0 +1,14 @@
+{
+  "kind": "face",
+  "id": "floral",
+  "purpose": "Hands over a floral artwork. The art is the face; the hands exist to stay legible over it, not to decorate it.",
+  "accent": { "where": "the hands", "color": "config:accent" },
+  "night": { "recipe": "Ignores night: a legacy exempt face; the artwork has no night variant until one is drawn.", "tokens": [] },
+  "options": [
+    { "key": "accent", "intent": "The hand colour; pick for contrast against the artwork, never to match it." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not add ticks or numerals over the artwork", "why": "the art carries the composition and marks fight it" }
+  ],
+  "parity": { "lvgl": null }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "face",
+  "id": "aperture",
+  "purpose": "A plate covers the dial; the hour and minute show through two windows and step, nothing sweeps. The only motion and the only accent is the seconds bar along the bottom of the minute window.",
+  "accent": { "where": "the seconds bar", "color": "--color-accent" },
+  "night": {
+    "recipe": "The plate and the ink flip with the palette; the seconds bar stays the accent.",
+    "tokens": ["--face-bg", "--face-ink", "--face-ink-muted", "--face-plate"]
+  },
+  "options": [
+    { "key": "format", "intent": "12h adds a small AM/PM tag beside the hour window; 24h keeps the windows bare." },
+    { "key": "showDate", "intent": "A date line under the minute window; off for a face that says only the time." },
+    { "key": "secondsBar", "intent": "Off removes the only motion and the only accent, for a fully still face." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not make the digits sweep or slide", "why": "stepping is the Pallweber signature; motion belongs to the seconds bar alone" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "Windows in a plate, no hands or ticks."
+}

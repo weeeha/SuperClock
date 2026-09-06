@@ -1,0 +1,15 @@
+{
+  "kind": "face",
+  "id": "productivity",
+  "purpose": "Coloured rim segments block the day into spans around a plain dial. The segments are the message; the hands are the reference for reading them.",
+  "accent": { "where": "the second hand and the highlighted segment", "color": "config:accent" },
+  "night": { "recipe": "Ignores night: a legacy exempt face with its own fixed palette until it is retrofitted to read --face-bg and --face-ink.", "tokens": [] },
+  "options": [
+    { "key": "accent", "intent": "The colour of the second hand and the live segment; one colour, so the rim reads as a clock and not a chart." },
+    { "key": "showSeconds", "intent": "Off for a still face; the segments still show the span." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not add a second saturated colour to the rim", "why": "one accent per face; a second colour turns the segments into a chart" }
+  ],
+  "parity": { "lvgl": null }
+}

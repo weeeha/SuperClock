@@ -1,0 +1,19 @@
+{
+  "kind": "face",
+  "id": "strokes",
+  "purpose": "A full-field lattice of 52 two-hand dials. The centre 4 by 6 block composes the HH and MM digit strokes; everything else parks dim on the south-west diagonal. Perfectly still between minutes.",
+  "accent": { "where": "the lit digit strokes", "color": "--color-accent" },
+  "night": {
+    "recipe": "The ghost hands and the plate flip with the palette; the lit strokes stay the accent.",
+    "tokens": ["--face-bg", "--face-ghost", "--face-plate"]
+  },
+  "options": [
+    { "key": "format", "intent": "24 is the default; 12 parks the leading-zero block for hours one to nine." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not add idle motion between minute steps", "why": "at rest it is perfectly still by decision; the sweep exists only for the hands that change" },
+    { "rule": "Do not replace the junction-gap digit font", "why": "the gaps are the font's character, asserted by the geometry test" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "A lattice of dials; its geometry lives in strokes-geometry.ts."
+}

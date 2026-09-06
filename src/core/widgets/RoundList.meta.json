@@ -1,0 +1,14 @@
+{
+  "kind": "widget",
+  "id": "round-list",
+  "purpose": "A centre-column vertical list for the round viewport: about 62 percent wide with a 64px edge fade, so rows never touch the invisible corners. The first primitive of the kit; Agents and Todo consume it.",
+  "tokens": [],
+  "states": [
+    { "state": "empty", "recipe": "The required empty node renders in place of the rows; an empty list must say why it is empty." },
+    { "state": "scrolling", "recipe": "Rows scroll inside the masked column with pan-y touch and contained overscroll; the header stays fixed above." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not set itemHeight below 72", "why": "the touch target gets too small for a finger on glass; 96 is the default for that reason" },
+    { "rule": "Do not put the header inside the scroll area", "why": "the title and count are the list's fixed frame; scrolling them away loses the context the round crop already squeezes" }
+  ]
+}

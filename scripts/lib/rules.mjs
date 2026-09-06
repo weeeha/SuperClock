@@ -116,6 +116,13 @@ export const RULES = [
     unchecked:
       'no grep guards VITE_ names; the calendar, github and claude-usage proxies are the pattern. A name-pattern check over import.meta.env reads would close it.',
   },
+  {
+    id: 'R16',
+    statement:
+      'every face and kiosk widget carries a .meta.json beside its component, and every claim in it (night tokens read, option keys, parity path, geometry state) is true of the source',
+    why: 'a judgment nobody wrote down gets inferred wrong; a claim nobody checks drifts the first time the component changes',
+    checkedBy: 'src/shared/part-contracts.test.ts',
+  },
 ];
 
 /** The rules with no detector: what a green run did not inspect. */

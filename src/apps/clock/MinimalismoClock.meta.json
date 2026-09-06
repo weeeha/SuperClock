@@ -1,0 +1,16 @@
+{
+  "kind": "face",
+  "id": "minimalismo",
+  "purpose": "A bare dial with two ink hands and a gold sweeping second hand, nothing else. It refuses ticks, numerals and a centre dot: it was kept on the Slow prototype because the ticks failed to render and the bare face was better.",
+  "accent": { "where": "the second hand", "color": "#FFD700" },
+  "night": {
+    "recipe": "The bg and ink tokens flip with the palette; the gold second hand stays gold in both.",
+    "tokens": ["--face-bg", "--face-ink"]
+  },
+  "options": [],
+  "antiPatterns": [
+    { "rule": "Do not add ticks, numerals or a centre pip", "why": "the face is defined by their absence; the moment one returns it is Analog" },
+    { "rule": "Never rotate the hands with CSS transforms or transitions", "why": "handPoints geometry is what makes a backsweep and a float32 jump impossible by construction" }
+  ],
+  "parity": { "lvgl": null }
+}
