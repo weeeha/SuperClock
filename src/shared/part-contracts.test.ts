@@ -10,9 +10,7 @@ import { SCHEMAS } from './schema-registry';
 import { faceMetaSchema, widgetMetaSchema, SPEC_PENDING } from './part-meta';
 import type { FaceMeta, WidgetMeta } from './part-meta';
 import { FACE_TOKEN_EXEMPT } from '../../scripts/lib/token-rules.mjs';
-
-// Moves to scripts/lib/parts-index.mjs when the index emitter lands.
-const WIDGET_META_PATHS = ['src/core/widgets/RoundList.meta.json', 'src/apps/agents/StateRing.meta.json'];
+import { WIDGET_META_PATHS } from '../../scripts/lib/parts-index.mjs';
 
 interface FacePart {
   id: string;

@@ -1,0 +1,16 @@
+parts[15]{kind,id,path,accent,parity,geometry,purpose}:
+  face,analog,src/apps/clock/AnalogClock.meta.json,config:accent,lvgl,spec,"The Swiss railway reference: sixty ticks, heavy white hands on a black dial, an accent second hand and pip."
+  face,aperture,src/apps/clock/ApertureClock.meta.json,--color-accent,none,specless,"A plate covers the dial; the hour and minute show through two windows and step, nothing sweeps."
+  face,complications-dark,src/apps/clock/ComplicationsDark.meta.json,config:accent,none,pending,The dark sibling of Complications Light: the same layout on a fixed dark dial.
+  face,complications-light,src/apps/clock/ComplicationsLight.meta.json,config:accent,none,pending,A light dial laid out around sub-dial positions for complications.
+  face,daylight,src/apps/clock/DaylightClock.meta.json,--color-accent,none,specless,"A 24-hour dial with noon at the top: one hand revolves per day and the ring shows sunrise to sunset in the accent, the rest in dusk."
+  face,depletion,src/apps/clock/DepletionClock.meta.json,--color-accent,none,specless,"A 24-hour dial, midnight at top, where the accent wedge is the time left in the day."
+  face,flip,src/apps/clock/FlipClock.meta.json,config:accent,none,specless,Split-flap digits that flip when they change.
+  face,floral,src/apps/clock/FloralClock.meta.json,config:accent,none,pending,Hands over a floral artwork.
+  face,minimalismo,src/apps/clock/MinimalismoClock.meta.json,#FFD700,none,spec,"A bare dial with two ink hands and a gold sweeping second hand, nothing else."
+  face,productivity,src/apps/clock/ProductivityClock.meta.json,config:accent,none,pending,Coloured rim segments block the day into spans around a plain dial.
+  face,square,src/apps/clock/SquareClock.meta.json,config:accent,none,pending,"A rounded square dial with numerals at the four cardinals and tick marks, designed for the square device's rectangle."
+  face,strokes,src/apps/clock/StrokesClock.meta.json,--color-accent,none,specless,A full-field lattice of 52 two-hand dials.
+  face,world,src/apps/clock/WorldClock.meta.json,config:accent,none,pending,A primary dial for one timezone with secondary dials for others.
+  widget,round-list,src/core/widgets/RoundList.meta.json,-,-,-,"A centre-column vertical list for the round viewport: about 62 percent wide with a 64px edge fade, so rows never touch the invisible corners."
+  widget,state-ring,src/apps/agents/StateRing.meta.json,-,-,-,The always-on-mic indicator: a ring just inside the bezel whose state is the whole message.

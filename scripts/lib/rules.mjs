@@ -122,6 +122,12 @@ export const RULES = [
     why: 'a judgment nobody wrote down gets inferred wrong; a claim nobody checks drifts the first time the component changes',
     checkedBy: 'src/shared/part-contracts.test.ts',
   },
+  {
+    id: 'R17',
+    statement: 'index/parts.toon equals a fresh emit from every part meta (npm run build:index)',
+    why: 'the index is the survey an agent reads instead of grepping components; a stale row sends it to a part that changed',
+    checkedBy: 'src/shared/parts-index.test.ts',
+  },
 ];
 
 /** The rules with no detector: what a green run did not inspect. */
