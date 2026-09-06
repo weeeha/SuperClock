@@ -5,6 +5,35 @@ there are no PRs to hand work over, so this file is the handoff surface. Append 
 entry before finishing a chunk of work, not only at session end. Each entry says:
 what changed, which files, what was verified, decisions taken, what is still open.
 
+## 2026-09-05 · item 6: path-scoped rules split (.claude/rules/)
+
+- **What:** three path-specific bodies moved out of the always-loaded AGENTS.md into
+  `.claude/rules/*.md` with `paths:` frontmatter, which Claude Code loads only when a matching
+  file is read: `gestures-and-navigation.md` (`src/core/**`, app components — arc map, the
+  `mode: 'transitioning'` invariant, the guarded cleanup), `clock-faces.md` (`src/apps/clock/**`,
+  `face.*` schemas, `slow-native/src/*` — useClockHands, the `--face-*` night contract, schema
+  reading, the one-accent rule, LVGL parity), `pi-deployment.md` (`scripts/*.sh`, units, CI —
+  what deploy.sh ships, its guards, the systemd naming drift).
+- **AGENTS.md still states every rule.** Each moved section leaves a one-line summary naming its
+  rule file, so agents that do not read `.claude/rules/` (Codex and friends read AGENTS.md) learn
+  the rule exists and where the body is. AGENTS.md 20057 → 14550 bytes; the bodies are 10474
+  bytes that now load only when relevant.
+- **Gate:** `scripts/lib/rules-scoped.test.ts` (20 checks) — every rule has `paths` and a
+  `summary`; every glob matches at least one tracked file (a typo'd glob is worse than a missing
+  rule: it never loads and nothing says so); every rule is named from AGENTS.md; every rule's
+  summary appears there verbatim; every `.claude/rules/…` path AGENTS.md names is a real rule.
+- **Drift gate widened, and it caught the split itself:** moving names out of AGENTS.md made its
+  NOT_IN_TREE and MUST_NOT_EXIST rows stale and dropped the identifier count below the floor.
+  The right fix was scope, not exemptions: the instruction corpus is AGENTS.md PLUS
+  `.claude/rules/*.md` (one contract split by scope), and the rule files are excluded from the
+  CODE corpus so a name mentioned only in prose still does not count as used. 117 → 127 checks.
+- **Also fixed:** the stubs first landed carrying their literal YAML quotes — the parser now
+  strips a quote pair (the gestures summary must be quoted because it contains `mode: '`).
+- **Verified:** gate red on the missing directory, then red on the missing stubs, green after;
+  drift gate red on the stale ledgers, green after widening; gates.sh green: lint, check:tokens,
+  45 files / 708 tests, build.
+- **Open:** none for item 6. All six items from the 2026-09-05 plan are done.
+
 ## 2026-09-05 · item 5: regenerable health report (docs/health.md)
 
 - **What:** `npm run report` renders `docs/health.md` from the registries, the ledgers and the

@@ -79,12 +79,14 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-// The corpus an identifier must appear in. This gate's own file is excluded:
-// its ledgers quote the very names it asserts absent.
+// The corpus an identifier must appear in: code, not instructions. Excluded
+// are the instruction files themselves (AGENTS.md and the path-scoped rules —
+// a name mentioned only in prose is not a name the code uses), the agent log,
+// and this gate, whose ledgers quote the very names it asserts absent.
 const codeFiles = [...CODE_ROOTS.flatMap((d) => walk(d)), ...CODE_FILES].filter(
   (f) =>
     /\.(tsx?|mjs|cjs|js|json|sh|css|c|h|md)$/.test(f) &&
-    !/AGENTS\.md|AGENT-LOG\.md|docs-drift\.test\.ts$/.test(f),
+    !/AGENTS\.md|AGENT-LOG\.md|docs-drift\.test\.ts$|^\.claude\/rules\//.test(f),
 );
 const allBasenames = new Set(walk('.').map((f) => basename(f)));
 const codeCorpus = codeFiles.map((f) => read(f)).join('\n');
@@ -95,7 +97,18 @@ function expandBraces(token: string): string[] {
   return m[2].split(',').flatMap((alt) => expandBraces(`${m[1]}${alt}${m[3]}`));
 }
 
-const agents = read('AGENTS.md');
+// The instruction corpus is AGENTS.md PLUS the path-scoped rules in
+// .claude/rules/ — one contract split by scope, so a claim carries the same
+// weight wherever it sits. Reading only AGENTS.md would let a rule file drift
+// freely, which is precisely what the split would otherwise cost.
+const instructionFiles = [
+  'AGENTS.md',
+  ...readdirSync(rel('.claude/rules'))
+    .filter((f) => f.endsWith('.md'))
+    .sort()
+    .map((f) => join('.claude/rules', f)),
+];
+const agents = instructionFiles.map(read).join('\n');
 const tokens = [...new Set([...agents.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]))];
 
 const isPathLike = (t: string) =>
@@ -110,7 +123,7 @@ const cssTokens = tokens.filter((t) => t.startsWith('--'));
 const ruleIdTokens = tokens.filter((t) => /^[A-Z]{3,4}-\d+$/.test(t));
 const npmTokens = tokens.filter((t) => /^npm run /.test(t));
 
-describe('AGENTS.md: every backticked repo path exists', () => {
+describe('instruction files: every backticked repo path exists', () => {
   it('finds path-like claims to check', () => {
     expect(pathTokens.length).toBeGreaterThan(40);
   });
@@ -144,7 +157,7 @@ describe('AGENTS.md: every backticked repo path exists', () => {
   });
 });
 
-describe('AGENTS.md: every backticked identifier appears in code', () => {
+describe('instruction files: every backticked identifier appears in code', () => {
   it('finds identifier claims to check', () => {
     expect(identTokens.length).toBeGreaterThan(30);
   });
@@ -159,7 +172,7 @@ describe('AGENTS.md: every backticked identifier appears in code', () => {
   });
 });
 
-describe('AGENTS.md: tokens, rule ids and npm scripts resolve', () => {
+describe('instruction files: tokens, rule ids and npm scripts resolve', () => {
   it.each(cssTokens)('%s is a declared CSS token prefix', (token) => {
     const prefix = token.replace(/\*.*$/, '').replace(/:.*$/, '').trim();
     const css = ['src/index.css', 'src/admin/index.css'].map(read).join('\n');

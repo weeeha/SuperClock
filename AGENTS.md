@@ -8,6 +8,8 @@ SuperClock is a smart-clock dashboard for a fleet of four Raspberry Pis driving 
 
 **Agent log:** parallel worktree sessions hand work over through `AGENT-LOG.md`, not PRs. Append an entry (what changed, files, verified, decisions, open) before finishing a chunk of work.
 
+**Path-scoped rules:** this file states every rule, but three bodies live in `.claude/rules/*.md` with `paths:` frontmatter, so Claude Code loads them only when you touch matching files. Read the named file directly if your agent does not do that for you. `scripts/lib/rules-scoped.test.ts` holds the split honest: every rule declares globs that match real files, and its one-line summary must still appear here.
+
 ## Commands
 
 ```bash
@@ -29,11 +31,7 @@ The **registry coherence test** (`src/shared/registry-coherence.test.ts`) pins t
 
 ### Pi deployment
 
-`scripts/deploy.sh nickv2026@<pi-ip>` builds locally and rsyncs the runtime payload to `~/SuperClock` on the Pi: `dist/` (client + `server.mjs` + `build-info.json`), `package*.json`, `config/fleet.example.json`, `scripts/`. The server is a self-contained esbuild bundle, so there is **no list of server source dirs to maintain** — npm packages stay external and are installed on the Pi (`npm ci --omit=dev`). `config/fleet.json` and `config/admin.json` are device-local state, never synced. The deploy script restarts the server (systemd brings it back) so fleet migrations run immediately.
-
-Deploys are **guarded and self-verifying**: the script refuses a dirty tree or a HEAD that isn't origin/main (`DEPLOY_ANYWAY=1` overrides — that's the blessed path for branch test builds on fastclock), refuses a device without 3× payload free space, and after restarting polls `/api/health` until the reported `build.commit` equals the commit it shipped — so "which commit is this device running?" is answered by `curl <pi>:3000/api/health`, never by `dist/` mtimes (rsync preserves them; they lie).
-
-First-time provisioning uses `scripts/setup-pi.sh` (run as root on Pi OS Trixie): installs Node + npm via `apt-get`, runs `npm ci --omit=dev`, and installs **one** systemd unit — `superclock-server.service` (`ExecStart=npm run start`, `WorkingDirectory=~/SuperClock`). **Naming drift on the live fleet:** devices provisioned before that unit existed run the server as `superclock.service` (verified on fastclock 2026-08-07) — a fresh provision creates the new name, so use `systemctl status 'superclock*'` when inspecting; deploy.sh's pkill-based restart works for either. The Chromium kiosk is **not** a systemd service: `scripts/kiosk.sh` is wired into `~/.config/labwc/autostart`, waits for `/api/health`, and execs Chromium with the required Wayland flags. `setup-pi.sh` is idempotent; `SERVICE_USER`/`REPO_DIR`/`PORT`/`ADMIN_HOST` are env-overridable. Server-side secrets (`CALENDAR_ICS_URL`, `GITHUB_TOKEN`) go in `/etc/default/superclock` on the Pi or `.env` in dev.
+**Pi deployment** — what `deploy.sh` ships, its guards and the live systemd naming drift live in `.claude/rules/pi-deployment.md` (loaded automatically when you touch a deploy or provisioning script). Never trust `dist/` mtimes; `/api/health` carries the build stamp.
 
 ## Architecture
 
@@ -51,21 +49,9 @@ First-time provisioning uses `scripts/setup-pi.sh` (run as root on Pi OS Trixie)
 
 Every mini-app is a module under `src/apps/<name>/` with an `index.ts` calling `registerApp({ metadata, component: lazy(...) })` and a `<Name>App.tsx` default-exporting a component receiving `AppProps` (`{ isActive, config? }`). **Adding a new app requires:** the side-import in `src/apps/index.ts`, an entry in `ALL_KIOSK_APP_IDS` in `src/shared/capabilities.ts`, a row in `src/shared/app-capabilities.ts` (what it does: fetches / ticks / multiView; what it needs: audio / mic / radar), and (unless it's config-free) an `app.<id>` schema in `src/shared/schemas/` + `src/shared/schema-registry.ts`. `npm test` fails until all lists agree, and `app-capabilities.test.ts` fails when a capability row contradicts the code. Faces additionally need: component + `FACE_COMPONENTS`/`SWIPE_CYCLE_ORDER` in `src/apps/clock/face-components.ts`, a `face-registry.ts` entry, and a `face.<id>` schema. **Don't hand-assemble these** — `npm run new:app -- <id>` / `npm run new:face -- <id>` emit every touchpoint (transactionally: a drifted anchor or duplicate id aborts with nothing written) plus a failing todo test; implementing the component and deleting that test is the definition of done.
 
-### Navigation state (Zustand)
+### Navigation state and gestures
 
-`src/core/navigation.ts` is the single source of truth: `mode: 'app' | 'grid' | 'transitioning'`, `activeAppId`, `activeInstanceId`. `SwipeContainer` keys its AnimatePresence child on `activeInstanceId ?? activeAppId` — **every action that sets `mode: 'transitioning'` must change that key**, or `onExitComplete → finishTransition()` never fires and all gestures die (they gate on mode). This invariant is pinned by `src/core/navigation.test.ts`. The store is `window.__nav` in dev. The same store also carries the overlay/back-gesture state consumed by Gestures below (`settingsOpen`, `peek`, `backCallback`) — none of it participates in the mode/transitioning contract above.
-
-### Gestures
-
-Classification is split into two pure, unit-tested functions; `src/core/hooks/useGestures.ts` is a thin dispatcher over them — one root `@use-gesture/react` handler (pointer events, pointer capture — no per-app gesture handlers). `src/core/gesture-zones.ts` classifies the touch **origin** at `onDragStart` — disc center + radius/angle math, not a y-coordinate check — into `inner | top-arc | bottom-arc | left-arc | right-arc` (a ~70px-equivalent outer ring, `RING_FRACTION`, tuned on hardware). `src/core/gesture-resolve.ts` takes that zone plus live nav state at drag end and returns exactly one `DragAction` tag; the handler only dispatches.
-
-Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → quick-settings**, with peek-follow (`nav.peek` tracks the finger) and commit at `COMMIT_PROGRESS` (40% of sheet height, min `ARC_MIN_TRAVEL` 80px); **left-arc swipe right → back**, dispatched through registerable `backCallback` (Calendar is the reference consumer; `BackChevron` is deleted — apps never render their own back chrome); **right-arc is unassigned**, falls through to inner behavior. **An assigned-arc origin owns its gesture**: sub-threshold travel is a snap-back no-op, it never falls through to the app gesture underneath — one gesture, one outcome. Unclaimed inner-disc vertical swipe (no `verticalSwipeCallback` registered) is a **strict no-op**, there is no grid fallback anymore. 3-finger tap and pinch-in are unchanged and still open the grid (pinch-in kept deliberately as a redundant entry point alongside the top-arc swipe).
-
-`backCallback` follows the **same registration/cleanup contract as `verticalSwipeCallback`** below — copy it exactly, including the guarded cleanup. Both are gated as `NAV-1`/`NAV-2` in `rules/superclock.json`.
-
-`settingsOpen` is a boolean **flag**, deliberately not a `NavMode`: mutually exclusive with `grid`, but it must never touch the `mode: 'transitioning'` contract above (opening/closing the sheet can't strand a swipe transition). Its brightness/night writes go through `src/core/local-overrides.ts`, which yields to the admin/scheduled base: an override wins only until the base it was set against changes, then it's silently spent. `src/core/hooks/useIdleReturn.ts` dismisses overlays after 20s idle and returns to the home app after 5min, **deferring only the home-return** (not overlay dismissal) while `isPlaylistDriving()`.
-
-**Vertical-swipe view cycling is the blessed multi-view pattern** (decided 2026-07-24): an app with more than one view registers the callback and cycles views on swipe up/down, sacrificing swipe-down-to-grid (the grid stays reachable via 3-finger tap / pinch-in; by convention swipe-down at the app's view 0 still falls through to `showGrid()`). HabitsApp is the reference implementation — copy its registration/cleanup shape exactly, **including the guarded cleanup**: capture the callback in a const and only null the store slot if `useNavigation.getState().verticalSwipeCallback === cb` (SwipeContainer's `popLayout` keeps the exiting app mounted after the next app registers, so an unconditional null in unmount cleanup stomps the incoming app's registration). The users are the apps declaring `multiView` in `src/shared/app-capabilities.ts` (a list held to the code by `app-capabilities.test.ts`, so it is not repeated here). Multi-view apps show Habits-style pager dots.
+**Gestures and the nav-store contract** — arc zones, the `mode: 'transitioning'` invariant and the guarded-cleanup shape live in `.claude/rules/gestures-and-navigation.md` (loaded automatically when you touch `src/core/**` or an app component). Gated as `NAV-1`/`NAV-2` in `rules/superclock.json` and by `src/core/navigation.test.ts`.
 
 ### Conventions
 
@@ -73,7 +59,6 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 - **App capabilities are declared, then checked.** `src/shared/app-capabilities.ts` says what each app does (`fetches`, `ticks`, `multiView`) and needs (`audio`, `mic`, `radar`); `app-capabilities.test.ts` holds every row to the code (fetch(), timers, swipe registration, an honest tell for fetching apps) and every hardware need to a device `FeatureFlag` in `capabilities.ts`, which now declares `audio`/`mic`/`radar` per device from fleet.md. The lists ride the capability wire as `AppDescriptor.capabilities`; gating UI on them (a "no mic on this device" tell, hiding an app a device cannot run) is a follow-up decision, not implied.
 - **Design rules are records, not prose.** `rules/superclock.json` holds every rule with its severity and its detector: `grep`/`heuristic`/`requires` rules run mechanically, `judgment`/`rendered` rules are printed as unchecked on every run, `delegated` rules name the gate that enforces them (the token gate, ESLint). Schema in `scripts/lib/rule-schema.mjs`; every mechanical rule proves itself on a bad/good fixture pair under `scripts/lib/__fixtures__/rules/`. Add a rule there, never as a new bullet here without a record.
 - **Active-aware effects:** gate `setInterval`/rAF on `props.isActive` — background apps must not tick (the grid overlay deactivates the app under it). Kiosks run for weeks; leaked timers and per-second re-renders are real heat on a Pi. Gated as `KIO-1`.
-- **Clock hands:** `useClockHands` is the single source of truth for hand angles; ESLint bans `setInterval` in `src/apps/clock/`.
 - **Honest offline:** apps that fetch must show an explicit offline tell (see WeatherApp/GithubApp) — never render fallback/mock data as if live.
 - **Secrets are server-side.** `VITE_`-prefixed env vars are inlined into the public bundle — never put a token in one; add a server proxy route instead (github/claude-usage pattern).
 - **Tailwind v4** via `@tailwindcss/vite`; kiosk theme tokens live in `src/index.css` under `@theme` (admin tokens separately in `src/admin/index.css`). No `tailwind.config.*`.
@@ -81,9 +66,9 @@ Arc map (app mode): **top-arc swipe down → grid**; **bottom-arc swipe up → q
 - **Static assets** are hashed PNG/SVG files in `public/` referenced by absolute path — the grid map in `AppGrid.tsx` and face previews in `face-registry.ts` point at them; don't rename without updating both.
 - **Touch/scroll is locked globally** in `src/index.css`; anything scrollable inside an app opts back in locally.
 
-### React ↔ LVGL face parity
+### Clock faces
 
-The `slow` device renders faces natively (LVGL, C — `slow-native/`, PRs #23/#24). Any face that exists on both sides (currently Minimalismo) has **two implementations kept in sync by hand**: if you change a shared face's geometry, palette, or night behavior in React, update `slow-native/src/clock_face.c` in the same PR or file a follow-up. Longer term the intent is a shared JSON face-spec (colors, hand geometry, tick layout — the same data `face.*` schemas and `handPoints` already encode) consumed by both renderers; until that exists, treat visual parity as part of face-change review.
+**Clock faces** — the hand-angle source of truth, the `--face-*` night contract, the one-accent rule and React ↔ LVGL parity live in `.claude/rules/clock-faces.md` (loaded automatically when you touch a face). Gated as `FCE-1`/`FCE-2`/`FCE-3` and `KIO-3` in `rules/superclock.json`.
 
 ## Traps already paid for
 
