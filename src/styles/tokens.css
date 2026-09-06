@@ -1,0 +1,158 @@
+/* SuperClock design tokens. Three tiers, imported by both entry stylesheets.
+ *
+ * Tier 1 below is raw steps with no meaning attached. Only tier 2 reads them.
+ * Tier 2 is the semantic layer and the ONLY place a light value and a dark
+ * value are ever written. Tier 3 lives in src/admin/index.css, where the
+ * shadcn vocabulary is aliased onto tier 2; the kiosk needs no tier 3,
+ * because its --face-* names are already semantic and already live here.
+ *
+ * Two value formats coexist on purpose and temporarily. Face roles carry hex.
+ * Admin-facing roles carry bare HSL triplets, because roughly one hundred
+ * admin consumers read hsl(var(--x)) and migrating them is sub-project 2. A
+ * triplet propagates unchanged through a var() chain, so the cost is this
+ * comment. Spec: docs/superpowers/specs/2026-09-06-token-layer-design.md
+ */
+
+/* ---- Tier 1: ramps. Nothing outside tier 2 may read these. ---- */
+:root {
+  /* Warm neutral, the faces' ramp (was inline in src/index.css). */
+  --stone-0: #ffffff;
+  --stone-50: #f1f1ef;
+  --stone-100: #e4e4e1;
+  --stone-200: #d9d9d4;
+  --stone-300: #a1a1aa;
+  --stone-400: #8a8a8a;
+  --stone-600: #52525b;
+  --stone-700: #444444;
+  --stone-800: #2c2f35;
+  --stone-850: #15171a;
+  --stone-900: #111316;
+  --stone-1000: #000000;
+
+  /* Dusk blues, face-specific, on no neutral ramp. */
+  --dusk-light: #8fa9c4;
+  --dusk-dark: #2b3d52;
+
+  /* Pure neutral, the admin's ramp. HSL triplets, see the header. */
+  --gray-4: 0 0% 4%;
+  --gray-7: 0 0% 7%;
+  --gray-12: 0 0% 12%;
+  --gray-14: 0 0% 14%;
+  --gray-16: 0 0% 16%;
+  --gray-60: 0 0% 60%;
+  --gray-84: 0 0% 84%;
+  --gray-88: 0 0% 88%;
+  --gray-92: 0 0% 92%;
+  --gray-96: 0 0% 96%;
+  --gray-100: 0 0% 100%;
+
+  /* Hues. Three accent oranges coexist; the spec's open question 1 decides
+     which survives, and this file must not decide it by picking one. */
+  --orange-kiosk: #ff8826;
+  --orange-admin: 20 96% 60%;
+  --red-50: 0 70% 50%;
+  --green-58: 142 69% 58%;
+  --amber-56: 43 96% 56%;
+  --amber-65: 46 97% 65%;
+
+  /* Chrome scrims, the kiosk's white-alpha fills. */
+  --scrim-15: 255 255 255 / 0.15;
+  --scrim-25: 255 255 255 / 0.25;
+  --scrim-80: 255 255 255 / 0.8;
+  --scrim-50-ink: 255 255 255 / 0.5;
+  --scrim-70-ink: 255 255 255 / 0.7;
+  --sheet-chrome: #171717;
+}
+
+/* ---- Tier 2: semantic roles. Both modes, and only here. ---- */
+:root, html.light {
+  /* Faces. Values identical to the pre-2026-09-06 src/index.css. */
+  --face-bg: var(--stone-0);
+  --face-ink: var(--stone-1000);
+  --face-ink-muted: var(--stone-600);
+  --face-tick: var(--stone-700);
+  --face-plate: var(--stone-50);
+  --face-dusk: var(--dusk-light);
+  --face-spent: var(--stone-100);
+  --face-ghost: var(--stone-200);
+
+  /* Names here must not collide with the admin's own token names: inside
+     .admin-root that block wins by specificity, so a tier 3 alias for the
+     admin's --accent slot would resolve to its leaving value instead of
+     this role. Hence --brand and the --status-* family rather than
+     --accent, --success and --warning.
+     Chrome and admin surfaces. Light values are ramp-derived defaults, not
+     designed ones; sub-project 2 tunes them against a real screen. Nothing
+     consumes them yet, so they move no pixel today. */
+  --surface-ground: var(--gray-100);
+  --surface-card: var(--gray-96);
+  --surface-sheet: var(--gray-92);
+  --surface-popover: var(--gray-96);
+  --ink: var(--gray-4);
+  --ink-muted: var(--gray-60);
+  --brand-ink: var(--gray-100);
+  --brand: var(--orange-admin);
+  --status-danger: var(--red-50);
+  --status-ok: var(--green-58);
+  --status-warn: var(--amber-56);
+  --status-warn-ink: var(--amber-65);
+  --line: var(--gray-84);
+  --focus: var(--orange-admin);
+  --fill-subtle: var(--scrim-15);
+  --fill: var(--scrim-25);
+  --fill-strong: var(--scrim-80);
+}
+
+html.dark {
+  --face-bg: var(--stone-1000);
+  --face-ink: var(--stone-0);
+  --face-ink-muted: var(--stone-300);
+  --face-tick: var(--stone-400);
+  --face-plate: var(--stone-850);
+  --face-dusk: var(--dusk-dark);
+  --face-spent: var(--stone-900);
+  --face-ghost: var(--stone-800);
+
+  /* Identical to today's src/admin/index.css values. */
+  --surface-ground: var(--gray-4);
+  --surface-card: var(--gray-7);
+  --surface-sheet: var(--gray-12);
+  --surface-popover: var(--gray-7);
+  --ink: var(--gray-96);
+  --ink-muted: var(--gray-60);
+  --brand-ink: var(--gray-7);
+  --brand: var(--orange-admin);
+  --status-danger: var(--red-50);
+  --status-ok: var(--green-58);
+  --status-warn: var(--amber-56);
+  --status-warn-ink: var(--amber-65);
+  --line: var(--gray-16);
+  --focus: var(--orange-admin);
+  --fill-subtle: var(--scrim-15);
+  --fill: var(--scrim-25);
+  --fill-strong: var(--scrim-80);
+}
+
+/* The admin has no scheduler, so its mode is the viewer's phone preference.
+ * The kiosk always carries an explicit class from apply-settings.ts, so this
+ * block never applies there. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --face-bg: var(--stone-1000);
+    --face-ink: var(--stone-0);
+    --face-ink-muted: var(--stone-300);
+    --face-tick: var(--stone-400);
+    --face-plate: var(--stone-850);
+    --face-dusk: var(--dusk-dark);
+    --face-spent: var(--stone-900);
+    --face-ghost: var(--stone-800);
+    --surface-ground: var(--gray-4);
+    --surface-card: var(--gray-7);
+    --surface-sheet: var(--gray-12);
+    --surface-popover: var(--gray-7);
+    --ink: var(--gray-96);
+    --ink-muted: var(--gray-60);
+    --brand-ink: var(--gray-7);
+    --line: var(--gray-16);
+  }
+}
