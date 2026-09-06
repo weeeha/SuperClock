@@ -1,9 +1,9 @@
 // Scaffold a kiosk app: npm run new:app -- <kebab-id>
 //
 // Emits every registry touchpoint the coherence suite pins (component, index
-// registration, side-import, ALL_KIOSK_APP_IDS, app.<id> schema + registry
-// entries) plus a red-by-construction todo test, so `npm test` is the
-// definition of done. All edits are computed before anything is written — a
+// registration, side-import, ALL_KIOSK_APP_IDS, an APP_CAPABILITIES row,
+// app.<id> schema + registry entries) plus a red-by-construction todo test, so
+// `npm test` is the definition of done. All edits are computed before anything is written — a
 // duplicate id or a drifted anchor aborts with the registry files untouched.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -19,6 +19,7 @@ import {
   todoTestTemplate,
   insertAppSideImport,
   insertKioskAppId,
+  insertAppCapabilities,
   insertSchemaRegistryImport,
   insertSchemaRegistryEntry,
 } from './lib/scaffold-templates.mjs';
@@ -51,6 +52,7 @@ try {
   };
   edit('src/apps/index.ts', (s) => insertAppSideImport(s, id));
   edit('src/shared/capabilities.ts', (s) => insertKioskAppId(s, id));
+  edit('src/shared/app-capabilities.ts', (s) => insertAppCapabilities(s, id));
   edit('src/shared/schema-registry.ts', (s) =>
     insertSchemaRegistryEntry(insertSchemaRegistryImport(s, 'app', id), 'app', id),
   );
@@ -65,8 +67,10 @@ try {
   1. Implement src/apps/${id}/${pascal}App.tsx and remove its SCAFFOLD-TODO marker.
   2. Fill in src/shared/schemas/app.${id}.ts (every field needs .default()).
   3. Set real metadata (icon/description/category) in src/apps/${id}/index.ts.
-  4. Delete src/apps/${id}/${id}.todo.test.ts once implemented.
-  5. npm test && npm run check:tokens — both must be green before "done".`);
+  4. Declare its capabilities in src/shared/app-capabilities.ts (fetches / ticks /
+     multiView, audio / mic / radar) — app-capabilities.test.ts holds the row to the code.
+  5. Delete src/apps/${id}/${id}.todo.test.ts once implemented.
+  6. npm test && npm run check:tokens — both must be green before "done".`);
 } catch (e) {
   console.error(`new:app — ${e.message}`);
   exit(1);

@@ -2,7 +2,9 @@ import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
 
 export const flipFaceSchema = z.object({
-  accent: z.string().default('#f97316'),
+  // Default = the white digits the face has always drawn, so an unconfigured
+  // instance looks exactly as before the schema was wired.
+  accent: z.string().default('#ffffff'),
   hour24: z.boolean().default(true),
 });
 

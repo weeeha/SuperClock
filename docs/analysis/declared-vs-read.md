@@ -6,22 +6,22 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 ## Summary
 
-- Apps: 14 registered; 13 with a schema; config read by 12 (safeParse 8, parse 0, cast 1, raw 3); never read by 2.
-- Faces: 13 registered; 12 with a schema; faceConfig read by 5 (safeParse 5, parse 0, cast 0, raw 0); never read by 8; night-exempt 7.
-- Schema fields: 66 declared (43 app, 23 face); 23 unread (13 app, 10 face).
+- Apps: 14 registered; 13 with a schema; config read by 14 (safeParse 13, parse 0, cast 0, raw 1); never read by 0.
+- Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
+- Schema fields: 66 declared (43 app, 23 face); 6 unread (6 app, 0 face).
 
 ## Apps
 
 | App | Schema | Parse | Declared | Unread |
 |---|---|---|---|---|
-| agents | app.agents | raw | 2 | none |
-| breathing | app.breathing | cast | 1 | none |
+| agents | app.agents | safeParse | 2 | none |
+| breathing | app.breathing | safeParse | 1 | none |
 | calendar | app.calendar | safeParse | 4 | none |
-| claude-usage | app.claude-usage | none | 3 | scope, refreshSeconds, moodEnabled |
+| claude-usage | app.claude-usage | safeParse | 3 | none |
 | clock | none | raw | 0 | none |
-| fireplace | app.fireplace | none | 2 | intensity, hue |
+| fireplace | app.fireplace | safeParse | 2 | none |
 | fitness | app.fitness | safeParse | 7 | none |
-| github | app.github | raw | 3 | colorScheme, refreshMinutes |
+| github | app.github | safeParse | 3 | none |
 | habits | app.habits | safeParse | 3 | weekStart, theme |
 | photo-frame | app.photo-frame | safeParse | 4 | source, sourcePath |
 | quote | app.quote | safeParse | 4 | sourceUrl |
@@ -35,14 +35,14 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 |---|---|---|---|---|---|---|---|
 | analog | AnalogClock | safeParse | 3 | none | none | 0 | yes |
 | aperture | ApertureClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-plate | 0 | no |
-| complications-dark | ComplicationsDark | none | 1 | accent | none | 4 declared, rendered | yes |
-| complications-light | ComplicationsLight | none | 1 | accent | --face-bg --face-tick | 0 | no |
+| complications-dark | ComplicationsDark | safeParse | 1 | none | none | 4 declared, rendered | yes |
+| complications-light | ComplicationsLight | safeParse | 1 | none | --face-bg --face-tick | 0 | no |
 | daylight | DaylightClock | safeParse | 3 | none | --face-bg --face-dusk --face-ink --face-ink-muted --face-tick | 0 | no |
 | depletion | DepletionClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-spent --face-tick | 0 | no |
-| flip | FlipClock | none | 2 | accent, hour24 | none | 0 | yes |
-| floral | FloralClock | none | 1 | accent | none | 0 | yes |
+| flip | FlipClock | safeParse | 2 | none | none | 0 | yes |
+| floral | FloralClock | safeParse | 1 | none | none | 0 | yes |
 | minimalismo | MinimalismoClock | none | 0 | none | --face-bg --face-ink | 0 | no |
-| productivity | ProductivityClock | none | 2 | accent, showSeconds | none | 0 | yes |
-| square | SquareClock | none | 1 | accent | none | 0 | yes |
+| productivity | ProductivityClock | safeParse | 2 | none | none | 0 | yes |
+| square | SquareClock | safeParse | 1 | none | none | 0 | yes |
 | strokes | StrokesClock | safeParse | 1 | none | --face-bg --face-ghost --face-plate | 0 | no |
-| world | WorldClock | none | 2 | accent, primaryTimezone | none | 0 | yes |
+| world | WorldClock | safeParse | 2 | none | none | 0 | yes |

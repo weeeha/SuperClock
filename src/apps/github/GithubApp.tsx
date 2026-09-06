@@ -1,15 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { githubAppSchema } from '../../shared/schemas/app.github';
+import { cacheKeyFor, contributionsUrl, paletteFor, type Palette } from './github-config';
 
-/* ── GitHub contribution levels & colors ─────────────────────── */
-const COLORS = [
-  '#161b22',   // 0 — no contributions
-  '#0e4429',   // 1 — low
-  '#006d32',   // 2 — medium
-  '#26a641',   // 3 — high
-  '#39d353',   // 4 — max
-] as const;
+/* ── GitHub contribution levels ──────────────────────────────── */
+// Heatmap colours come from github-config.ts (paletteFor) per the app.github
+// colorScheme option; the sub-views receive them as `colors`.
 
 type Level = 0 | 1 | 2 | 3 | 4;
 
@@ -47,8 +44,8 @@ function countToLevel(count: number, max: number): Level {
 
 // Data comes via the server proxy (/api/github/contributions) — the PAT
 // lives server-side only and never reaches this bundle.
-async function fetchContributions(): Promise<ContributionData> {
-  const res = await fetch('/api/github/contributions');
+async function fetchContributions(username: string): Promise<ContributionData> {
+  const res = await fetch(contributionsUrl(username));
   const json = (await res.json()) as {
     ok: boolean;
     username: string;
@@ -150,12 +147,13 @@ function computeTodayStats(days: DayCount[]): TodayStats {
    On a cold start with no cache, the component shows an honest empty
    state. Same "server is truth, localStorage is the resilience layer"
    pattern as src/shared/local-config.ts. */
-const CACHE_KEY = 'superclock:github:contrib';
+// The key is per configured username (github-config.ts cacheKeyFor), so one
+// user's last-good graph never paints for another.
 
-function loadCache(): ContributionData | null {
+function loadCache(key: string): ContributionData | null {
   if (typeof localStorage === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ContributionData;
     // Minimal shape guard — a corrupt/pre-days-format entry must not crash
@@ -175,10 +173,10 @@ function loadCache(): ContributionData | null {
   }
 }
 
-function saveCache(data: ContributionData): void {
+function saveCache(key: string, data: ContributionData): void {
   if (typeof localStorage === 'undefined') return;
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch {
     // ignore — quota full, private mode, etc.
   }
@@ -198,7 +196,7 @@ function relativeTime(fromMs: number): string {
    configured, or GitHub unreachable on a cold start). A dim, contribution-
    shaped ring makes clear the face is alive but has no data to show — never
    fabricated numbers. */
-function EmptyState({ error }: { error: string }) {
+function EmptyState({ error, colors }: { error: string; colors: Palette }) {
   const cx = 500;
   const cy = 500;
   const innerR = 260;
@@ -217,7 +215,7 @@ function EmptyState({ error }: { error: string }) {
           cx={cx + r * Math.cos(angle)}
           cy={cy + r * Math.sin(angle)}
           r={dotR}
-          fill={COLORS[0]}
+          fill={colors[0]}
           opacity={0.4}
         />,
       );
@@ -263,7 +261,7 @@ function EmptyState({ error }: { error: string }) {
 }
 
 /* ── View 0: Today & streak (resting view) ───────────────────── */
-function TodayView({ data }: { data: ContributionData }) {
+function TodayView({ data, colors }: { data: ContributionData; colors: Palette }) {
   const cx = 500;
   const { todayCount, currentStreak, longestStreak, last7 } = computeTodayStats(data.days);
 
@@ -306,7 +304,7 @@ function TodayView({ data }: { data: ContributionData }) {
           cx={rowX0 + i * DOT_SPACING}
           cy={608}
           r={DOT_R}
-          fill={COLORS[countToLevel(day.count, data.maxCount)]}
+          fill={colors[countToLevel(day.count, data.maxCount)]}
           stroke={i === last7.length - 1 ? '#8b949e' : 'none'}
           strokeWidth={i === last7.length - 1 ? 2 : 0}
           opacity={day.count === 0 ? 0.55 : 1}
@@ -357,7 +355,15 @@ function TodayView({ data }: { data: ContributionData }) {
 }
 
 /* ── View 1: year ring (unchanged layout) ────────────────────── */
-function RingView({ data, stats }: { data: ContributionData; stats: Stats }) {
+function RingView({
+  data,
+  stats,
+  colors,
+}: {
+  data: ContributionData;
+  stats: Stats;
+  colors: Palette;
+}) {
   const cx = 500;
   const cy = 500;
   const innerR = 260;
@@ -386,7 +392,7 @@ function RingView({ data, stats }: { data: ContributionData; stats: Stats }) {
               cx={x}
               cy={y}
               r={dotR}
-              fill={COLORS[level]}
+              fill={colors[level]}
               opacity={level === 0 ? 0.5 : 1}
             />
           );
@@ -499,10 +505,43 @@ function RingView({ data, stats }: { data: ContributionData; stats: Stats }) {
 }
 
 /* ── Main Component ──────────────────────────────────────────── */
-export default function GithubApp({ isActive }: AppProps) {
-  // Seed from the last-good cache so a prior real graph paints instantly on
-  // boot; the network fetch below refreshes it. Never fabricated data.
-  const [data, setData] = useState<ContributionData | null>(loadCache);
+export default function GithubApp({ isActive, config }: AppProps) {
+  // Calendar pattern: the admin's config validated against app.github, defaults otherwise.
+  const parsed = githubAppSchema.safeParse(config ?? {});
+  const { username, colorScheme, refreshMinutes } = parsed.success
+    ? parsed.data
+    : githubAppSchema.parse({});
+  // Keyed on the per-user cache key: a username change remounts with that
+  // user's own last-good cache instead of briefly painting another user's graph.
+  const cacheKey = cacheKeyFor(username);
+  return (
+    <GithubGraph
+      key={cacheKey}
+      isActive={isActive}
+      username={username}
+      cacheKey={cacheKey}
+      colors={paletteFor(colorScheme)}
+      refreshMinutes={refreshMinutes}
+    />
+  );
+}
+
+function GithubGraph({
+  isActive,
+  username,
+  cacheKey,
+  colors,
+  refreshMinutes,
+}: {
+  isActive: boolean;
+  username: string;
+  cacheKey: string;
+  colors: Palette;
+  refreshMinutes: number;
+}) {
+  // Seed from this user's last-good cache so a prior real graph paints instantly
+  // on boot; the network fetch below refreshes it. Never fabricated data.
+  const [data, setData] = useState<ContributionData | null>(() => loadCache(cacheKey));
   // Error carries a timestamp so every failed refresh is a NEW object —
   // a repeated identical message string would bail out of re-render and
   // freeze the "cached <when>" pill.
@@ -513,11 +552,11 @@ export default function GithubApp({ isActive }: AppProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchContributions()
+    fetchContributions(username)
       .then((d) => {
         if (cancelled) return;
         setData(d);
-        saveCache(d);
+        saveCache(cacheKey, d);
         setError(null);
       })
       .catch((err: unknown) => {
@@ -530,25 +569,26 @@ export default function GithubApp({ isActive }: AppProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [username, cacheKey]);
 
-  // Refresh every 30 minutes when active. Failures must SET the error state:
-  // swallowing them here meant weeks-stale data with no offline tell.
+  // Refresh every `refreshMinutes` (app.github, default 30) when active.
+  // Failures must SET the error state: swallowing them here meant weeks-stale
+  // data with no offline tell.
   useEffect(() => {
     if (!isActive) return;
     const id = setInterval(() => {
-      fetchContributions()
+      fetchContributions(username)
         .then((d) => {
           setData(d);
-          saveCache(d);
+          saveCache(cacheKey, d);
           setError(null);
         })
         .catch((err: unknown) => {
           setError({ message: err instanceof Error ? err.message : String(err), at: Date.now() });
         });
-    }, 30 * 60 * 1000);
+    }, refreshMinutes * 60 * 1000);
     return () => clearInterval(id);
-  }, [isActive]);
+  }, [isActive, username, cacheKey, refreshMinutes]);
 
   // View switching consumes vertical swipes via the shell's callback slot —
   // same mechanism as HabitsApp/ClockApp (touch-event stopPropagation never
@@ -580,7 +620,7 @@ export default function GithubApp({ isActive }: AppProps) {
   // No data + a settled error → honest empty state (no token / cold start
   // offline). We never render fabricated contributions.
   if (!data || !stats) {
-    if (error) return <EmptyState error={error.message} />;
+    if (error) return <EmptyState error={error.message} colors={colors} />;
     // Still loading the first fetch.
     return <div className="h-full w-full bg-black" />;
   }
@@ -592,8 +632,8 @@ export default function GithubApp({ isActive }: AppProps) {
       {/* Cached data is DIMMED + desaturated — never styled as live. */}
       <div className={`flex h-full w-full items-center justify-center ${offline ? 'opacity-40 saturate-50' : ''}`}>
         {view === 'today'
-          ? <TodayView data={data} />
-          : <RingView data={data} stats={stats} />
+          ? <TodayView data={data} colors={colors} />
+          : <RingView data={data} stats={stats} colors={colors} />
         }
       </div>
 

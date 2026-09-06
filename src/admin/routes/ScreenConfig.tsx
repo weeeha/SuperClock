@@ -209,7 +209,7 @@ function ScreenConfigBody({ instance }: { instance: ScreenInstance }) {
             disabled={locked}
             onChange={(e) => setName(e.target.value)}
             onBlur={submitName}
-            className="w-full bg-transparent py-0.5 text-sm focus:outline-none disabled:opacity-50"
+            className="w-full bg-transparent py-0.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] disabled:opacity-50"
           />
           <PushOutcomeChip outcome={nameOutcome} />
         </div>

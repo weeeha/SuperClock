@@ -1,8 +1,12 @@
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { floralFaceSchema } from '../../shared/schemas/face.floral';
 
-export default function FloralClock({ isActive }: AppProps) {
+export default function FloralClock({ isActive, faceConfig }: FaceProps) {
   const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
+  // Face options validated against face.floral, defaults otherwise (AnalogClock pattern).
+  const parsed = floralFaceSchema.safeParse(faceConfig ?? {});
+  const { accent } = parsed.success ? parsed.data : floralFaceSchema.parse({});
 
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -79,14 +83,14 @@ export default function FloralClock({ isActive }: AppProps) {
         {/* Second hand */}
         <line
           x1="500" y1="565" x2="500" y2="145"
-          stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
+          stroke={accent} strokeWidth="5" strokeLinecap="round"
           style={{
             transform: `rotate(${secondDeg}deg)`,
             transformOrigin: '500px 500px',
             transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
           }}
         />
-        <circle cx="500" cy="500" r="14" fill="#fbbf24" />
+        <circle cx="500" cy="500" r="14" fill={accent} />
         <circle cx="500" cy="500" r="7" fill="white" />
       </svg>
     </div>

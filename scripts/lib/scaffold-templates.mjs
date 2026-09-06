@@ -35,15 +35,22 @@ function kebabToTitle(id) {
 
 export function appComponentTemplate(id) {
   const pascal = kebabToPascal(id);
+  const camel = kebabToCamel(id);
   const title = kebabToTitle(id);
   return `import type { AppProps } from '../../core/types';
+import { ${camel}AppSchema } from '../../shared/schemas/app.${id}';
 
 // SCAFFOLD-TODO: implement ${pascal}App. House rules that apply from day one:
 // gate any setInterval/rAF on \`isActive\` (background apps must not tick),
 // and if this app fetches, design the honest offline tell before the happy
-// path (WeatherApp is the reference).
-export default function ${pascal}App({ isActive }: AppProps) {
+// path (WeatherApp is the reference). Config arrives validated below (the
+// Calendar pattern; the schema-liveness gate holds every app to it): read
+// cfg.<field>, never props.config directly.
+export default function ${pascal}App({ isActive, config }: AppProps) {
+  const parsed = ${camel}AppSchema.safeParse(config ?? {});
+  const cfg = parsed.success ? parsed.data : ${camel}AppSchema.parse({});
   void isActive;
+  void cfg; // SCAFFOLD-TODO: consume the config
   return (
     <div className="flex h-full w-full items-center justify-center">
       <span className="font-display text-2xl opacity-40">${title} scaffold</span>
@@ -93,16 +100,23 @@ export type ${pascal}AppConfig = z.infer<typeof ${camel}AppSchema>;
 
 export function faceComponentTemplate(id) {
   const pascal = kebabToPascal(id);
+  const camel = kebabToCamel(id);
   const title = kebabToTitle(id);
-  return `import type { FaceProps } from './face-components';
+  return `import { ${camel}FaceSchema } from '../../shared/schemas/face.${id}';
+import type { FaceProps } from './face-components';
 
-// SCAFFOLD-TODO: implement the ${title} face. Born under two contracts:
+// SCAFFOLD-TODO: implement the ${title} face. Born under three contracts:
 // consume --face-* tokens so the night flip reaches it (src/index.css — this
-// scaffold already does, keep it that way), and the one-accent-quantity rule
-// (at most one saturated accent quantity on the dial). Gate ticking on
-// \`isActive\`; hand angles come from useClockHands, never setInterval.
-export default function ${pascal}Clock({ isActive }: FaceProps) {
+// scaffold already does, keep it that way); read face options through the
+// schema (below, the AnalogClock pattern — the schema-liveness gate holds
+// every face to it); and the one-accent-quantity rule (at most one saturated
+// accent quantity on the dial). Gate ticking on \`isActive\`; hand angles come
+// from useClockHands, never setInterval.
+export default function ${pascal}Clock({ isActive, faceConfig }: FaceProps) {
+  const parsed = ${camel}FaceSchema.safeParse(faceConfig ?? {});
+  const options = parsed.success ? parsed.data : ${camel}FaceSchema.parse({});
   void isActive;
+  void options; // SCAFFOLD-TODO: consume the face options
   return (
     <div
       className="flex h-full w-full items-center justify-center"
@@ -181,6 +195,23 @@ export function insertKioskAppId(source, id) {
   const region = source.slice(start, end);
   assertAbsent(region, `'${id}'`, 'kiosk app id');
   return `${source.slice(0, end)}  '${id}',\n${source.slice(end)}`;
+}
+
+/** src/shared/app-capabilities.ts — an empty row (with a SCAFFOLD-TODO) that
+ *  app-capabilities.test.ts then holds to the code as the app is implemented:
+ *  add fetch() and the row must say `fetches`, and so on. Keys are quoted
+ *  (valid for every id); the duplicate check accepts the bare form too. */
+export function insertAppCapabilities(source, id) {
+  const anchor = 'export const APP_CAPABILITIES';
+  const start = findAnchor(source, anchor, 'app-capabilities.ts');
+  const end = source.indexOf('};', start);
+  if (end === -1) throw new Error('anchor not found: APP_CAPABILITIES closing };');
+  const region = source.slice(start, end);
+  if (new RegExp(`^\\s*(?:'${id}'|${id}):`, 'm').test(region)) {
+    throw new Error(`app capabilities row already present: ${id}`);
+  }
+  const row = `  '${id}': [], // SCAFFOLD-TODO: declare what it does (fetches/ticks/multiView) and needs (audio/mic/radar)\n`;
+  return `${source.slice(0, end)}${row}${source.slice(end)}`;
 }
 
 const KIND_SUFFIX = { app: 'App', face: 'Face' };

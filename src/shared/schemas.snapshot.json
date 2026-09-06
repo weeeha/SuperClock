@@ -68,7 +68,7 @@
           "type": "boolean"
         },
         "refreshSeconds": {
-          "default": 60,
+          "default": 30,
           "maximum": 600,
           "minimum": 30,
           "type": "integer"
@@ -674,7 +674,7 @@
     "face.flip": {
       "properties": {
         "accent": {
-          "default": "#f97316",
+          "default": "#ffffff",
           "type": "string"
         },
         "hour24": {
@@ -687,7 +687,7 @@
     "face.floral": {
       "properties": {
         "accent": {
-          "default": "#f59e0b",
+          "default": "#fbbf24",
           "type": "string"
         }
       },
@@ -696,7 +696,7 @@
     "face.productivity": {
       "properties": {
         "accent": {
-          "default": "#ffcc00",
+          "default": "#ff8826",
           "type": "string"
         },
         "showSeconds": {
@@ -709,7 +709,7 @@
     "face.square": {
       "properties": {
         "accent": {
-          "default": "#22c55e",
+          "default": "#e94560",
           "type": "string"
         }
       },
@@ -731,7 +731,7 @@
     "face.world": {
       "properties": {
         "accent": {
-          "default": "#3b82f6",
+          "default": "#ee0000",
           "type": "string"
         },
         "primaryTimezone": {

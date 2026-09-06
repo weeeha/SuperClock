@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
+import { agentsAppSchema } from '../../shared/schemas/app.agents';
 import { mockAgentProvider, type Agent } from './provider';
 import { openAgent, backToList, onVerticalSwipe, type AgentsView } from './view-state';
 import { MIC_STATES, nextMicState, type MicState } from './mic-state';
@@ -33,8 +34,13 @@ export default function AgentsApp({ isActive, config }: AppProps) {
       setVerticalSwipeCallback(null);
       return;
     }
-    setVerticalSwipeCallback(() => setView((v) => onVerticalSwipe(v)));
-    return () => setVerticalSwipeCallback(null);
+    const cb = () => setView((v) => onVerticalSwipe(v));
+    setVerticalSwipeCallback(cb);
+    return () => {
+      // popLayout keeps the exiting app mounted after the next app registers —
+      // only clear the slot if it's still ours (HabitsApp's guarded cleanup).
+      if (useNavigation.getState().verticalSwipeCallback === cb) setVerticalSwipeCallback(null);
+    };
   }, [isActive, view, setVerticalSwipeCallback]);
 
   // Mock mic-state machine: cycles every 4s so all four ring states are
@@ -47,12 +53,12 @@ export default function AgentsApp({ isActive, config }: AppProps) {
   }, [isActive, view.kind]);
 
   const visible = useMemo(() => {
-    const rawEnabled = config?.enabledAgents;
-    const enabledAgents = Array.isArray(rawEnabled)
-      ? rawEnabled.filter((x): x is string => typeof x === 'string')
-      : [];
-    const defaultAgent =
-      typeof config?.defaultAgent === 'string' ? config.defaultAgent : 'main';
+    // Calendar pattern: the admin's config validated against app.agents, or
+    // the schema defaults — never raw field reads (decision D4).
+    const parsed = agentsAppSchema.safeParse(config ?? {});
+    const { enabledAgents, defaultAgent } = parsed.success
+      ? parsed.data
+      : agentsAppSchema.parse({});
     const filtered =
       enabledAgents.length > 0
         ? agents.filter((a) => enabledAgents.includes(a.id))

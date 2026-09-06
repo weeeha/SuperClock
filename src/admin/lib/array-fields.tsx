@@ -259,7 +259,7 @@ function StringListRow({
         onChange={(e) => onEdit(row.id, e.target.value)}
         placeholder="Empty — dropped on save"
         aria-label={`Entry ${index + 1}`}
-        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
+        className="min-w-0 flex-1 bg-transparent text-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] placeholder:opacity-40"
       />
       {renamed && (
         <TriangleAlert

@@ -1,9 +1,13 @@
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { squareFaceSchema } from '../../shared/schemas/face.square';
 
 /** Modern square clock face with rounded corners and minimal design */
-export default function SquareClock({ isActive }: AppProps) {
+export default function SquareClock({ isActive, faceConfig }: FaceProps) {
   const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
+  // Face options validated against face.square, defaults otherwise (AnalogClock pattern).
+  const parsed = squareFaceSchema.safeParse(faceConfig ?? {});
+  const { accent } = parsed.success ? parsed.data : squareFaceSchema.parse({});
 
   // Hour numbers at cardinal positions
   const hourLabels = [
@@ -117,7 +121,7 @@ export default function SquareClock({ isActive }: AppProps) {
           y1="570"
           x2="500"
           y2="160"
-          stroke="#e94560"
+          stroke={accent}
           strokeWidth="4"
           strokeLinecap="round"
           style={{
@@ -128,7 +132,7 @@ export default function SquareClock({ isActive }: AppProps) {
         />
 
         {/* Center dot */}
-        <circle cx="500" cy="500" r="10" fill="#e94560" />
+        <circle cx="500" cy="500" r="10" fill={accent} />
         <circle cx="500" cy="500" r="4" fill="#000000" />
       </svg>
     </div>

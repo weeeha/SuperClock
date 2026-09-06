@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
+import { flipFaceSchema } from '../../shared/schemas/face.flip';
 
 interface PanelProps {
   value: string;
+  /** Digit colour — the face's `accent` option. */
+  color: string;
 }
 
-function FlipPanel({ value }: PanelProps) {
+function FlipPanel({ value, color }: PanelProps) {
   const [current, setCurrent] = useState(value);
   const [prev, setPrev] = useState(value);
   const [flipping, setFlipping] = useState(false);
@@ -34,7 +37,7 @@ function FlipPanel({ value }: PanelProps) {
     justifyContent: 'center',
     fontSize: '27vmin',
     fontWeight: 900,
-    color: 'white',
+    color,
     fontFamily: "'system-ui', '-apple-system', 'Helvetica Neue', sans-serif",
     fontVariantNumeric: 'tabular-nums',
     lineHeight: 1,
@@ -120,11 +123,17 @@ function FlipPanel({ value }: PanelProps) {
   );
 }
 
-export default function FlipClock({ isActive }: AppProps) {
+export default function FlipClock({ isActive, faceConfig }: FaceProps) {
   const { time } = useClockHands(isActive);
+  // Face options validated against face.flip, defaults otherwise (AnalogClock pattern).
+  const parsed = flipFaceSchema.safeParse(faceConfig ?? {});
+  const { accent, hour24 } = parsed.success ? parsed.data : flipFaceSchema.parse({});
 
-  const hh = String(time.getHours()).padStart(2, '0');
+  const hours = time.getHours();
+  // 12-hour mode keeps two digits so the panel width never jumps (07, not 7).
+  const hh = String(hour24 ? hours : ((hours + 11) % 12) + 1).padStart(2, '0');
   const mm = String(time.getMinutes()).padStart(2, '0');
+  const meridiem = hours < 12 ? 'AM' : 'PM';
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
@@ -135,8 +144,23 @@ export default function FlipClock({ isActive }: AppProps) {
         }
       `}</style>
       <div style={{ display: 'flex', gap: '2.5vmin', alignItems: 'center' }}>
-        <FlipPanel value={hh} />
-        <FlipPanel value={mm} />
+        <FlipPanel value={hh} color={accent} />
+        <FlipPanel value={mm} color={accent} />
+        {!hour24 && (
+          <div
+            style={{
+              alignSelf: 'flex-end',
+              paddingBottom: '2vmin',
+              fontSize: '6vmin',
+              fontWeight: 900,
+              color: accent,
+              opacity: 0.7,
+              fontFamily: "'system-ui', '-apple-system', 'Helvetica Neue', sans-serif",
+            }}
+          >
+            {meridiem}
+          </div>
+        )}
       </div>
     </div>
   );

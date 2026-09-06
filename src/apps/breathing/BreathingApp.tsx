@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { AppProps } from '../../core/types';
 import { setRadarMode, useRadar } from '../../core/radar';
-import type { BreathingAppConfig } from '../../shared/schemas/app.breathing';
+import { breathingAppSchema } from '../../shared/schemas/app.breathing';
 
 // How often the active app renews its breathing-mode lease. The server
 // reverts the sensor to presence mode 90s after the last renewal, so a
@@ -18,7 +18,10 @@ function formatDistance(mm: number | null): string | null {
  *  visualized as a ring that inflates and deflates at the measured pace. */
 export default function BreathingApp({ isActive, config }: AppProps) {
   const radar = useRadar();
-  const { showDistance = true } = (config ?? {}) as Partial<BreathingAppConfig>;
+  // Calendar pattern: validate the admin's config against the schema, fall
+  // back to the schema defaults (never a raw cast — decision D4).
+  const parsed = breathingAppSchema.safeParse(config ?? {});
+  const { showDistance } = parsed.success ? parsed.data : breathingAppSchema.parse({});
 
   // Lease breathing mode while this screen is the active app.
   useEffect(() => {

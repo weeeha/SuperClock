@@ -4,6 +4,7 @@ import { useNavigation } from '../../core/navigation';
 import { MOOD_GROUPS, SPRITES, type Sprite } from './sprites';
 import { useClaudeUsage } from './useClaudeUsage';
 import { useMood } from './useMood';
+import { claudeUsageAppSchema } from '../../shared/schemas/app.claude-usage';
 import ClawdSprite from './ClawdSprite';
 import UsageDetailView from './UsageDetailView';
 
@@ -66,8 +67,15 @@ function pickSpriteForMood(moodIdx: number, rotation: number): Sprite {
   return SPRITES[id] ?? Object.values(SPRITES)[0];
 }
 
-export default function ClaudeUsageApp({ isActive }: AppProps) {
-  const { data, loading } = useClaudeUsage(isActive);
+export default function ClaudeUsageApp({ isActive, config }: AppProps) {
+  // Calendar pattern: the admin's config validated against app.claude-usage,
+  // defaults otherwise. `scope` is declared but not honoured yet (the daemon
+  // reports one rollup); the admin renders it disabled with that note.
+  const parsed = claudeUsageAppSchema.safeParse(config ?? {});
+  const { refreshSeconds, moodEnabled } = parsed.success
+    ? parsed.data
+    : claudeUsageAppSchema.parse({});
+  const { data, loading } = useClaudeUsage(isActive, refreshSeconds * 1000);
   const sessionUtil = data?.session.utilization ?? 0;
   const weekUtil = data?.week.utilization ?? 0;
   const sessionPct = data ? sessionUtil * 100 : null;
@@ -79,10 +87,11 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
 
   const [rotation, setRotation] = useState(0);
   useEffect(() => {
-    if (!isActive || view !== 'pet') return; // sprite unmounted in detail view — don't tick
+    // Sprite unmounted in the detail view or with mood off — don't tick.
+    if (!isActive || view !== 'pet' || !moodEnabled) return;
     const id = setInterval(() => setRotation((r) => r + 1), SPRITE_ROTATE_MS);
     return () => clearInterval(id);
-  }, [isActive, view]);
+  }, [isActive, view, moodEnabled]);
 
   // Re-render countdowns each minute even if no new poll arrives.
   const [, setTick] = useState(0);
@@ -165,17 +174,20 @@ export default function ClaudeUsageApp({ isActive }: AppProps) {
           strokeLinecap="round"
         />
 
-        {/* Sprite panel — mounted via foreignObject so canvas renders at native res */}
-        <foreignObject
-          x={CENTER - SPRITE_PX / 2}
-          y={SPRITE_TOP}
-          width={SPRITE_PX}
-          height={SPRITE_PX}
-        >
-          <div style={{ width: SPRITE_PX, height: SPRITE_PX }}>
-            <ClawdSprite sprite={sprite} size={SPRITE_PX} isActive={isActive} />
-          </div>
-        </foreignObject>
+        {/* Sprite panel — mounted via foreignObject so canvas renders at native res.
+            app.claude-usage moodEnabled=false leaves the metrics without the sprite. */}
+        {moodEnabled && (
+          <foreignObject
+            x={CENTER - SPRITE_PX / 2}
+            y={SPRITE_TOP}
+            width={SPRITE_PX}
+            height={SPRITE_PX}
+          >
+            <div style={{ width: SPRITE_PX, height: SPRITE_PX }}>
+              <ClawdSprite sprite={sprite} size={SPRITE_PX} isActive={isActive} />
+            </div>
+          </foreignObject>
+        )}
 
         {/* Metrics row directly below the sprite panel.
             Layout per Figma 651:25900: lowercase mono labels, big white percentages,
