@@ -6,6 +6,43 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · local optimization sweep, seven tasks
+
+Spec `docs/superpowers/specs/2026-09-06-local-optimization-design.md`, plan
+`docs/superpowers/plans/2026-09-06-local-optimization.md`. Seven commits, `7846c0c` to `1f39098`.
+
+**Changed:**
+- `scripts/lib/asset-liveness.{mjs,d.mts,test.ts}`, `src/shared/asset-liveness.test.ts` (new): public/ liveness gate. Nine orphaned assets deleted, `public/favicon.svg` added, `public/fitness/README.md` → `docs/fitness-art.md`.
+- Sixteen 1000x1000 PNGs in `public/` resampled to 512px in place. No source file changed: the filenames are opaque identifiers, not content hashes.
+- `package-lock.json`: `npm audit fix` only. `package.json` untouched.
+- `AGENT-LOG.md` deleted into this file; `AGENTS.md` line 11 and `scripts/lib/docs-drift.test.ts` follow.
+- `src/apps/claude-usage/sprite-codec.{ts,test.ts}`, `scripts/encode-sprites.mjs` (new); `sprites.ts` and `ClawdSprite.tsx` re-encoded to run-length strings.
+- `server/fleet-store.ts` (event emitter), `server/device-routes.ts` (`GET /api/device/config/stream`), `server/config-stream.test.ts` (new), `src/shared/local-config.ts` (`startConfigSync`/`stopConfigSync`, poll 5s → 60s), `src/App.tsx`.
+- `src/index.css` (`.face-sweep` keyframe), `src/apps/clock/MinimalismoClock.tsx` (second hand driven by CSS).
+
+**Measured, before → after:** `dist/` 12.5 MB → 5.99 MB. `public/` 8.36 MB → 4.98 MB. `sprites.ts` 181 KB → 33 KB, its built chunk 188 KB → 40 KB. `npm audit` 12 advisories (6 high) → 0. Config requests per device per day 17,280 → 1,440. Tests 898 → 919, gates green throughout.
+
+**Verified:** every task ends on `./scripts/gates.sh` green. Beyond that: the asset gate was mutation-checked (a planted orphan fails by name); the resampled art was checked in a browser across the kiosk grid and the admin face gallery, 0 broken images, no 404s; the SSE stream was driven against a real server with curl and in the kiosk, where a config change reached the glass in 933ms with zero polls in a 12.7s window, and 15 connect/disconnect cycles produced no MaxListenersExceededWarning; the sprite codec round-trips all 86,400 cells and the canvas paints and animates; the Minimalismo sweep was driven through the Web Animations API and lands within 0.000° at seven wall-clock seconds, moving forward through the minute wrap.
+
+**Found while working, each recorded in its commit:**
+- Both HTML shells have linked `/favicon.svg` since the initial commit and the file never existed, so every kiosk and admin boot took a 404.
+- The first sprite format was ambiguous: with a base-36 index, `[0,1,0,1,2]` encoded to `"01012"` and read back as 1012 zeros. The round-trip test caught it. Letters index the palette and digits count the run precisely so the two alphabets cannot overlap.
+- A CSS-driven sweep introduces a regression the rAF loop did not have: a hidden document pauses the animation timeline and resumes where it stopped, not where the wall clock is. Closed with a `visibilitychange` re-align.
+
+**Decisions:**
+- `docs/agent-log.md` is canonical over `AGENT-LOG.md`; AGENTS.md's primary instruction named it and it held the newest entries.
+- The 28 remaining minor dependency updates were NOT taken. A blanket `npm update` reproducibly breaks the tree 24 type errors and 7 lint errors deep, in code this sweep never touched. See `e50eff6` for the three distinct causes. None carries an advisory, so nothing is at risk by waiting.
+- `eslint-plugin-react-hooks` stays at 7.0.1. 7.1.1 flags six pre-existing `set-state-in-effect` violations and one ref-during-render; fixing them changes behaviour in calendar, weather, complications, playlist and two admin routes.
+
+**Open:**
+- **Nothing here has been deployed or seen on a real display.** The Claude preview pane keeps the page permanently `document.hidden`, which suspends rAF and the animation timeline, so the Minimalismo sweep could not be watched running and the 30-to-1 renders-per-second claim is read off the code path taken, not measured. That is the one claim in this sweep resting on reasoning rather than observation.
+- The Minimalismo change touches a face, and AGENTS.md reserves face changes for Nick. Geometry, colour and sweep rate are identical by construction and verified numerically, but he has not seen it.
+- `useClockHands`'s `sweep` option now has no consumer and no test. Removing it touches a file every face depends on.
+- The seven `set-state-in-effect` violations above, and the dependency-minor bisect.
+- Still coexisting, untouched here: the two rule catalogues.
+
+---
+
 ## 2026-09-06 · branch claude/local-folder-optimization-eb398f · the two agent logs merged into one
 
 **Changed:** `AGENT-LOG.md` deleted, its 12 entries appended to this file below the provenance note; `AGENTS.md` Project-context line now names `docs/agent-log.md`, matching the instruction at the top of the file; `scripts/lib/docs-drift.test.ts` exclusion regex updated, since it named a file that no longer exists.
