@@ -32,6 +32,24 @@
 // quotes are string delimiters (CSS strings never use a backtick), and
 // there is no glued check, since CSS has nothing for it to guard against.
 //
+// Known limitations (inherited from the shared algorithm, not introduced):
+//
+// A slash glued directly to a word character or digit is guarded as a
+// potential JSX prose or protocol-relative URL, not a comment opener. This
+// means a comment in code like `const x = 5/* token mention */;` or
+// `foo// token mention` is not detected as a comment. This guard is
+// inherited from scripts/rulecheck.mjs to avoid false positives on
+// division operators and protocol URLs; removing it would trade a comment
+// miss for broader unwanted content erasure, which is worse. No instances
+// appear in the tree today.
+//
+// A template-literal backtick enters opaque-string mode, where all content
+// until the closing backtick is treated as inert text. The mode never
+// re-enters code grammar to parse a ${...} substitution, so a comment
+// inside a substitution like ` const s = `text ${/* token */ x}`; ` is not
+// detected. This limitation is inherited from the shared algorithm and kept
+// for simplicity; no instances appear in the tree today.
+//
 // Provenance: the JS/TSX form was harvested from design-system-rebuild
 // scripts/rulecheck.mjs (via the ds-architecture starter kit) under the
 // "port, don't rewrite" rule. The CSS form was adapted from it for
