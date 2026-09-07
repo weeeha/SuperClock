@@ -118,9 +118,9 @@ The contrast gate is why rule R11 stops being `unchecked`. It checks the declare
 ## Success criteria
 
 - `./scripts/gates.sh` green, with the new both-modes, alias and contrast gates in `npm test`.
-- Every one of the sixteen roles carries a light and a dark value, and no tier 3 alias holds a literal.
+- Every one of the twenty-seven roles carries a light and a dark value, and no tier 3 alias holds a literal.
 - The quick-settings sheet renders from roles only, verified in both modes.
-- `UNCONSUMED_LEDGER` is the same length, with the four admin entries' reasons updated to say they are now reachable and awaiting a consumer.
+- `UNCONSUMED_LEDGER` grew from seven entries to twenty-one (see the changelog for the breakdown), with the four originally-ledgered admin entries' reasons updated to say they are now reachable and awaiting a consumer.
 - R11 in the rule catalog names its token-level detector and states plainly that the rendered half is still unchecked.
 - No pixel changes outside the proof surface. The face tokens resolve to the same values they hold today.
 

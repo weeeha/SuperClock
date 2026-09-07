@@ -1,10 +1,14 @@
-/* SuperClock design tokens. Three tiers, imported by both entry stylesheets.
+/* SuperClock design tokens. Three tiers, though today only the kiosk's
+ * entry stylesheet (src/index.css) imports this file. src/admin/index.css
+ * does not import it yet: its shadcn names still hold their own values
+ * directly, not aliased onto anything here. Tier 3, the layer that would
+ * alias those names onto tier 2, does not exist yet either; sub-project 2
+ * adds the admin's import and its tier 3 together.
  *
  * Tier 1 below is raw steps with no meaning attached. Only tier 2 reads them.
  * Tier 2 is the semantic layer and the ONLY place a light value and a dark
- * value are ever written. Tier 3 lives in src/admin/index.css, where the
- * shadcn vocabulary is aliased onto tier 2; the kiosk needs no tier 3,
- * because its --face-* names are already semantic and already live here.
+ * value are ever written. The kiosk needs no tier 3 of its own: its
+ * --face-* names are already semantic and already live here, at tier 2.
  *
  * Two value formats coexist on purpose and temporarily. Face roles carry hex.
  * Admin-facing roles carry bare HSL triplets, because roughly one hundred

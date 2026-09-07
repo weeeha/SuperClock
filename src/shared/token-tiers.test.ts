@@ -24,11 +24,11 @@ describe('token tiers', () => {
     ).toEqual([]);
   });
 
-  it('no role holds a literal; every one points at a ramp', () => {
+  it('no role holds a literal or a dangling ramp reference; every one resolves to a declared ramp', () => {
     const bad = tierViolations(parsed);
     expect(
       bad,
-      `tier 2 roles holding a literal in ${TOKENS}: ${bad.join(', ')}. Move the value into a tier 1 ramp and point the role at it, or the mode flip and any future rebrand cannot reach it.`,
+      `tier 2 role(s) in ${TOKENS} not resolving to a declared tier 1 ramp: ${bad.join(', ')}. Either the value is a literal (move it into a tier 1 ramp and point the role at it), or it is a var() reference naming a ramp tier 1 never declares (fix the typo, or add the missing ramp). Either way, the mode flip and any future rebrand cannot reach it as it stands.`,
     ).toEqual([]);
   });
 });
