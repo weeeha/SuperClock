@@ -3,7 +3,10 @@
 //   1. Semantic-only zones (src/admin, src/core): styling reaches CSS through
 //      tokens (admin: shadcn semantics under .admin-root; kiosk core: the
 //      @theme block in src/index.css). No raw hex, no raw color functions,
-//      no Tailwind palette classes, no muted-on-muted contrast pairing.
+//      no Tailwind palette classes, no muted-on-muted contrast pairing, and
+//      no tier 1 ramp named directly (--stone-*, --gray-*, --scrim-*,
+//      --dusk-*): a component reads a tier 2 role, or a --face-* alias,
+//      never the ramp behind it.
 //   2. Faces (reconciled from face-components.ts's real imports, never a
 //      hand-kept list): every face consumes --face-* so the night palette
 //      flip reaches it. Legacy exceptions live in FACE_TOKEN_EXEMPT in
@@ -25,6 +28,7 @@ import {
   findSemanticZoneViolations,
   findSingleStringViolations,
   findCvaViolations,
+  findTierSkipViolations,
   parseFaceComponentFiles,
   findFaceTokenGap,
   FACE_TOKEN_EXEMPT,
@@ -49,6 +53,7 @@ for (const file of semanticFiles) {
     ...findSemanticZoneViolations(file, source),
     ...findSingleStringViolations(file, source),
     ...findCvaViolations(file, source),
+    ...findTierSkipViolations(file, source),
   );
 }
 
