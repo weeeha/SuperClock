@@ -89,7 +89,7 @@
       "severity": "blocker",
       "detect": {
         "method": "grep",
-        "pattern": "[\\u{1F300}-\\u{1FAFF}\\u{2728}]",
+        "pattern": "[\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{FE0F}]",
         "flags": "u",
         "scope": [
           "src/apps",
@@ -103,7 +103,7 @@
         "exempt": []
       },
       "fix": "lucide-react at one weight and two or three sizes, or nothing. Emoji live only inside user-generated content.",
-      "why": "The model's default is to reach for one; it never belongs in nav, labels, buttons or tiles (unslop Phase 1 #5). Known blind spot: `\\u{...}` escapes in registration files (metadata.icon) are not codepoints in source and do not trip this pattern."
+      "why": "The model's default is to reach for one; it never belongs in nav, labels, buttons or tiles (unslop Phase 1 #5). The range covers Misc Symbols and Dingbats (U+2600-27BF) as well as the pictograph planes: the original pattern checked only U+1F300-1FAFF plus sparkles, so a heart, a sun, a tick and a heavy bar all shipped past a blocker rule (found 2026-09-07). U+FE0F is included so an emoji-presentation sequence is caught by its selector alone. Typographic characters stay legal: middle dot, bullet, arrows, dashes, degree. Known blind spot: `\\u{...}` escapes in registration files (metadata.icon) are not codepoints in source and do not trip this pattern."
     },
     {
       "id": "MOT-1",
