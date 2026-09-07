@@ -164,8 +164,8 @@ export const UNCONSUMED_LEDGER = [
   // Group 2: the admin's shadcn vocabulary, deferred whole to sub-project 2
   // on 2026-09-06 (spec Scope section) because an @theme inline block would
   // otherwise ship dead utility variables ahead of any consumer. Each entry
-  // is deleted when that sub-project's @theme inline block aliases the named
-  // shadcn slot onto this role.
+  // is deleted when a component writes hsl(var(--role-name)) directly, or
+  // when the gate gains a tier-aware alias-plus-utility predicate.
   {
     token: '--surface-ground',
     reason: 'admin app background; the --color-background alias sub-project 2 plans only adds a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--surface-ground)) directly or the gate gains a tier-aware alias-plus-utility predicate',
