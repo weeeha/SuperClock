@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { ulid } from 'ulid';
+import { Check, Delete, Space, X } from 'lucide-react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import RoundList from '../../core/widgets/RoundList';
@@ -27,10 +28,10 @@ function DoneRow({ item }: { item: TodoItem }) {
   return (
     <div className="h-full flex items-center gap-6 px-4 rounded-3xl active:bg-neutral-900">
       <div
-        className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center text-black text-2xl font-bold"
+        className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center text-black"
         style={{ background: ACCENT }}
       >
-        ✓
+        <Check size={26} strokeWidth={3} aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0 text-2xl leading-tight truncate text-neutral-500 line-through">
         {item.title}
@@ -57,7 +58,8 @@ function AddOverlay({
     setDraft((d) => (d.length < MAX_TITLE ? d + ch : d));
   };
   const key =
-    'w-16 h-16 rounded-xl bg-neutral-900 text-white text-2xl active:bg-neutral-700 shrink-0';
+    'w-16 h-16 rounded-xl bg-neutral-900 text-white text-2xl active:bg-neutral-700 shrink-0 ' +
+    'inline-flex items-center justify-center';
   return (
     <div className="absolute inset-0 z-20 bg-black/95 flex flex-col items-center justify-center gap-3">
       <div className="w-[62%] min-h-16 mb-4 px-6 py-3 rounded-2xl bg-neutral-950 border border-neutral-800 text-3xl text-white break-words text-center">
@@ -73,22 +75,27 @@ function AddOverlay({
         </div>
       ))}
       <div className="flex gap-2 justify-center mt-1">
-        <button className={`${key} w-28`} onClick={onCancel}>
-          ✕
+        <button className={`${key} w-28`} onClick={onCancel} aria-label="Discard draft">
+          <X size={26} aria-hidden="true" />
         </button>
-        <button className={`${key} w-64`} onClick={() => type(' ')}>
-          ␣
-        </button>
-        <button className={`${key} w-28`} onClick={() => setDraft((d) => d.slice(0, -1))}>
-          ⌫
+        <button className={`${key} w-64`} onClick={() => type(' ')} aria-label="Space">
+          <Space size={26} aria-hidden="true" />
         </button>
         <button
-          className={`${key} w-28 text-black font-bold disabled:opacity-30`}
+          className={`${key} w-28`}
+          onClick={() => setDraft((d) => d.slice(0, -1))}
+          aria-label="Backspace"
+        >
+          <Delete size={26} aria-hidden="true" />
+        </button>
+        <button
+          className={`${key} w-28 text-black disabled:opacity-30`}
           style={{ background: ACCENT }}
           disabled={draft.trim().length === 0}
           onClick={onSave}
+          aria-label="Save todo"
         >
-          ✓
+          <Check size={26} strokeWidth={3} aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -260,7 +267,7 @@ export default function TodoApp({ isActive, config }: AppProps) {
           setDraft={setDraft}
           onSave={addItem}
           onCancel={() => {
-            // ✕ is stated intent to discard; only app-switching keeps a draft.
+            // Discard is stated intent; only app-switching keeps a draft.
             setAdding(false);
             setDraft('');
           }}

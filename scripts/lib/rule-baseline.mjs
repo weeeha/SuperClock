@@ -11,7 +11,8 @@
 // (U+2600-27BF) walked past a blocker rule: a heart, a coffee cup, a tick, a
 // heavy pause bar and the entire weather condition set. Seventeen hits in
 // eight files, none of them new, all of them shipped for months. The eight
-// weather ones were paid the same day; nine remain across seven files.
+// weather ones were paid the same day, and Todo's three soon after; six
+// remain across six files.
 //
 // They are recorded rather than fixed because every one is a visible design
 // decision inside an app or a face, and this repo's rule is that a face's look
@@ -32,10 +33,17 @@ export const BASELINE = {
   'ICO-2 src/apps/fitness/view-model.ts': 1,
   'ICO-2 src/apps/fitness/view-model.test.ts': 1,
 
-  // Completion ticks and a clear/close cross in list chrome, plus the app's
-  // registry icon. The most clear-cut of the debt: these are chrome, and lucide
-  // `Check` / `X` replace them one for one. Waiting only on a Todo design pass.
-  'ICO-2 src/apps/todo/TodoApp.tsx': 3,
+  // TodoApp's three (two ticks and a close cross) are paid: the Todo design
+  // pass took them to lucide Check / X, and the mini-keyboard's space and
+  // backspace keys with them.
+  //
+  // What is left is the registry icon, and it is a different problem. The
+  // `icon` field on AppMetadata is DEAD: the kiosk never renders it, and the
+  // admin's tile art comes from APP_ICONS (real file paths) via add-screen.ts,
+  // not from here. All fourteen apps carry one; thirteen write it as a
+  // `\u{...}` escape, which is why only Todo's literal trips the rule. Deleting
+  // the field is a fourteen-file change and a types change, not a design pass,
+  // so it waits for one that is scoped to it.
   'ICO-2 src/apps/todo/index.ts': 1,
 
   // The weather row that stood here (8 hits, the whole condition glyph set) is
