@@ -8,7 +8,7 @@ import {
   dayProgress,
   rampColor,
   parseForecast,
-  codeGlyph,
+  codeMark,
   conditionLabel,
   compass,
 } from './weather-utils';
@@ -245,35 +245,37 @@ describe('parseForecast', () => {
   });
 });
 
-describe('codeGlyph', () => {
-  // Escaped rather than pasted, to match the GLYPH_* constants in
-  // weather-utils.ts — see the comment there on why raw/pasted emoji are
-  // avoided (invisible, copy-paste-fragile variation selectors).
-  const SUN = '\u2600\uFE0F';
-  const MOON = '\u{1F319}';
-  const CLOUD = '\u2601\uFE0F';
-  const RAIN = '\u{1F327}\uFE0F';
-  const SNOW = '\u2744\uFE0F';
-  const STORM = '\u26C8\uFE0F';
-
+describe('codeMark', () => {
   it('uses day and night variants for clear skies', () => {
-    expect(codeGlyph(0, true)).toBe(SUN);
-    expect(codeGlyph(0, false)).toBe(MOON);
+    expect(codeMark(0, true)).toBe('sun');
+    expect(codeMark(0, false)).toBe('moon');
   });
 
-  it('maps WMO ranges to glyph families', () => {
-    expect(codeGlyph(3, true)).toBe(CLOUD);
-    expect(codeGlyph(61, true)).toBe(RAIN);
-    expect(codeGlyph(71, true)).toBe(SNOW);
-    expect(codeGlyph(95, true)).toBe(STORM);
+  it('keeps the night variant when the sky is only partly clear', () => {
+    expect(codeMark(2, true)).toBe('partly');
+    expect(codeMark(2, false)).toBe('moon');
+  });
+
+  it('maps WMO ranges to mark families', () => {
+    expect(codeMark(3, true)).toBe('cloud');
+    expect(codeMark(45, true)).toBe('fog');
+    expect(codeMark(61, true)).toBe('rain');
+    expect(codeMark(71, true)).toBe('snow');
+    expect(codeMark(85, true)).toBe('snow-shower');
+    expect(codeMark(95, true)).toBe('storm');
   });
 
   it('resolves boundary and hazard codes', () => {
-    expect(codeGlyph(56, true)).toBe(RAIN); // freezing drizzle shares the plain rain glyph
-    expect(codeGlyph(66, true)).toBe(RAIN); // freezing rain shares the plain rain glyph
-    expect(codeGlyph(77, true)).toBe(SNOW);
-    expect(codeGlyph(96, true)).toBe(STORM);
-    expect(codeGlyph(99, true)).toBe(STORM);
+    expect(codeMark(56, true)).toBe('rain'); // freezing drizzle shares the plain rain mark
+    expect(codeMark(66, true)).toBe('rain'); // freezing rain shares the plain rain mark
+    expect(codeMark(77, true)).toBe('snow');
+    expect(codeMark(82, true)).toBe('rain');
+    expect(codeMark(96, true)).toBe('storm');
+    expect(codeMark(99, true)).toBe('storm');
+  });
+
+  it('falls back to cloud for a code it does not know', () => {
+    expect(codeMark(4, true)).toBe('cloud');
   });
 });
 

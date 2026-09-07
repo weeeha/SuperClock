@@ -1,7 +1,7 @@
 import type { DialProps } from './Dial';
 import type { WeatherPageId } from '../../shared/schemas/app.weather';
 import {
-  RAMPS, codeGlyph, compass, conditionLabel, rampColor,
+  RAMPS, codeMark, compass, conditionLabel, rampColor,
   type HourSample, type WeatherModel,
 } from './weather-utils';
 
@@ -36,9 +36,9 @@ export function dialFor(page: WeatherPageId, m: WeatherModel): DialProps | null 
     case 'conditions':
       return {
         ...base,
-        valueOf: (h: HourSample) => codeGlyph(h.code, h.isDay),
+        valueOf: () => '',
+        markOf: (h: HourSample) => codeMark(h.code, h.isDay),
         colorOf: () => '#e8e8ec',
-        valueSize: 58,
         centre: `${m.current.temp}°`,
         sub: conditionLabel(m.current.code),
         caption: `H ${m.today.high}°     L ${m.today.low}°`,

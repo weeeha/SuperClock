@@ -1,3 +1,5 @@
+import type { ConditionMarkId } from './ConditionMark';
+
 /** Open-Meteo returns zone-less local timestamps ("2026-07-24T20:00").
  *  `new Date(str)` parses those as UTC and then reads back local, shifting
  *  every hour label by the offset. Always come through here. */
@@ -193,31 +195,25 @@ export function parseForecast(json: OpenMeteoResponse, now: Date): WeatherModel 
  *  glyph: the distinction doesn't survive being read from across a room, and
  *  `conditionLabel` collapses them the same way for consistency. */
 
-// Explicit escapes, not pasted characters: the U+FE0F variation selector is
-// invisible in source and does not survive copy-paste reliably. Emoji
-// presentation is deliberate and uniform — colour emoji ignore SVG `fill`,
-// so the conditions ring renders these as-is rather than tinting them.
-const GLYPH_SUN = '☀️';
-const GLYPH_MOON = '\u{1F319}';
-const GLYPH_PARTLY = '⛅️';
-const GLYPH_CLOUD = '☁️';
-const GLYPH_FOG = '\u{1F32B}️';
-const GLYPH_RAIN = '\u{1F327}️';
-const GLYPH_SNOW = '❄️';
-const GLYPH_SNOW_SHOWER = '\u{1F328}️';
-const GLYPH_STORM = '⛈️';
-
-export function codeGlyph(code: number, isDay: boolean): string {
-  if (code === 0) return isDay ? GLYPH_SUN : GLYPH_MOON;
-  if (code <= 2) return isDay ? GLYPH_PARTLY : GLYPH_MOON;
-  if (code === 3) return GLYPH_CLOUD;
-  if (code === 45 || code === 48) return GLYPH_FOG;
-  if (code >= 51 && code <= 67) return GLYPH_RAIN;
-  if (code >= 71 && code <= 77) return GLYPH_SNOW;
-  if (code >= 80 && code <= 82) return GLYPH_RAIN;
-  if (code === 85 || code === 86) return GLYPH_SNOW_SHOWER;
-  if (code >= 95) return GLYPH_STORM;
-  return GLYPH_CLOUD;
+// Which drawn mark an Open-Meteo weather code gets. The marks themselves live
+// in ConditionMark.tsx; this file stays render-free so it can be unit tested.
+//
+// These were colour emoji until 2026-09-07. That was deliberate (colour emoji
+// ignore SVG `fill`, so the ring drew them untinted) but it left stock system
+// glyphs sitting at a different visual weight from the rest of a flat
+// monochrome dial, unable to dim with the ring at night, and drawn differently
+// on every platform. Marks take the ring's colour through `currentColor`.
+export function codeMark(code: number, isDay: boolean): ConditionMarkId {
+  if (code === 0) return isDay ? 'sun' : 'moon';
+  if (code <= 2) return isDay ? 'partly' : 'moon';
+  if (code === 3) return 'cloud';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 67) return 'rain';
+  if (code >= 71 && code <= 77) return 'snow';
+  if (code >= 80 && code <= 82) return 'rain';
+  if (code === 85 || code === 86) return 'snow-shower';
+  if (code >= 95) return 'storm';
+  return 'cloud';
 }
 
 export function conditionLabel(code: number): string {

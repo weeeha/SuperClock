@@ -10,7 +10,8 @@
 // U+1F300-1FAFF plus sparkles, so the whole Misc Symbols and Dingbats block
 // (U+2600-27BF) walked past a blocker rule: a heart, a coffee cup, a tick, a
 // heavy pause bar and the entire weather condition set. Seventeen hits in
-// eight files, none of them new, all of them shipped for months.
+// eight files, none of them new, all of them shipped for months. The eight
+// weather ones were paid the same day; nine remain across seven files.
 //
 // They are recorded rather than fixed because every one is a visible design
 // decision inside an app or a face, and this repo's rule is that a face's look
@@ -37,13 +38,8 @@ export const BASELINE = {
   'ICO-2 src/apps/todo/TodoApp.tsx': 3,
   'ICO-2 src/apps/todo/index.ts': 1,
 
-  // The nine weather condition glyphs — sun, moon, partly, cloud, fog, rain,
-  // snow, snow shower, storm — on eight lines (the pasted ones carry a
-  // U+FE0F selector that counts separately from its base character).
-  //
-  // Unlike the rest of this debt it is a decision the source argues for:
-  // "colour emoji ignore SVG `fill`, so the conditions ring renders these
-  // as-is rather than tinting them." Replacing them means giving the ring its
-  // own tintable marks. Scheduled — the Weather design pass deletes this row.
-  'ICO-2 src/apps/weather/weather-utils.ts': 8,
+  // The weather row that stood here (8 hits, the whole condition glyph set) is
+  // gone: the Weather design pass replaced the emoji with drawn marks in
+  // ConditionMark.tsx, which is what the row said it was waiting for. Nine
+  // hits of debt paid, seven remain.
 };
