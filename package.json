@@ -13,6 +13,7 @@
     "report": "REPORT_EMIT=1 vitest run scripts/lib/health-report.test.ts",
     "new:app": "node scripts/new-app.mjs",
     "new:face": "node scripts/new-face.mjs",
+    "build:index": "node scripts/build-index.mjs",
     "snapshot:schemas": "node --import tsx scripts/snapshot-schemas.ts",
     "analyze": "node --import tsx scripts/analyze.ts",
     "preview": "vite preview",

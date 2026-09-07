@@ -11,6 +11,7 @@ import {
   extractCvaCalls,
   parseFaceComponentFiles,
   findFaceTokenGap,
+  findTierSkipViolations,
   FACE_TOKEN_EXEMPT,
 } from './token-rules.mjs';
 
@@ -68,6 +69,53 @@ describe('findSemanticZoneViolations — raw values in semantic-only zones', () 
   it('a token-gate:allow comment on the line suppresses the finding', () => {
     const src = `const hex = '#000000'; // token-gate:allow color-input fallback value, not styling`;
     expect(findSemanticZoneViolations(FILE, src)).toHaveLength(0);
+  });
+});
+
+describe('findTierSkipViolations — a semantic-zone component may not name a tier 1 ramp', () => {
+  it("flags the reviewer's exact probe: a ramp named inside hsl(var(...)), which the raw-colour-function rule exempts", () => {
+    const out = findTierSkipViolations(FILE, `<div className="bg-[hsl(var(--gray-60))]" />`);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toContain('--gray-60');
+  });
+
+  it('flags a bare var() read too, not only the hsl(var()) arbitrary-value shape', () => {
+    const out = findTierSkipViolations(FILE, `const c = 'var(--stone-900)';`);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toContain('--stone-900');
+  });
+
+  it('flags every tier 1 ramp family named in src/styles/tokens.css: stone, gray, scrim, dusk', () => {
+    const src = [
+      `const a = 'var(--stone-900)';`,
+      `const b = 'var(--gray-16)';`,
+      `const c = 'var(--scrim-knob)';`,
+      `const d = 'var(--dusk-light)';`,
+    ].join('\n');
+    expect(findTierSkipViolations(FILE, src)).toHaveLength(4);
+  });
+
+  it('leaves a tier 2 role alone (the component reads the role, not the ramp behind it)', () => {
+    const src = [
+      `const a = 'var(--surface-card)';`,
+      `<b className="bg-[hsl(var(--brand))]" />`,
+      `<i className="text-[hsl(var(--status-warn))]" />`,
+    ].join('\n');
+    expect(findTierSkipViolations(FILE, src)).toHaveLength(0);
+  });
+
+  it('leaves a --face-* alias alone: not a ramp, and legitimately read outside these zones too', () => {
+    expect(findTierSkipViolations(FILE, `const c = 'var(--face-ink)';`)).toHaveLength(0);
+  });
+
+  it('a token-gate:allow comment on the line suppresses the finding', () => {
+    const src = `const a = 'var(--gray-60)'; // token-gate:allow ramp name in a worked comment example, not styling`;
+    expect(findTierSkipViolations(FILE, src)).toHaveLength(0);
+  });
+
+  it('one finding per line, matching findSemanticZoneViolations style, not per occurrence', () => {
+    const out = findTierSkipViolations(FILE, `const both = 'var(--gray-4)' + 'var(--gray-96)';`);
+    expect(out).toHaveLength(1);
   });
 });
 

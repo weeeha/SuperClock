@@ -1,0 +1,17 @@
+{
+  "kind": "face",
+  "id": "complications-light",
+  "purpose": "A light dial laid out around sub-dial positions for complications. It draws nothing from the complication registry yet; the positions are geometry, not a promise.",
+  "accent": { "where": "the sub-dial accents", "color": "config:accent" },
+  "night": {
+    "recipe": "The dial background and the ticks flip with the palette; the hands and sub-dials keep their own colours.",
+    "tokens": ["--face-bg", "--face-tick"]
+  },
+  "options": [
+    { "key": "accent", "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not present the sub-dial positions as configurable complication slots", "why": "the face reads no slot today; D2 says wire complications, never fake them" }
+  ],
+  "parity": { "lvgl": null }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "face",
+  "id": "daylight",
+  "purpose": "A 24-hour dial with noon at the top: one hand revolves per day and the ring shows sunrise to sunset in the accent, the rest in dusk. Sun times come from a local NOAA computation, so there is no offline state.",
+  "accent": { "where": "the daylight arc", "color": "--color-accent" },
+  "night": {
+    "recipe": "Dusk, ticks and ink flip with the palette; the daylight arc stays the accent.",
+    "tokens": ["--face-bg", "--face-dusk", "--face-ink", "--face-ink-muted", "--face-tick"]
+  },
+  "options": [
+    { "key": "latitude", "intent": "Leave 0,0 for the schematic 06:00 to 18:00 band; set both coordinates for real sun times." },
+    { "key": "longitude", "intent": "Degrees east, negative west; only meaningful together with latitude." },
+    { "key": "showTimes", "intent": "Sunrise and sunset labels at the band ends; off for a bare ring." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not put midnight at the top", "why": "noon at top is the solar convention (hand high means sun high), deliberately opposite to Depletion" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "One 24-hour solar hand and an arc; the hour, minute and second vocabulary does not describe it."
+}

@@ -11,8 +11,16 @@
         "method": "grep",
         "pattern": "bg-gradient-|bg-clip-text",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts", ".css"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
         "exempt": []
       },
       "fix": "Flat token (the accent, a --face-* or admin semantic surface); emphasis through size, weight and position; at most one word in the accent colour.",
@@ -26,8 +34,16 @@
         "method": "heuristic",
         "pattern": "backdrop-blur|backdrop-filter",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts", ".css"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
         "exempt": [
           {
             "path": "src/core/components/QuickSettings.tsx",
@@ -51,8 +67,16 @@
         "method": "heuristic",
         "pattern": "(bg|text|border|from|via|to)-(indigo|violet|purple)-[0-9]{2,3}",
         "flags": "i",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts", ".css"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
         "exempt": [],
         "falsePositives": "Matches the utility inside a string that quotes or discusses the banned class rather than applying it. Every hit still needs a look, hence warning."
       },
@@ -67,8 +91,15 @@
         "method": "grep",
         "pattern": "[\\u{1F300}-\\u{1FAFF}\\u{2728}]",
         "flags": "u",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
         "exempt": []
       },
       "fix": "lucide-react at one weight and two or three sizes, or nothing. Emoji live only inside user-generated content.",
@@ -82,8 +113,16 @@
         "method": "heuristic",
         "pattern": "\\banimate-(?!none\\b)",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts", ".css"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
         "exempt": [
           {
             "path": "src/core/components/SwipeContainer.tsx",
@@ -115,8 +154,16 @@
         "method": "grep",
         "pattern": "transition-all|transition:\\s*all",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts", ".css"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts",
+          ".css"
+        ],
         "exempt": []
       },
       "fix": "Name the properties that change: transition-colors, transition-transform, transition-opacity. Transform and opacity only.",
@@ -130,8 +177,14 @@
         "method": "grep",
         "pattern": "Get Started|Learn More",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
         "exempt": []
       },
       "fix": "Name the object and the outcome the control leads to: \"Add screen\", \"Push to clock\". The label predicts the next screen.",
@@ -145,8 +198,15 @@
         "method": "grep",
         "pattern": "\\b(elevate|unlock)\\b|empower|supercharge|seamless|effortless",
         "flags": "i",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
         "exempt": []
       },
       "fix": "Delete the adjective or claim, or replace it with the concrete mechanism it stands in for. Say what it does.",
@@ -171,8 +231,15 @@
         "method": "grep",
         "pattern": "#8884d8|#82ca9d|#ffc658",
         "flags": "i",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
         "exempt": []
       },
       "fix": "The configured accent (--color-accent) for the series answering the question; --face-* or admin semantic tokens for context series.",
@@ -186,8 +253,15 @@
         "method": "grep",
         "pattern": "strokeDasharray=\"3 3\"",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx", ".ts"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
         "exempt": []
       },
       "fix": "Delete the dash prop or set an explicit hairline solid gridline.",
@@ -201,8 +275,14 @@
         "method": "heuristic",
         "pattern": "\\[[0-9.]+px\\]",
         "flags": "",
-        "scope": ["src/apps", "src/core", "src/admin"],
-        "include": [".tsx"],
+        "scope": [
+          "src/apps",
+          "src/core",
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
         "exempt": [
           {
             "path": "src/admin/components/ui/",
@@ -233,8 +313,12 @@
         "method": "heuristic",
         "pattern": "^(?!.*focus-visible).*outline-none",
         "flags": "",
-        "scope": ["src/admin"],
-        "include": [".tsx"],
+        "scope": [
+          "src/admin"
+        ],
+        "include": [
+          ".tsx"
+        ],
         "exempt": [],
         "falsePositives": "Fires on outline-none whose focus-visible pairing lives on another line or on a wrapping element, and on non-interactive containers that were never focusable. Both need a look before treating a hit as a violation. Admin only: the kiosk is touch-only by non-negotiable #4 and has no keyboard focus."
       },
@@ -284,8 +368,12 @@
         "when": "setVerticalSwipeCallback\\(",
         "must": "verticalSwipeCallback === ",
         "flags": "",
-        "scope": ["src/apps"],
-        "include": [".tsx"],
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".tsx"
+        ],
         "exempt": [],
         "falsePositives": "A file that guards through a helper defined elsewhere would read as unguarded; none exists today. Shipped at review on 2026-09-05 with two baseline rows (Agents, Weather); promoted to blocker the same day once both adopted the HabitsApp shape."
       },
@@ -301,8 +389,12 @@
         "when": "setBackCallback\\(",
         "must": "backCallback === ",
         "flags": "",
-        "scope": ["src/apps"],
-        "include": [".tsx"],
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".tsx"
+        ],
         "exempt": []
       },
       "fix": "Same shape as NAV-1: guarded cleanup that nulls the slot only if it is still yours (CalendarApp is the reference consumer).",
@@ -317,8 +409,13 @@
         "when": "setInterval\\(|requestAnimationFrame\\(",
         "must": "isActive|\\bactive\\b",
         "flags": "",
-        "scope": ["src/apps"],
-        "include": [".ts", ".tsx"],
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".ts",
+          ".tsx"
+        ],
         "exempt": [
           {
             "path": "src/apps/calendar/useCalendarEvents.ts",
@@ -369,11 +466,12 @@
       "title": "React and LVGL siblings stay in parity",
       "severity": "blocker",
       "detect": {
-        "method": "judgment",
-        "how": "A change to a shared face's geometry, palette or night behaviour in src/apps/clock (Minimalismo today) needs the matching edit in slow-native/src/clock_face.c in the same change, or a filed follow-up."
+        "method": "delegated",
+        "gate": "src/shared/lvgl-parity.test.ts",
+        "how": "npm test: the parity gate parses slow-native/src/clock_face.c (its geom_t initializer and its colour calls) and diffs it against the spec block in src/apps/clock/AnalogClock.meta.json. A mismatch fails unless PARITY_DRIFT_LEDGER (scripts/lib/lvgl-parity.mjs, shrink-only) names the field with a reason, and a ledger entry that no longer mismatches fails as stale. The parser also fails when it cannot read a geometry field or a colour, so an unreadable C file cannot report clean."
       },
-      "fix": "Mirror the edit in C, or file the follow-up before merging; the planned structural fix is the shared JSON face-spec (decision D3).",
-      "why": "Only Minimalismo exists on both sides and nothing fails when the mirror is forgotten (AGENTS.md, React <-> LVGL face parity)."
+      "fix": "Change slow-native/src/clock_face.c together with the React face, or ledger the difference in PARITY_DRIFT_LEDGER with the reason each renderer does what it does. Never edit the C file or the face meta to turn the gate green.",
+      "why": "Analog, not Minimalismo, is the face both renderers draw, and until 2026-09-06 nothing compared them: the two disagree on the dial colour, the ink, the tick and minute-hand colours, the face radius and all four tick edges. Nine mismatches are ledgered; which renderer is right is a design decision, not a fix-forward."
     },
     {
       "id": "FCE-3",

@@ -1,0 +1,16 @@
+{
+  "kind": "face",
+  "id": "flip",
+  "purpose": "Split-flap digits that flip when they change. The mechanism is the face, so the flip is content, not chrome.",
+  "accent": { "where": "the digits", "color": "config:accent" },
+  "night": { "recipe": "Ignores night: a legacy exempt face; the flaps keep their fixed colours until retrofitted.", "tokens": [] },
+  "options": [
+    { "key": "accent", "intent": "The digit colour, the only colour on the face." },
+    { "key": "hour24", "intent": "On for 24-hour digits; off adds an AM/PM tag and drops the leading zero." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not animate anything but the digit that changed", "why": "the flip is the only sanctioned motion; ambient motion elsewhere makes it noise" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "Digits on flaps, no hands or ticks; the hand vocabulary does not describe it."
+}

@@ -1,0 +1,35 @@
+{
+  "kind": "face",
+  "id": "analog",
+  "purpose": "The Swiss railway reference: sixty ticks, heavy white hands on a black dial, an accent second hand and pip. It is the face the LVGL client mirrors, so its numbers are the fleet's shared vocabulary.",
+  "accent": { "where": "the second hand and the outer centre pip", "color": "config:accent" },
+  "night": {
+    "recipe": "Ignores night: a legacy exempt face, black dial in both palettes. Retrofitting means reading --face-bg and --face-ink and deleting its FACE_TOKEN_EXEMPT line.",
+    "tokens": []
+  },
+  "options": [
+    { "key": "accent", "intent": "One saturated colour that paints the second hand and the pip together; never two colours on one dial." },
+    { "key": "numeralStyle", "intent": "none keeps the railway look; arabic or roman only when the dial is read at a glance from across a room." },
+    { "key": "showSeconds", "intent": "Off removes the only moving accent; use it for a still bedside face." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not thin the hands to make room for numerals", "why": "the 28 and 20 widths are the railway signature and the LVGL twin draws the same" },
+    { "rule": "Do not change a number here without the C twin", "why": "the parity test diffs clock_face.c against this file; a one-sided change is a red gate, not a fix" }
+  ],
+  "parity": { "lvgl": "slow-native/src/clock_face.c" },
+  "spec": {
+    "space": 1000,
+    "radius": 500,
+    "face": { "background": "#000000", "ink": "#ffffff" },
+    "hands": {
+      "hour": { "tip": 280, "width": 28 },
+      "minute": { "tip": 380, "width": 20 },
+      "second": { "tip": 350, "tail": 80, "width": 6, "color": "config:accent" }
+    },
+    "ticks": {
+      "hour": { "inner": 420, "outer": 480, "width": 12 },
+      "minute": { "inner": 435, "outer": 460, "width": 4 }
+    },
+    "dot": { "outer": 12, "inner": 6, "outerColor": "config:accent", "innerColor": "#000000" }
+  }
+}

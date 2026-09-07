@@ -1,0 +1,15 @@
+{
+  "kind": "face",
+  "id": "world",
+  "purpose": "A primary dial for one timezone with secondary dials for others. The primary is the answer; the rest are context and must read as smaller.",
+  "accent": { "where": "the primary dial highlight", "color": "config:accent" },
+  "night": { "recipe": "Ignores night: a legacy exempt face with a fixed palette until it is retrofitted.", "tokens": [] },
+  "options": [
+    { "key": "accent", "intent": "Highlights the primary dial only; the secondary dials stay unaccented so the eye lands on one." },
+    { "key": "primaryTimezone", "intent": "An IANA name for the dial the owner reads first; local follows the device clock." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not construct an Intl.DateTimeFormat per render", "why": "one formatter per zone, built once; construction costs milliseconds on a Pi and this used to run five times a second" }
+  ],
+  "parity": { "lvgl": null }
+}

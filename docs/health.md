@@ -77,7 +77,7 @@ Ledger `SCHEMA_UNREAD`: empty.
 
 ## Rules (25, rules/superclock.json)
 
-By method: delegated 3, grep 7, heuristic 5, judgment 4, rendered 3, requires 3. By severity: blocker 20, review 3, warning 2.
+By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3. By severity: blocker 20, review 3, warning 2.
 
 | id | severity | method | title |
 | --- | --- | --- | --- |
@@ -90,7 +90,7 @@ By method: delegated 3, grep 7, heuristic 5, judgment 4, rendered 3, requires 3.
 | CPY-2 | blocker | grep | Banned marketing register |
 | CPY-4 | blocker | judgment | Zero fabrication: mock or fallback data is never rendered as live |
 | FCE-1 | blocker | judgment | One saturated accent quantity per face |
-| FCE-2 | blocker | judgment | React and LVGL siblings stay in parity |
+| FCE-2 | blocker | delegated | React and LVGL siblings stay in parity |
 | FCE-3 | blocker | delegated | Every face reads the --face-* palette so night mode reaches it |
 | ICO-2 | blocker | grep | Zero emoji in chrome |
 | KIO-1 | blocker | requires | Timers tick only while the app is active |
@@ -111,9 +111,9 @@ Tree scan over 173 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
 
 Baseline rows (`BASELINE`, frozen debt): empty.
 
-Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1` (judgment), `FCE-2` (judgment), `KIO-2` (rendered), `STA-1` (judgment), `STA-5` (rendered), `STA-7` (rendered).
+Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1` (judgment), `KIO-2` (rendered), `STA-1` (judgment), `STA-5` (rendered), `STA-7` (rendered).
 
-Delegated to other gates: `FCE-3` → scripts/check-tokens.mjs, `KIO-3` → eslint.config.js, `SYS-1` → scripts/check-tokens.mjs.
+Delegated to other gates: `FCE-2` → src/shared/lvgl-parity.test.ts, `FCE-3` → scripts/check-tokens.mjs, `KIO-3` → eslint.config.js, `SYS-1` → scripts/check-tokens.mjs.
 
 Sanctioned exemptions (8):
 

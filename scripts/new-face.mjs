@@ -16,6 +16,7 @@ import {
   kebabToPascal,
   faceComponentTemplate,
   faceSchemaTemplate,
+  faceMetaTemplate,
   todoTestTemplate,
   insertFaceComponent,
   insertFaceRegistryEntry,
@@ -38,6 +39,7 @@ try {
 
   const newFiles = {
     [componentPath]: faceComponentTemplate(id),
+    [`src/apps/clock/${pascal}Clock.meta.json`]: faceMetaTemplate(id),
     [`src/apps/clock/${id}.todo.test.ts`]: todoTestTemplate(id, componentPath),
     [`src/shared/schemas/face.${id}.ts`]: faceSchemaTemplate(id),
   };
@@ -64,12 +66,16 @@ try {
   1. Implement ${componentPath} and remove its SCAFFOLD-TODO marker
      (keep consuming --face-* — the token gate holds new faces to it).
   2. Fill in src/shared/schemas/face.${id}.ts (every field needs .default()).
-  3. Drop 1000×1000 preview art at public/${id}-preview.png and set the real
+  3. Write src/apps/clock/${pascal}Clock.meta.json: replace every TODO with the
+     judgment (purpose, accent, night recipe, an intent per option, anti-patterns
+     with the why); use a spec block for a hand-and-tick face, specless otherwise.
+     Then npm run build:index. The contract gate is red until this is done.
+  4. Drop 1000×1000 preview art at public/${id}-preview.png and set the real
      category in src/shared/face-registry.ts.
-  4. Delete src/apps/clock/${id}.todo.test.ts once implemented.
-  5. npm test && npm run check:tokens — both must be green before "done".
-  6. Shared-face parity: if this face will exist on superclock-slow too, plan
-     the LVGL sibling (see CLAUDE.md "React <-> LVGL face parity").`);
+  5. Delete src/apps/clock/${id}.todo.test.ts once implemented.
+  6. npm test && npm run check:tokens — both must be green before "done".
+  7. Shared-face parity: if this face will exist on superclock-slow too, set
+     parity.lvgl in the meta and plan the LVGL sibling (AGENTS.md "React <-> LVGL face parity").`);
 } catch (e) {
   console.error(`new:face — ${e.message}`);
   exit(1);

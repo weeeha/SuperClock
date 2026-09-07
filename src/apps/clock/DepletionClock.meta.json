@@ -1,0 +1,20 @@
+{
+  "kind": "face",
+  "id": "depletion",
+  "purpose": "A 24-hour dial, midnight at top, where the accent wedge is the time left in the day. It drains to nothing at midnight and refills in one frame. No hands: a hairline datum at 12 and a heavy boundary at now.",
+  "accent": { "where": "the remaining-time wedge", "color": "--color-accent" },
+  "night": {
+    "recipe": "The spent area, ticks and ink flip with the palette; the wedge stays the accent.",
+    "tokens": ["--face-bg", "--face-ink", "--face-ink-muted", "--face-spent", "--face-tick"]
+  },
+  "options": [
+    { "key": "cycle", "intent": "calendar-day drains to midnight; awake drains to the configured bedtime instead." },
+    { "key": "ticks", "intent": "hours for reading the time, quarters for a calmer disc, none for a bare gauge." },
+    { "key": "readout", "intent": "remaining prints the hours-and-minutes-left line inside the spent area; none for a pure disc." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not animate the midnight refill", "why": "it refills in a single frame by design; an animation draws attention to the one moment nobody watches" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "A wedge and a datum, no hands or ticks in the hand vocabulary."
+}

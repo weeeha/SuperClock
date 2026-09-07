@@ -21,6 +21,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url'; // never URL.pathname — this checkout path contains spaces
+import { stripComments } from './lib/comment-strip.mjs';
 
 const SEVERITY_RANK = { blocker: 0, review: 1, warning: 2 };
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build']);
@@ -50,59 +51,18 @@ export function walk(root, scopes, extensions) {
   return out.sort();
 }
 
-// Character state machine: blanks // and /* */ comments, keeps string
-// contents intact, preserves length and line breaks so reported line numbers
-// still point at the real line. A `/` glued to a word character is JSX prose
-// or a URL, not a comment opener. Harvested verbatim.
-const WORD_BEFORE_SLASH = /[A-Za-z0-9_$]/;
-
-export function stripComments(source) {
-  const out = [];
-  let mode = 'code';
-  for (let i = 0; i < source.length; i++) {
-    const c = source[i];
-    const next = source[i + 1];
-    if (mode === 'code') {
-      const glued = WORD_BEFORE_SLASH.test(source[i - 1] ?? '');
-      if (c === '/' && next === '/' && !glued) {
-        mode = 'line';
-        out.push('  ');
-        i++;
-      } else if (c === '/' && next === '*' && !glued) {
-        mode = 'block';
-        out.push('  ');
-        i++;
-      } else {
-        if (c === "'" || c === '"' || c === '`') mode = c;
-        out.push(c);
-      }
-      continue;
-    }
-    if (mode === 'line') {
-      if (c === '\n') {
-        mode = 'code';
-        out.push('\n');
-      } else out.push(' ');
-      continue;
-    }
-    if (mode === 'block') {
-      if (c === '*' && next === '/') {
-        mode = 'code';
-        out.push('  ');
-        i++;
-      } else out.push(c === '\n' ? '\n' : ' ');
-      continue;
-    }
-    if (c === '\\') {
-      out.push(c, next ?? '');
-      i++;
-      continue;
-    }
-    if (c === mode) mode = 'code';
-    out.push(c);
-  }
-  return out.join('');
-}
+// stripComments moved to scripts/lib/comment-strip.mjs: a pure sibling
+// module under scripts/lib, fs-free, fixture-tested there. It is the same
+// character state machine this file used to define directly (blanks //
+// and /* */ comments, keeps string contents intact, preserves length and
+// line breaks so reported line numbers still point at the real line, a
+// `/` glued to a word character is JSX prose or a URL, not a comment
+// opener), extracted so scripts/lib/token-liveness.mjs (a pure predicate
+// module) could depend on it too without depending on this file, a runner
+// that imports node:fs at module scope. Imported above for scan()'s own
+// use below, and re-exported here so existing callers
+// (scripts/lib/rulecheck.test.ts) keep working unchanged.
+export { stripComments };
 
 // Strip `g`: the loops below call re.test() once per line, and a global regex
 // advances lastIndex across calls, so every other matching line would read as

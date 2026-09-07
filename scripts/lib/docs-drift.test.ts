@@ -175,8 +175,15 @@ describe('instruction files: every backticked identifier appears in code', () =>
 describe('instruction files: tokens, rule ids and npm scripts resolve', () => {
   it.each(cssTokens)('%s is a declared CSS token prefix', (token) => {
     const prefix = token.replace(/\*.*$/, '').replace(/:.*$/, '').trim();
-    const css = ['src/index.css', 'src/admin/index.css'].map(read).join('\n');
-    expect(css.includes(prefix), `${prefix} is not declared in src/index.css or src/admin/index.css`).toBe(true);
+    // src/styles/tokens.css is the token layer the kiosk's entry stylesheet
+    // imports (2026-09-06): the --face-* roles AGENTS.md and clock-faces.md
+    // cite now declare there, not in src/index.css itself. src/admin/
+    // index.css is listed below for its own, separately declared shadcn
+    // tokens, not because it imports tokens.css: it does not yet, that is
+    // sub-project 2.
+    const cssFiles = ['src/index.css', 'src/admin/index.css', 'src/styles/tokens.css'];
+    const css = cssFiles.map(read).join('\n');
+    expect(css.includes(prefix), `${prefix} is not declared in ${cssFiles.join(' or ')}`).toBe(true);
   });
 
   it.each(ruleIdTokens)('%s is in the rule catalogue', (id) => {
