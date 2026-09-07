@@ -14,6 +14,8 @@ import { join } from 'node:path';
 import {
   declaredTokens,
   stripDeclarations,
+  stripComments,
+  stripCssComments,
   auditLiveness,
   UNCONSUMED_LEDGER,
 } from '../../scripts/lib/token-liveness.mjs';
@@ -41,7 +43,10 @@ const TIER_AWARE_LIVE = [...consumedRamps(parseTiers(readFileSync(TOKENS_CSS, 'u
 
 /** Every source under src/ that could read a token. Tests are excluded on
  *  purpose: a test that writes `var(--x)` proves the name can be typed, not
- *  that anything shipped reads it. Stylesheets are stripped of their
+ *  that anything shipped reads it. Every source is stripped of comments
+ *  first (stripComments for .ts/.tsx, stripCssComments for .css, since CSS
+ *  has no line-comment form) so a name mentioned only in prose can never
+ *  count as a reader; stylesheets are then also stripped of their
  *  declaration lines so they count only through rules that consume. */
 function walkSources(dir: string, out: TokenSource[] = []): TokenSource[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -50,7 +55,9 @@ function walkSources(dir: string, out: TokenSource[] = []): TokenSource[] {
       walkSources(full, out);
     } else if (/\.(tsx?|css)$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
       const text = readFileSync(full, 'utf8');
-      out.push({ file: full, text: entry.name.endsWith('.css') ? stripDeclarations(text) : text });
+      const isCss = entry.name.endsWith('.css');
+      const withoutComments = isCss ? stripCssComments(text) : stripComments(text);
+      out.push({ file: full, text: isCss ? stripDeclarations(withoutComments) : withoutComments });
     }
   }
   return out;

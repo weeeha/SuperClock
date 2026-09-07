@@ -21,6 +21,8 @@ export interface LivenessAudit {
 
 export declare function declaredTokens(cssText: string): string[];
 export declare function stripDeclarations(cssText: string): string;
+export declare function stripComments(source: string): string;
+export declare function stripCssComments(cssText: string): string;
 export declare function readerPattern(token: string): RegExp;
 export declare function findReaders(token: string, sources: TokenSource[]): string[];
 export declare function auditLiveness(

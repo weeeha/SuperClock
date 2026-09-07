@@ -8,6 +8,10 @@
 // tokens three ways: kiosk @theme tokens as Tailwind utilities or var(),
 // --face-* as var() in face SVG/style attributes, admin tokens as
 // hsl(var(--x)) arbitrary values and .admin-root rules.
+//
+// stripComments / stripCssComments (below, after findReaders) cover the
+// fix for a read inside a comment counting as a real one: see the
+// "comments are not readers" and "historical failure" blocks.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -17,6 +21,8 @@ import {
   findReaders,
   auditLiveness,
   UNCONSUMED_LEDGER,
+  stripComments,
+  stripCssComments,
 } from './token-liveness.mjs';
 
 const KIOSK_CSS = `
@@ -130,6 +136,119 @@ describe('findReaders — which sources read a token', () => {
   it('a stylesheet counts only through a rule that reads, never through its declaration', () => {
     expect(findReaders('--font-family-display', sources)).toEqual(['src/index.css']);
     expect(findReaders('--face-bg', sources)).toEqual([]);
+  });
+});
+
+describe('stripCssComments: CSS has only the block comment form', () => {
+  it('blanks a block comment, keeps declarations, preserves length and line breaks', () => {
+    const fixture = ['/* Chrome scrims, one per role */', ':root {', '  --scrim-knob: 0 0 0;', '}'].join('\n');
+    const out = stripCssComments(fixture);
+    expect(out.length).toBe(fixture.length);
+    expect(out.split('\n').length).toBe(fixture.split('\n').length);
+    expect(out).not.toContain('Chrome scrims');
+    expect(out).toContain('--scrim-knob: 0 0 0;');
+  });
+
+  it('blanks a token mention on an interior line of a multi-line block comment (the tokens.css:57 shape)', () => {
+    const fixture = [
+      '/* plus one opaque black (--scrim-knob) for the toggle',
+      '   knob: not a translucent overlay */',
+      '--scrim-knob: 0 0 0;',
+    ].join('\n');
+    const out = stripCssComments(fixture);
+    expect(out).not.toContain('(--scrim-knob)');
+    expect(out).toContain('--scrim-knob: 0 0 0;');
+  });
+
+  it('does not treat // as a comment opener: CSS has no line-comment form, so a protocol-relative url survives untouched', () => {
+    const fixture = 'background: url(//cdn.example.com/img.png); color: var(--face-ink);';
+    expect(stripCssComments(fixture)).toBe(fixture);
+  });
+
+  it('keeps a string literal intact even when it contains comment-like text', () => {
+    const fixture = 'content: "/* not a comment */ still here"; color: var(--face-ink);';
+    expect(stripCssComments(fixture)).toBe(fixture);
+  });
+});
+
+describe('comments are not readers: .ts/.tsx sources (stripComments, reused from rulecheck.mjs)', () => {
+  const sourcesFor = (text: string) => [{ file: 'src/apps/clock/AnalogClock.tsx', text: stripComments(text) }];
+
+  it('a var() inside a line comment does not count', () => {
+    const sources = sourcesFor('// var(--face-ink) explained the old approach\nconst x = 1;');
+    expect(findReaders('--face-ink', sources)).toEqual([]);
+  });
+
+  it('a var() inside a block comment does not count', () => {
+    const sources = sourcesFor('/* var(--face-ink) was read here before the refactor */\nconst x = 1;');
+    expect(findReaders('--face-ink', sources)).toEqual([]);
+  });
+
+  it('a real read on the same line as a trailing comment still counts', () => {
+    const sources = sourcesFor('<circle fill="var(--face-ink)" /> // the face outline');
+    expect(findReaders('--face-ink', sources)).toEqual(['src/apps/clock/AnalogClock.tsx']);
+  });
+
+  it('a comment marker inside a string literal does not eat real code', () => {
+    const sources = sourcesFor(
+      'const note = "not a real /* comment */ marker";\nconst ink = \'var(--face-ink)\';',
+    );
+    expect(findReaders('--face-ink', sources)).toEqual(['src/apps/clock/AnalogClock.tsx']);
+  });
+
+  it('a Tailwind utility-shaped mention inside a comment does not count either', () => {
+    const sources = sourcesFor('// used to read bg-accent for the dial\nconst x = 1;');
+    expect(findReaders('--color-accent', sources)).toEqual([]);
+  });
+});
+
+describe('comments are not readers: .css sources (stripCssComments)', () => {
+  const sourcesFor = (text: string) => [
+    { file: 'src/styles/tokens.css', text: stripDeclarations(stripCssComments(text)) },
+  ];
+
+  it('a var() inside a block comment does not count', () => {
+    const sources = sourcesFor(
+      ['/* plus one opaque black (--scrim-knob) for the toggle knob */', ':root {', '  --scrim-knob: 0 0 0;', '}'].join(
+        '\n',
+      ),
+    );
+    expect(findReaders('--scrim-knob', sources)).toEqual([]);
+  });
+
+  it('a real read on the same line as a trailing comment still counts', () => {
+    const sources = sourcesFor('.x {\n  background: var(--face-ink); /* the face plate */\n}');
+    expect(findReaders('--face-ink', sources)).toEqual(['src/styles/tokens.css']);
+  });
+
+  it('a comment marker inside a string literal does not eat real code', () => {
+    const sources = sourcesFor('.x {\n  content: "/* not a real comment */";\n  background: var(--face-ink);\n}');
+    expect(findReaders('--face-ink', sources)).toEqual(['src/styles/tokens.css']);
+  });
+});
+
+describe('the historical failure this module now catches: a token kept alive only by a comment', () => {
+  // Same shape as the retired --sheet-bg (git history: tokens.css explained
+  // --sheet-950 with a comment that happened to spell var(--sheet-bg), which
+  // is exactly what kept --sheet-bg passing without a real reader). The
+  // comment sits on its own lines, separate from any declaration, so
+  // stripDeclarations alone never removes it, only stripCssComments does.
+  const rawCss = [
+    ':root, html.light {',
+    '  /* Ghost role: kept only so a comment can point at var(--ghost-role);',
+    '     no component ever renders it. */',
+    '  --ghost-role: #171717;',
+    '}',
+  ].join('\n');
+
+  it('is reported dead once the caller strips comments before building sources', () => {
+    const sources = [{ file: 'src/styles/tokens.css', text: stripDeclarations(stripCssComments(rawCss)) }];
+    expect(auditLiveness(['--ghost-role'], sources, []).dead).toEqual(['--ghost-role']);
+  });
+
+  it('was reported live under the old, comment-oblivious composition, pinning what changed', () => {
+    const sources = [{ file: 'src/styles/tokens.css', text: stripDeclarations(rawCss) }];
+    expect(auditLiveness(['--ghost-role'], sources, []).live).toEqual(['--ghost-role']);
   });
 });
 

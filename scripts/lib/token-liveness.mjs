@@ -1,6 +1,9 @@
-// Token liveness predicates. Deliberately free of `node:fs`, like
-// token-rules.mjs: the real-tree gate (src/shared/token-liveness.test.ts) owns
-// file walking; every judgment is here so vitest can drive it with fixtures.
+// Token liveness predicates. This module's own code touches no files: the
+// one cross-import below (stripComments, from ../rulecheck.mjs) is a pure
+// string-to-string function, not a filesystem read, so every judgment is
+// still here for vitest to drive with fixtures, the same as token-rules.mjs;
+// the real-tree gate (src/shared/token-liveness.test.ts) still owns file
+// walking.
 //
 // Why this exists: a token can be declared, themed for night, and mirrored in
 // a doc while nothing reads it. Every earlier check looked at the CSS, where
@@ -14,9 +17,31 @@
 //   - --face-* as var() in face SVG attributes and style objects;
 //   - admin tokens as `hsl(var(--x))` arbitrary values and .admin-root rules.
 //
-// Known limitation, carried on purpose: a read inside a comment counts. The
-// gate under-reports dead tokens rather than inventing a comment stripper
-// that would need its own tests to trust.
+// A read inside a comment used to count, kept on purpose: a comment stripper
+// looked like it would need its own tests to trust before this gate could
+// rely on it. That trade failed four times in one sub-project: a comment in
+// a new token file had to be reworded because it falsely revived a ledgered
+// token, twelve ledger reasons had to be corrected partly for the same
+// reason, a tier 2 role, --sheet-bg, passed this gate with no rendering
+// consumer because a comment happened to name it, and a reviewer then found
+// the same shape again at src/styles/tokens.css:57. scripts/rulecheck.mjs
+// had already paid the "own tests to trust" cost, comment- and
+// string-aware, for its .ts/.tsx scan, so this module reuses its
+// stripComments for .ts/.tsx sources rather than re-deriving it. CSS has no
+// line-comment form (an unquoted, protocol-relative url() may contain a
+// bare double slash that is ordinary CSS text, not a comment opener), so
+// .css sources get their own block-comment-only stripCssComments below
+// instead, same technique, narrowed to the grammar CSS actually has. Both
+// are fixture-tested here, and every source a caller hands to findReaders
+// must now be pre-stripped through the one that matches its type, the same
+// way stripDeclarations already works for CSS. Run against the real tree
+// (src/shared/token-liveness.test.ts), the only token this changed the
+// textual evidence for is --scrim-knob (the src/styles/tokens.css:57 case),
+// and it stays live regardless: a tier-aware structural predicate
+// (consumedRamps, see auditLiveness's extraLive below) already covered it,
+// so the audited live/dead/ledgered sets are unchanged.
+
+export { stripComments } from '../rulecheck.mjs';
 
 const DECLARATION_RE = /^\s*(--[\w-]+)\s*:/;
 
@@ -44,6 +69,53 @@ export function stripDeclarations(cssText) {
     .split('\n')
     .filter((line) => !DECLARATION_RE.test(line))
     .join('\n');
+}
+
+// CSS's only comment form is the block form; there is no double-slash line
+// comment, so a bare // (as in an unquoted, protocol-relative
+// url(//cdn.example.com/x.png)) is ordinary CSS text, not a comment opener.
+// Narrower than stripComments above: same state-machine technique (blank
+// the comment, keep string contents intact, preserve length and line
+// breaks), with the // branch removed and no "glued" check to go with it,
+// since CSS has nothing for that check to guard against. CSS strings are
+// only ' or ", never a backtick, so unlike stripComments this does not
+// treat a backtick as an opener either. Adapted from stripComments
+// (scripts/rulecheck.mjs), not re-derived: same approach, narrowed to the
+// grammar CSS actually has.
+export function stripCssComments(cssText) {
+  const out = [];
+  let mode = 'code'; // 'code' | 'block' | "'" | '"'
+  for (let i = 0; i < cssText.length; i++) {
+    const c = cssText[i];
+    const next = cssText[i + 1];
+    if (mode === 'code') {
+      if (c === '/' && next === '*') {
+        mode = 'block';
+        out.push('  ');
+        i++;
+      } else {
+        if (c === "'" || c === '"') mode = c;
+        out.push(c);
+      }
+      continue;
+    }
+    if (mode === 'block') {
+      if (c === '*' && next === '/') {
+        mode = 'code';
+        out.push('  ');
+        i++;
+      } else out.push(c === '\n' ? '\n' : ' ');
+      continue;
+    }
+    if (c === '\\') {
+      out.push(c, next ?? '');
+      i++;
+      continue;
+    }
+    if (c === mode) mode = 'code';
+    out.push(c);
+  }
+  return out.join('');
 }
 
 function escapeRe(s) {
@@ -80,9 +152,12 @@ export function readerPattern(token) {
   return new RegExp(parts.join('|'));
 }
 
-/** The files among `sources` ({ file, text }) that read `token`. Stylesheets
- *  must be passed through stripDeclarations first; this function does not
- *  know which sources are CSS. */
+/** The files among `sources` ({ file, text }) that read `token`. Every
+ *  source must arrive pre-cleaned: stylesheets through stripDeclarations,
+ *  and every source through the comment stripper for its type
+ *  (stripComments for .ts/.tsx, stripCssComments for .css). This function
+ *  does not know which sources are CSS or which lines were comments; it
+ *  only tests the pattern against whatever text it is given. */
 export function findReaders(token, sources) {
   const re = readerPattern(token);
   return sources.filter((s) => re.test(s.text)).map((s) => s.file);
