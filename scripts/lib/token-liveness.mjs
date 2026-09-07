@@ -130,8 +130,20 @@ export function findReaders(token, sources) {
 
 // Tokens declared on purpose but read by nothing yet. May only SHRINK: when a
 // token gains a reader the audit reports its entry as stale and the entry
-// must be deleted; when the decision is "delete the token", delete both. A
-// new token never enters this list — wire it or do not declare it.
+// must be deleted; when the decision is "delete the token", delete both.
+//
+// Its exact membership is pinned in scripts/lib/token-liveness.test.ts, the
+// same discipline FACE_TOKEN_EXEMPT already has in token-rules.test.ts, so
+// an addition or a removal fails that pin first and must edit it in the
+// same diff. Shrink-only is an enforced constraint here, not only a
+// description of what has happened so far. The list grew from 7 entries to
+// 21 during the 2026-09-06 token-layer work: a deliberate one-time addition
+// of 14 tier 2 roles (Group 1 and Group 2 below), each declared ahead of
+// its sub-project-2 consumer, not drift. The spec's Scope section says why:
+// an @theme inline block would otherwise ship dead variables to every Pi
+// before anything writes them. That one-time exception is closed: ordinary
+// work still never adds a token here, named future consumer or not; wire it
+// or do not declare it.
 export const UNCONSUMED_LEDGER = [
   // Kiosk (src/index.css). Both declared in the first @theme block and never
   // read: WeatherApp colours its dials without them. Deleting changes nothing

@@ -293,4 +293,46 @@ describe('UNCONSUMED_LEDGER — shrink-only, every entry carries a reason', () =
       expect(entry.reason.length, `${entry.token} needs a real reason`).toBeGreaterThanOrEqual(20);
     }
   });
+
+  // Same discipline as FACE_TOKEN_EXEMPT's pin in token-rules.test.ts:
+  // "may only shrink" is a comment above the array unless something fails
+  // when membership changes without this test also changing. Before this
+  // pin, the ledger grew from 7 entries to 21 across the token-layer work
+  // with nothing that would have failed had an addition been silent. This
+  // makes growth (or shrinkage) a visible, deliberate edit: touch
+  // UNCONSUMED_LEDGER without touching this list, and this test names
+  // exactly which token(s) moved.
+  it('pins the exact membership: adding or removing an entry must edit this list too', () => {
+    expect([...UNCONSUMED_LEDGER.map((entry) => entry.token)].sort()).toEqual(
+      [
+        // The original 7.
+        '--color-temp-high',
+        '--color-temp-low',
+        '--accent',
+        '--accent-foreground',
+        '--input',
+        '--popover-foreground',
+        '--radius',
+        // Group 1: the always-dark quick-settings sheet's mode-inverting
+        // generic ink roles, wrong for that surface (see the entries'
+        // own reasons in token-liveness.mjs).
+        '--ink',
+        '--ink-muted',
+        // Group 2: the admin's shadcn vocabulary, deferred whole to
+        // sub-project 2.
+        '--surface-ground',
+        '--surface-card',
+        '--surface-sheet',
+        '--surface-popover',
+        '--brand',
+        '--brand-ink',
+        '--status-danger',
+        '--status-ok',
+        '--status-warn',
+        '--status-warn-ink',
+        '--line',
+        '--focus',
+      ].sort(),
+    );
+  });
 });
