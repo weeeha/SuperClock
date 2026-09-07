@@ -107,9 +107,9 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-7 | blocker | rendered | The admin passes at 375px |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 176 files: 3 violation(s) (3 blocker, 0 review, 0 warning): `ICO-2` src/apps/clock/ComplicationsDark.tsx:60, `ICO-2` src/apps/clock/ComplicationsLight.tsx:71, `ICO-2` src/apps/todo/index.ts:8.
+Tree scan over 177 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
 
-Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/clock/ComplicationsDark.tsx` ×1, `ICO-2 src/apps/clock/ComplicationsLight.tsx` ×1, `ICO-2 src/apps/todo/index.ts` ×1.
+Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/todo/index.ts` ×1.
 
 Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1` (judgment), `KIO-2` (rendered), `STA-1` (judgment), `STA-5` (rendered), `STA-7` (rendered).
 

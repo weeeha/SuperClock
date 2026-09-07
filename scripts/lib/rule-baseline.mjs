@@ -11,19 +11,17 @@
 // (U+2600-27BF) walked past a blocker rule: a heart, a coffee cup, a tick, a
 // heavy pause bar and the entire weather condition set. Seventeen hits in
 // eight files, none of them new, all of them shipped for months. The eight
-// weather's eight were paid the same day, then Todo's three and Fitness's
-// three; three remain across three files.
+// weather's eight were paid the same day, then Todo's three, Fitness's three
+// and the two Complications cups. One remains.
 //
 // They are recorded rather than fixed because every one is a visible design
 // decision inside an app or a face, and this repo's rule is that a face's look
 // is the product — a red check on a deliberate design is a conversation, not a
 // fix-forward. The rows carry the substitution each one is waiting for.
 export const BASELINE = {
-  // The caffeine complication draws a coffee cup. Both faces are on
-  // FACE_TOKEN_EXEMPT already; retiring the glyph is part of their night-token
-  // retrofit, not a drive-by swap. Substitution: lucide `Coffee`.
-  'ICO-2 src/apps/clock/ComplicationsDark.tsx': 1,
-  'ICO-2 src/apps/clock/ComplicationsLight.tsx': 1,
+  // Both Complications faces are paid: the caffeine cup is drawn in
+  // CaffeineMark.tsx, shared by the two, taking the tile's ink. src/apps/clock
+  // now holds no emoji at all.
 
   // Fitness is paid: the streak hearts are drawn in the face's ink (the ring is
   // already that screen's one saturated quantity, so red hearts would have
