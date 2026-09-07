@@ -168,51 +168,51 @@ export const UNCONSUMED_LEDGER = [
   // shadcn slot onto this role.
   {
     token: '--surface-ground',
-    reason: 'admin app background; dies when sub-project 2 aliases --color-background onto this role',
+    reason: 'admin app background; the --color-background alias sub-project 2 plans only adds a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--surface-ground)) directly or the gate gains a tier-aware alias-plus-utility predicate',
   },
   {
     token: '--surface-card',
-    reason: 'admin card background; dies when sub-project 2 aliases --color-card onto this role',
+    reason: 'admin card background; aliasing --color-card onto this role is a declaration line stripDeclarations removes along with the reference inside it, so retiring this entry needs a component that writes hsl(var(--surface-card)) directly or a consumedRamps-style predicate that credits the alias',
   },
   {
     token: '--surface-sheet',
-    reason: 'admin secondary/muted surface; dies when sub-project 2 aliases --color-secondary and --color-muted onto this role',
+    reason: 'admin secondary/muted surface; the --color-secondary and --color-muted aliases sub-project 2 plans are declaration lines the gate strips, leaving this ledgered until a component writes hsl(var(--surface-sheet)) directly or the gate learns to see through the alias-plus-utility path',
   },
   {
     token: '--surface-popover',
-    reason: 'admin popover background; dies when sub-project 2 aliases --color-popover onto this role',
+    reason: 'admin popover background; aliasing --color-popover onto this role only creates a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--surface-popover)) directly or the gate gains a tier-aware predicate that credits the alias',
   },
   {
     token: '--brand',
-    reason: 'admin primary/accent colour; dies when sub-project 2 aliases --color-primary and --color-accent onto this role',
+    reason: 'admin primary/accent colour; the --color-primary and --color-accent aliases sub-project 2 plans are declaration lines the gate strips, so retiring this entry needs a component that writes hsl(var(--brand)) directly or a consumedRamps-style predicate for the alias-plus-utility path',
   },
   {
     token: '--brand-ink',
-    reason: 'admin text on --brand; dies when sub-project 2 aliases --color-primary-foreground and --color-accent-foreground onto this role',
+    reason: 'admin text on --brand; aliasing --color-primary-foreground and --color-accent-foreground onto this role only adds declaration lines the gate strips, leaving this ledgered until a component writes hsl(var(--brand-ink)) directly or the gate gains a tier-aware alias-plus-utility predicate',
   },
   {
     token: '--status-danger',
-    reason: 'admin destructive colour; dies when sub-project 2 aliases --color-destructive onto this role',
+    reason: 'admin destructive colour; the --color-destructive alias sub-project 2 plans is a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--status-danger)) directly or a tier-aware predicate credits the alias',
   },
   {
     token: '--status-ok',
-    reason: 'admin success colour; dies when sub-project 2 aliases --color-success onto this role',
+    reason: 'admin success colour; aliasing --color-success onto this role only creates a declaration line the gate strips, so retiring this entry needs a component that writes hsl(var(--status-ok)) directly or a consumedRamps-style predicate for the alias-plus-utility path',
   },
   {
     token: '--status-warn',
-    reason: 'admin warning colour; dies when sub-project 2 aliases --color-warning onto this role',
+    reason: 'admin warning colour; the --color-warning alias sub-project 2 plans is only a declaration line the gate strips, leaving this ledgered until a component writes hsl(var(--status-warn)) directly or the gate learns to see through the alias-plus-utility path',
   },
   {
     token: '--status-warn-ink',
-    reason: 'admin text on --status-warn; dies when sub-project 2 aliases --color-warning-foreground onto this role',
+    reason: 'admin text on --status-warn; aliasing --color-warning-foreground onto this role only adds a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--status-warn-ink)) directly or the gate gains a tier-aware predicate that credits the alias',
   },
   {
     token: '--line',
-    reason: 'admin border colour; dies when sub-project 2 aliases --color-border and --color-input onto this role',
+    reason: 'admin border colour; the --color-border and --color-input aliases sub-project 2 plans are declaration lines the gate strips, so retiring this entry needs a component that writes hsl(var(--line)) directly or a consumedRamps-style predicate for the alias-plus-utility path',
   },
   {
     token: '--focus',
-    reason: 'admin focus-ring colour; dies when sub-project 2 aliases --color-ring onto this role',
+    reason: 'admin focus-ring colour; aliasing --color-ring onto this role only creates a declaration line the gate strips, leaving this ledgered until a component writes hsl(var(--focus)) directly or the gate gains a tier-aware alias-plus-utility predicate',
   },
 ];
 
