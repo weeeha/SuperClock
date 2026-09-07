@@ -52,7 +52,6 @@
   --red-50: 0 70% 50%;
   --green-58: 142 69% 58%;
   --amber-56: 43 96% 56%;
-  --amber-65: 46 97% 65%;
 
   /* Chrome scrims, the kiosk's white-alpha fills, one per --fill-* role. */
   --scrim-15: 255 255 255 / 0.15;
@@ -79,19 +78,27 @@
      --accent, --success and --warning.
      Chrome and admin surfaces. Light values are ramp-derived defaults, not
      designed ones; sub-project 2 tunes them against a real screen. Nothing
-     consumes them yet, so they move no pixel today. */
+     consumes them yet, so they move no pixel today.
+     Three repoints came from src/shared/token-contrast.test.ts: --ink-muted
+     (light) and --brand-ink (light) were ramp-derived defaults reading
+     below 4.5:1 against the surface each is for (gray-60 is light grey
+     text on a white ground; brand-ink's default of white read against the
+     mid-orange brand), now gray-16 and gray-7. --status-warn-ink (both
+     modes) pointed at amber-65, one step from amber-56 on the same hue,
+     and read 1.18:1 against it; it now points at gray-7 too, and amber-65
+     is gone from tier 1 since that was its only reader. */
   --surface-ground: var(--gray-100);
   --surface-card: var(--gray-96);
   --surface-sheet: var(--gray-92);
   --surface-popover: var(--gray-96);
   --ink: var(--gray-4);
-  --ink-muted: var(--gray-60);
-  --brand-ink: var(--gray-100);
+  --ink-muted: var(--gray-16);
+  --brand-ink: var(--gray-7);
   --brand: var(--orange-admin);
   --status-danger: var(--red-50);
   --status-ok: var(--green-58);
   --status-warn: var(--amber-56);
-  --status-warn-ink: var(--amber-65);
+  --status-warn-ink: var(--gray-7);
   --line: var(--gray-84);
   --focus: var(--orange-admin);
   --fill-subtle: var(--scrim-15);
@@ -121,7 +128,7 @@ html.dark {
   --status-danger: var(--red-50);
   --status-ok: var(--green-58);
   --status-warn: var(--amber-56);
-  --status-warn-ink: var(--amber-65);
+  --status-warn-ink: var(--gray-7);
   --line: var(--gray-16);
   --focus: var(--orange-admin);
   --fill-subtle: var(--scrim-15);
