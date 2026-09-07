@@ -6,6 +6,24 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · the three open decisions, resolved and built
+
+Nick made all three calls; the third he delegated ("make recommended decisions").
+
+**1. Floral's violets — artistic faces exempt (`ab734ee`).** COL-6 now governs chrome and data encodings, not a face in the `artistic` category. Floral's five petal violets are allowed rather than ledgered; three rows remain, all colour standing for data (Productivity's progress quantity, a Complications Dark tile, the extreme-UV weather step). The exemption reads `face-registry.ts` for the category and `face-components.ts` for the file, so a new artistic face is covered and a recategorised one loses it. **A bug worth remembering:** the first regex scanned from an `id:` forward to the nearest `category: 'artistic'`, walking out of its own entry — it exempted Square and Daylight, two faces with no purple in them, while leaving Floral still ledgered. Confidently wrong rather than erroring. A negative lookahead on `id:` fixed it.
+
+**2. Habits month view — density ring (`b457610`).** Seven concentric rings of 31 segments in seven saturated primaries became one ring whose bands grow outward and brighten with how many habits were done that day. Day marks at 1/8/15/22/29; centre shows the month's percentage over ELAPSED days only (dividing by the whole month reports a falling score daily for no reason); empty state is now a sentence. Dropped: per-habit history, the accepted cost — the daily view names every habit but only for today, so that has no home yet. Also dropped seven per-habit Gaussian blurs, which were seven blurred layers a frame on a Pi 4.
+
+**3. The scales — defined (`15da6d5`).** `src/shared/kiosk-scale.ts`: `TYPE` (5 steps from the real frequency peaks) and `GREY` (7 steps from the most-used lightness values among the 44 near-greys). Two calls made rather than asked: face display numerals stay OUT of the type scale (280 and 168 are a dial's proportions, and a face's look is the product), and only true neutrals join the grey ramp (GitHub's #8b949e and the Fitness cream face's #8b8279 are designs, not drift). Three exact-duplicate pairs collapsed for zero pixel change: colours 121 → 118.
+
+**The ratchet earned itself twice today.** It refused the Habits rewrite because I had introduced `#232323`, a grey one shade off ones already present — reused `#1e1e1e` instead. And the token-liveness gate refused the grey ramp when I first declared it in `@theme`, because nothing read those seven tokens; that is what moved both scales into TypeScript, which is where they belonged anyway since they are SVG presentation attributes.
+
+**Verified:** gates green after each commit, 939 tests. Habits rendered with seeded data (30 segments, bands at 166 and 99 units for 5/7 and 3/7, day marks, "55% of September"). The last Habits tweak was confirmed by reading the rendered DOM, not by eye — the browser pane was hidden and could not composite.
+
+**Open:** none of this is deployed; fastclock still runs `3cbc8ba`, which predates every commit from the drift fix onward. Migration of apps onto the two scales. Quote, Images and Breathing never looked at. And still, nothing seen on the actual glass.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · first deploy to fastclock, and what it cost
 
 Nick ran `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@SuperClockFast.local` (the classifier blocked the agent from running it; the command was handed over instead).
