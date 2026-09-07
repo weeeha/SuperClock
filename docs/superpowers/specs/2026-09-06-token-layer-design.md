@@ -59,7 +59,7 @@ Sized from what the code actually paints, not from a generic palette.
 | Lines | `border`, `focus` | admin `--border` 27, `--ring` 20 |
 | Fills | `fill-subtle`, `fill`, `fill-strong` | kiosk slider tracks at white/15, /25, /80 |
 
-Sixteen roles. Each carries a light value and a dark value in tier 2, and nowhere else.
+Twenty seven roles as built. Each carries a light value and a dark value in tier 2, and nowhere else. The table above is the design intent; the group names were renamed to avoid colliding with the admin's own token names, and the sheet's mode-invariant roles were added during the build. The Changelog records both.
 
 The eight `--face-*` names keep their spelling and **are** tier 2 roles, not tier 3 aliases. They already carry a light and a dark value and are already semantic, so aliasing them to new names would add a layer that buys nothing. Tier 3 therefore exists only in the admin, where the shadcn names are a vendor vocabulary that genuinely needs the indirection. No face component changes in this sub-project and the face contracts' `night.tokens` claims stay true.
 
