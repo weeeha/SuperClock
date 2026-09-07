@@ -75,7 +75,9 @@ A `data-density` attribute with one value would be an axis nothing selects on, w
 
 ## Scope
 
-**In:** the three tiers in both entries, the sixteen roles with both modes, the `--face-*` and shadcn names rewritten as aliases, the admin's mode signal, the gates below, and one surface re-tokenised end to end as proof.
+**In:** tier 1 and tier 2 in a shared file, every role carrying both modes, the kiosk consuming it with its face values pinned unchanged, the gates below (including bringing the new file under the existing liveness gate), and one kiosk surface re-tokenised end to end as proof.
+
+**The admin's participation moved out on 2026-09-06, mid-build.** Tier 3, the admin's import, its mode signal and its light palette now all land in sub-project 2 together with the consumers that use them. The reason is evidence rather than taste: `@theme inline` emits a custom property for every alias while the generated utilities bypass it, so declaring 21 aliases before anything writes `bg-card` ships 21 dead variables to every Pi and forces 21 entries onto a list whose whole discipline is that it may only shrink. `scripts/lib/token-liveness.mjs` states the rule this breaks in its own header: wire it or do not declare it. The same reasoning already kept the density axis undeclared in this spec, and applying it to one and not the other would be incoherent.
 
 **Proof surface:** the quick-settings sheet. It is the smallest kiosk surface that uses every group (a surface, two ink levels, all three fills, and the accent), it is already isolated behind an overlay, and it is where open question 3 will be answered.
 
@@ -145,4 +147,4 @@ So this sub-project leaves the existing triplet declarations in place, untouched
 ## Changelog
 
 - 2026-09-06: initial draft from the approved design.
-- 2026-09-06: four corrections found while deriving exact values for the plan. The ledger does not shrink here, because liveness requires a reader and nothing consumes the new admin route until sub-project 2. The nine face tokens are tier 2 roles rather than tier 3 aliases, which removes a layer. A third accent orange exists in the admin (`#fb7837`), so open question 1 covers three values. The admin's bare-triplet consumer format is recorded as a transitional constraint with its own section.
+- 2026-09-06, mid-build: the admin's whole participation moved to sub-project 2, and a new task brings the token file under the liveness gate. See the Scope section. Four earlier corrections found while deriving exact values for the plan. The ledger does not shrink here, because liveness requires a reader and nothing consumes the new admin route until sub-project 2. The nine face tokens are tier 2 roles rather than tier 3 aliases, which removes a layer. A third accent orange exists in the admin (`#fb7837`), so open question 1 covers three values. The admin's bare-triplet consumer format is recorded as a transitional constraint with its own section.
