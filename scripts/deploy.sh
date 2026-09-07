@@ -79,7 +79,16 @@ fi
 echo "Free space OK: $(( AVAIL_KB / 1024 )) MB available, $(( NEED_KB / 1024 )) MB required."
 
 # Built client bundle + bundled server (dist/server.mjs).
-rsync -avz --delete dist/ "$PI_HOST:$REMOTE_DIR/dist/"
+#
+# `protect photos/***` keeps --delete off the device's photo library. Photos
+# are the same class of thing as config/fleet.json below — device-local user
+# content that must survive a deploy — but unlike config/ they live INSIDE the
+# mirrored directory, because the build bakes public/photos/ into dist/.
+# public/photos/* is gitignored, so a clean checkout builds an EMPTY
+# dist/photos/, and a mirroring delete then erased whatever was on the Pi.
+# That is not theoretical: this wiped fastclock's three photos on 2026-09-07.
+# Protect still allows new photos to be sent, it only forbids deleting.
+rsync -avz --delete --filter='protect photos/***' dist/ "$PI_HOST:$REMOTE_DIR/dist/"
 
 # Package manifests (npm ci + `npm run start`).
 rsync -avz package.json package-lock.json "$PI_HOST:$REMOTE_DIR/"
