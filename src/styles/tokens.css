@@ -37,31 +37,27 @@
   --gray-4: 0 0% 4%;
   --gray-7: 0 0% 7%;
   --gray-12: 0 0% 12%;
-  --gray-14: 0 0% 14%;
   --gray-16: 0 0% 16%;
   --gray-60: 0 0% 60%;
   --gray-84: 0 0% 84%;
-  --gray-88: 0 0% 88%;
   --gray-92: 0 0% 92%;
   --gray-96: 0 0% 96%;
   --gray-100: 0 0% 100%;
 
-  /* Hues. Three accent oranges coexist; the spec's open question 1 decides
-     which survives, and this file must not decide it by picking one. */
-  --orange-kiosk: #ff8826;
+  /* One of three coexisting accent oranges (spec: open question 1). The
+     kiosk's own accent (#ff8826) and the config default (#ff6b35) are the
+     other two; neither is ramped here, so this file cannot be read as
+     favouring one by declaring it. */
   --orange-admin: 20 96% 60%;
   --red-50: 0 70% 50%;
   --green-58: 142 69% 58%;
   --amber-56: 43 96% 56%;
   --amber-65: 46 97% 65%;
 
-  /* Chrome scrims, the kiosk's white-alpha fills. */
+  /* Chrome scrims, the kiosk's white-alpha fills, one per --fill-* role. */
   --scrim-15: 255 255 255 / 0.15;
   --scrim-25: 255 255 255 / 0.25;
   --scrim-80: 255 255 255 / 0.8;
-  --scrim-50-ink: 255 255 255 / 0.5;
-  --scrim-70-ink: 255 255 255 / 0.7;
-  --sheet-chrome: #171717;
 }
 
 /* ---- Tier 2: semantic roles. Both modes, and only here. ---- */

@@ -155,6 +155,45 @@ describe('auditLiveness — live, ledgered, dead, stale ledger', () => {
   });
 });
 
+describe('auditLiveness: extraLive, the tier-aware escape hatch', () => {
+  // Only src/styles/tokens.css has this shape: a tier 1 ramp is declared,
+  // then read exclusively by a tier 2 role in the same file. stripDeclarations
+  // removes that read along with the declaration line it lives on (both are
+  // the same line), so no ordinary source walk can ever find it. extraLive is
+  // how a caller who has already done that tier-aware reasoning elsewhere
+  // (token-tiers.mjs's consumedRamps, in src/shared/token-liveness.test.ts)
+  // tells auditLiveness the token is not actually dead.
+  const sources = [{ file: 'src/styles/tokens.css', text: '' }]; // declarations already stripped, nothing left to read
+  const tokens = ['--stone-0', '--stone-unused'];
+
+  it('a token with no reader is dead by default, extraLive included or not', () => {
+    expect(auditLiveness(tokens, sources).dead).toEqual(['--stone-0', '--stone-unused']);
+    expect(auditLiveness(tokens, sources, [], []).dead).toEqual(['--stone-0', '--stone-unused']);
+  });
+
+  it('a token named in extraLive is live even though no source reads it', () => {
+    const out = auditLiveness(tokens, sources, [], ['--stone-0']);
+    expect(out.live).toEqual(['--stone-0']);
+    expect(out.dead).toEqual(['--stone-unused']);
+  });
+
+  it('does not spill onto a token that was not named', () => {
+    // Guards against a version that marks everything live once anything is
+    // passed, which would be the blanket loosening this parameter must not be.
+    const out = auditLiveness(tokens, sources, [], ['--stone-0']);
+    expect(out.dead).not.toContain('--stone-0');
+    expect(out.live).not.toContain('--stone-unused');
+  });
+
+  it('a ledger entry for a token extraLive now covers is reported stale', () => {
+    const ledger = [{ token: '--stone-0', reason: 'was unread before the tier-aware rule existed' }];
+    const out = auditLiveness(tokens, sources, ledger, ['--stone-0']);
+    expect(out.live).toEqual(['--stone-0']);
+    expect(out.ledgered).toEqual([]);
+    expect(out.staleLedger).toEqual(['--stone-0']);
+  });
+});
+
 describe('UNCONSUMED_LEDGER — shrink-only, every entry carries a reason', () => {
   it('each entry names a token and a reason a reviewer can act on', () => {
     for (const entry of UNCONSUMED_LEDGER) {

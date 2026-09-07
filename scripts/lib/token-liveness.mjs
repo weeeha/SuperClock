@@ -129,22 +129,124 @@ export const UNCONSUMED_LEDGER = [
     token: '--radius',
     reason: 'shadcn radius scale; rounded-* utilities do not read it without an @theme inline alias, so admin radii are raw steps today',
   },
+  // Token layer (src/styles/tokens.css), brought under this gate 2026-09-06.
+  // These are tier 2 roles, not ramps: Task 1 declared each with both modes
+  // and its own comment already said "nothing consumes them yet, so they
+  // move no pixel today." The tier-aware rule (consumedRamps, applied in
+  // src/shared/token-liveness.test.ts) rules out the other reading these
+  // could have had, a ramp read only by a role in the same file, so every
+  // name below is a genuine dead end today, not a gate blind spot.
+  //
+  // Group 1: the quick-settings sheet, this sub-project's own proof surface
+  // (see the spec's "Proof surface" note). The very next task retokenises
+  // src/core/components/QuickSettings.tsx onto these five roles; each entry
+  // is deleted in that same change, not carried forward again after.
+  {
+    token: '--fill-subtle',
+    reason: 'quick-settings toggle-off fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+  },
+  {
+    token: '--fill',
+    reason: 'quick-settings grab-handle fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+  },
+  {
+    token: '--fill-strong',
+    reason: 'quick-settings toggle-on fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+  },
+  {
+    token: '--ink',
+    reason: 'quick-settings toggle-knob colour, the chrome ink role used there (not --face-ink); dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+  },
+  {
+    token: '--ink-muted',
+    reason: 'quick-settings label and wifi-value colour; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+  },
+  // Group 2: the admin's shadcn vocabulary, deferred whole to sub-project 2
+  // on 2026-09-06 (spec Scope section) because an @theme inline block would
+  // otherwise ship dead utility variables ahead of any consumer. Each entry
+  // is deleted when that sub-project's @theme inline block aliases the named
+  // shadcn slot onto this role.
+  {
+    token: '--surface-ground',
+    reason: 'admin app background; dies when sub-project 2 aliases --color-background onto this role',
+  },
+  {
+    token: '--surface-card',
+    reason: 'admin card background; dies when sub-project 2 aliases --color-card onto this role',
+  },
+  {
+    token: '--surface-sheet',
+    reason: 'admin secondary/muted surface; dies when sub-project 2 aliases --color-secondary and --color-muted onto this role',
+  },
+  {
+    token: '--surface-popover',
+    reason: 'admin popover background; dies when sub-project 2 aliases --color-popover onto this role',
+  },
+  {
+    token: '--brand',
+    reason: 'admin primary/accent colour; dies when sub-project 2 aliases --color-primary and --color-accent onto this role',
+  },
+  {
+    token: '--brand-ink',
+    reason: 'admin text on --brand; dies when sub-project 2 aliases --color-primary-foreground and --color-accent-foreground onto this role',
+  },
+  {
+    token: '--status-danger',
+    reason: 'admin destructive colour; dies when sub-project 2 aliases --color-destructive onto this role',
+  },
+  {
+    token: '--status-ok',
+    reason: 'admin success colour; dies when sub-project 2 aliases --color-success onto this role',
+  },
+  {
+    token: '--status-warn',
+    reason: 'admin warning colour; dies when sub-project 2 aliases --color-warning onto this role',
+  },
+  {
+    token: '--status-warn-ink',
+    reason: 'admin text on --status-warn; dies when sub-project 2 aliases --color-warning-foreground onto this role',
+  },
+  {
+    token: '--line',
+    reason: 'admin border colour; dies when sub-project 2 aliases --color-border and --color-input onto this role',
+  },
+  {
+    token: '--focus',
+    reason: 'admin focus-ring colour; dies when sub-project 2 aliases --color-ring onto this role',
+  },
 ];
 
 /** Sort every declared token into exactly one of live / ledgered / dead, and
  *  list ledger entries that went stale (a reader appeared, or the token is no
- *  longer declared) so the ledger cannot quietly outlive its reason. */
-export function auditLiveness(tokens, sources, ledger = UNCONSUMED_LEDGER) {
+ *  longer declared) so the ledger cannot quietly outlive its reason.
+ *
+ *  `extraLive` exists for exactly one shape this source-text search cannot
+ *  see: a tier 1 ramp in src/styles/tokens.css, read only by a tier 2 role
+ *  declared in the very same file. That read sits on a declaration line
+ *  (`--face-bg: var(--stone-0);` both declares --face-bg and reads
+ *  --stone-0), so stripDeclarations removes it along with every other
+ *  declaration, on purpose: a stylesheet must never count as a reader
+ *  through the line that declares the token, or every token would look
+ *  self-consuming. The caller (src/shared/token-liveness.test.ts) computes
+ *  this set itself, with token-tiers.mjs's consumedRamps, from the same
+ *  tier-aware reasoning the tier gate already trusts elsewhere. This is not
+ *  a general escape hatch: a token named here is still only live because a
+ *  real, tested predicate found a real reference to it, not because someone
+ *  decided the search should stop looking. */
+export function auditLiveness(tokens, sources, ledger = UNCONSUMED_LEDGER, extraLive = []) {
   const ledgered = new Set(ledger.map((e) => e.token));
   const declared = new Set(tokens);
+  const knownLive = new Set(extraLive);
   const out = { live: [], ledgered: [], dead: [], staleLedger: [] };
   for (const token of tokens) {
-    if (findReaders(token, sources).length) out.live.push(token);
+    if (findReaders(token, sources).length || knownLive.has(token)) out.live.push(token);
     else if (ledgered.has(token)) out.ledgered.push(token);
     else out.dead.push(token);
   }
   for (const { token } of ledger) {
-    if (!declared.has(token) || findReaders(token, sources).length) out.staleLedger.push(token);
+    if (!declared.has(token) || findReaders(token, sources).length || knownLive.has(token)) {
+      out.staleLedger.push(token);
+    }
   }
   return out;
 }

@@ -69,3 +69,24 @@ export function tierViolations({ ramps, light, dark }) {
   }
   return [...bad];
 }
+
+/** Ramp names read by at least one tier 2 role, in either mode. Tier 1's own
+ *  rule, stated where the ramps are declared, is that nothing outside tier 2
+ *  may read one directly. That makes this set the complete answer to "does
+ *  anything reach this ramp": a name absent here has no path to render in
+ *  either mode, independent of whether the role that would have carried it
+ *  has a reader of its own (that role's liveness is a separate, ordinary
+ *  question the token-liveness gate already asks). A reference to a name
+ *  outside `ramps` is the dangling case tierViolations reports on its own;
+ *  it names no real ramp, so it contributes nothing here either. */
+export function consumedRamps({ ramps, light, dark }) {
+  const knownRamps = new Set(ramps);
+  const out = new Set();
+  for (const block of [light, dark]) {
+    for (const value of Object.values(block)) {
+      const ref = /^var\((--[\w-]+)\)$/.exec(value);
+      if (ref && knownRamps.has(ref[1])) out.add(ref[1]);
+    }
+  }
+  return out;
+}

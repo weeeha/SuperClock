@@ -6,3 +6,4 @@ export interface ParsedTiers {
 export declare function parseTiers(cssText: string): ParsedTiers;
 export declare function missingModes(parsed: ParsedTiers): string[];
 export declare function tierViolations(parsed: ParsedTiers): string[];
+export declare function consumedRamps(parsed: ParsedTiers): Set<string>;

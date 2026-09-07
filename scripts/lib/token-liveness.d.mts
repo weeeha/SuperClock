@@ -27,5 +27,6 @@ export declare function auditLiveness(
   tokens: string[],
   sources: TokenSource[],
   ledger?: LedgerEntry[],
+  extraLive?: Iterable<string>,
 ): LivenessAudit;
 export declare const UNCONSUMED_LEDGER: LedgerEntry[];
