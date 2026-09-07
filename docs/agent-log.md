@@ -6,6 +6,32 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design passes: Todo, Fitness, Complications; Habits assessed
+
+Continues the pass below. Nick's call was "design-pass more apps", worst-first.
+
+**Todo (`4c9d014`).** Ticks, cross and the mini-keyboard's space and backspace were text glyphs doing icons' jobs. Now lucide `Check` / `X` / `Space` / `Delete` at 26, sized to the 24px letter keys beside them, with accessible names they never had. `U+2423` and `U+232B` sit outside even the widened ICO-2 range, so the gate had no opinion on them; they went for the same reason.
+
+**Fitness (`3181bb9`).** Streak hearts were `❤️`, drawn now — and drawn in the face's *ink*, not red, because the progress ring is already that screen's one saturated quantity. The paused readout was a `'❚❚'` headline, i.e. the view model spelling a picture; it is a `paused` flag now and the face draws two bars.
+
+**Complications (`2f594e4`).** The caffeine `☕` is drawn in a shared `CaffeineMark.tsx`. This is a face, so what changed is the rendering of one icon, not palette, geometry or composition.
+
+**Emoji debt: 17 → 1.** The last is `src/apps/todo/index.ts`'s registry `icon`. That field is DEAD — the kiosk never renders it and the admin's tile art comes from `APP_ICONS` — and all fourteen apps carry one, thirteen behind a `\u{...}` escape. Deleting it is a fifteen-file types change, not a design pass, so it is left with its reason recorded.
+
+**Two corrections to my own earlier claims, both found by checking rather than assuming:**
+- The Complications demo values are NOT unlabelled. Both demo tiles already carry a "DEMO" row and the habit ring is live from HabitsApp storage; the board's fabrication concern was closed before this pass. That was the stated reason the face was queued, and it was stale.
+- The Complications weather tile is NOT an emoji. It is a drawn sun and two ellipses. It looks like one in a screenshot because it is full colour on a monochrome face — a real observation, but a different one.
+
+**The design ratchet paid down for the first time**, and forced it: dropping the fitness emoji removed `fontSize` 58, nothing else used it, the count fell 61 → 60 and the gate failed until `CEILINGS.fontSizes` followed.
+
+**Habits: assessed, not changed.** Seeded a month of completions and rendered the month-ring view. The board's "7 rings × 31 segments" risk is real: seven fully saturated primaries compete at once (#FF3333 beside #19A340 beside #0044FF), there are no day labels, and habit identity is carried only by seven ~6px dots under the date. It reads as decoration rather than data. Its empty state is worse — with no completions it is concentric near-black rings with no message, where the state kit calls for a sentence and a creating action. **Not redesigned: choosing the replacement encoding (one hue by lightness, a harmonised palette, or a density ring plus legend) is a design decision with several valid answers and is Nick's.**
+
+**Verified:** gates green after every commit, 938 tests. Each pass rendered and read in the browser: Todo's four keyboard icons and their labels plus the done badge, Fitness on both the work and paused faces, the caffeine cup in its tile with the layout unmoved.
+
+**Open:** nothing here is deployed or seen on a real panel. Habits' encoding. The 8 banned-hue rows (Floral's five violets especially — whether COL-6 is meant to apply to an artistic face is unresolved). 60 font sizes and 121 colours still frozen rather than reduced. Quote, Images and Breathing not yet looked at.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design enforcement + Weather and Fireplace passes
 
 Follow-on from the board audit below. Nick's call was "close the enforcement holes first, then redesign the two apps".
