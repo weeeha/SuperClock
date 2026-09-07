@@ -138,28 +138,24 @@ export const UNCONSUMED_LEDGER = [
   // name below is a genuine dead end today, not a gate blind spot.
   //
   // Group 1: the quick-settings sheet, this sub-project's own proof surface
-  // (see the spec's "Proof surface" note). The very next task retokenises
-  // src/core/components/QuickSettings.tsx onto these five roles; each entry
-  // is deleted in that same change, not carried forward again after.
-  {
-    token: '--fill-subtle',
-    reason: 'quick-settings toggle-off fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
-  },
-  {
-    token: '--fill',
-    reason: 'quick-settings grab-handle fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
-  },
-  {
-    token: '--fill-strong',
-    reason: 'quick-settings toggle-on fill; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
-  },
+  // (see the spec's "Proof surface" note). The proof-surface task
+  // retokenised src/core/components/QuickSettings.tsx onto the three fill
+  // roles below directly, so they are gone from this list: a real reader
+  // now exists. --ink and --ink-muted stayed ledgered instead of joining
+  // them: both invert between modes (they are the admin's light-surface/
+  // dark-surface text roles), which is wrong for a sheet whose surface is
+  // fixed dark in both palettes (src/index.css's --color-sheet comment
+  // says so). The sheet's text and its toggle knob read new, deliberately
+  // mode-invariant roles instead (--sheet-ink, --fill-knob, both declared
+  // in src/styles/tokens.css tier 2), wired in the same change that added
+  // them, so neither ever entered this ledger.
   {
     token: '--ink',
-    reason: 'quick-settings toggle-knob colour, the chrome ink role used there (not --face-ink); dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+    reason: 'admin text-on-surface colour, inverts between modes by design; wrong for the always-dark quick-settings sheet, which reads the new mode-invariant --fill-knob for its toggle knob instead (see the Group 1 comment above). Awaits a genuinely mode-dependent consumer, e.g. the admin in sub-project 2',
   },
   {
     token: '--ink-muted',
-    reason: 'quick-settings label and wifi-value colour; dies when the proof-surface task retokenises QuickSettings.tsx onto tier 2 roles',
+    reason: 'admin muted text-on-surface colour, inverts between modes by design; wrong for the always-dark quick-settings sheet, which reads the new mode-invariant --sheet-ink for its labels and wifi value instead (see the Group 1 comment above). Awaits a genuinely mode-dependent consumer, e.g. the admin in sub-project 2',
   },
   // Group 2: the admin's shadcn vocabulary, deferred whole to sub-project 2
   // on 2026-09-06 (spec Scope section) because an @theme inline block would

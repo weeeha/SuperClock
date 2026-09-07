@@ -53,10 +53,21 @@
   --green-58: 142 69% 58%;
   --amber-56: 43 96% 56%;
 
-  /* Chrome scrims, the kiosk's white-alpha fills, one per --fill-* role. */
+  /* Chrome scrims, the kiosk's white-alpha fills, one per --fill-* role,
+     plus one opaque black (--scrim-knob) for the quick-settings toggle
+     knob: not a translucent overlay, but it gets the same raw-value,
+     no-meaning tier 1 treatment as everything else here. */
   --scrim-15: 255 255 255 / 0.15;
   --scrim-25: 255 255 255 / 0.25;
   --scrim-80: 255 255 255 / 0.8;
+  --scrim-knob: 0 0 0;
+
+  /* Mirrors src/index.css's --color-sheet literal (#171717), which stays
+     the value Tailwind reads directly; this task does not move it. This
+     step exists only so tier 2 can declare var(--sheet-bg) below, the
+     role src/shared/token-contrast.test.ts checks --sheet-ink against.
+     Nothing else reads it. */
+  --sheet-950: #171717;
 }
 
 /* ---- Tier 2: semantic roles. Both modes, and only here. ---- */
@@ -104,6 +115,25 @@
   --fill-subtle: var(--scrim-15);
   --fill: var(--scrim-25);
   --fill-strong: var(--scrim-80);
+
+  /* Task 5 (the proof surface): src/index.css's --color-sheet is
+     deliberately static across day/night (overlay chrome, both palettes),
+     so its foreground must be too, or quick-settings text reads dark grey
+     on a dark sheet in light mode. Both declared identically here and in
+     html.dark below: the both-modes gate requires each role in both
+     blocks, not that they differ. --sheet-ink is the sheet's own white
+     ink (the component applies the /50, /70 opacity modifiers that were
+     on the old text-white/N literals); --fill-knob is the toggle knob's
+     fixed black mark, kept in the scrim (rgb) family rather than named as
+     an --*ink* role, because an opaque mark riding on the translucent
+     fill track has no single surface a contrast pair could check it
+     against. --sheet-bg mirrors --color-sheet's literal (see the
+     ramp comment above --sheet-950) purely so --sheet-ink has a real
+     tier 2 surface to be checked against in
+     src/shared/token-contrast.test.ts. */
+  --sheet-ink: var(--gray-100);
+  --fill-knob: var(--scrim-knob);
+  --sheet-bg: var(--sheet-950);
 }
 
 html.dark {
@@ -134,6 +164,12 @@ html.dark {
   --fill-subtle: var(--scrim-15);
   --fill: var(--scrim-25);
   --fill-strong: var(--scrim-80);
+
+  /* Sheet-chrome additions, identical to html.light: see the comment
+     there. */
+  --sheet-ink: var(--gray-100);
+  --fill-knob: var(--scrim-knob);
+  --sheet-bg: var(--sheet-950);
 }
 
 /* The admin has no scheduler, so its mode is the viewer's phone preference.

@@ -8,10 +8,10 @@
 // src/styles/tokens.css rather than trusted from the plan that first wrote
 // it (role names had already stabilised on --ink, --brand-ink and the
 // --status-* family by the time this task landed, so nothing needed
-// renaming — see the report). Two properties keep the list honest:
+// renaming; see the report). Two properties keep the list honest:
 //
 //   1. every pair's two values must actually resolve to a colour this gate
-//      can read, or the pair is reported unreadable and fails — it is
+//      can read, or the pair is reported unreadable and fails: it is
 //      never silently skipped and scored as a pass;
 //   2. every tier 2 role whose name marks it as an ink (the --*ink* family:
 //      --ink, --ink-muted, --brand-ink, --status-warn-ink, --face-ink,
@@ -39,6 +39,14 @@ const AA = 4.5;
 // surface. --status-danger and --status-ok have no dedicated ink role of
 // their own yet (the task-3 scaffold reused --ink for danger and had no
 // foreground at all for ok), so neither appears here; see the report.
+// --sheet-ink is the proof-surface task's own addition (the quick-settings
+// sheet): it is the real, current consumer (bg-fill-knob's sibling), and
+// it is checked against --sheet-bg, a tier 2 role that exists only to
+// mirror src/index.css's --color-sheet literal for this pair. --fill-knob
+// is deliberately not in this list: an opaque mark on the translucent
+// fill track has no single surface a token-level pair could check it
+// against, so it was named outside the --*ink* family instead of added
+// here unchecked.
 const PAIRS: Array<[string, string]> = [
   ['--ink', '--surface-ground'],
   ['--ink', '--surface-card'],
@@ -53,6 +61,7 @@ const PAIRS: Array<[string, string]> = [
   ['--face-ink', '--face-bg'],
   ['--face-ink-muted', '--face-bg'],
   ['--face-ink', '--face-plate'],
+  ['--sheet-ink', '--sheet-bg'],
 ];
 
 describe('token contrast', () => {

@@ -5,7 +5,7 @@
 // parseColor deliberately returns null rather than guessing: a value the
 // gate cannot read must be reported as unreadable, never silently scored as
 // a pass. It reads the two forms tier 2 actually uses (a six-digit hex, and
-// the bare HSL triplet the admin-derived roles carry) and nothing else —
+// the bare HSL triplet the admin-derived roles carry) and nothing else:
 // in particular not the "255 255 255 / 0.15" scrim form, which is never an
 // ink or a surface a text pair sits on.
 
