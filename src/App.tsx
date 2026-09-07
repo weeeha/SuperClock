@@ -9,7 +9,7 @@ import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
 import QuickSettings from './core/components/QuickSettings';
 import PresenceShade from './core/components/PresenceShade';
-import { startConfigPolling, stopConfigPolling } from './shared/local-config';
+import { startConfigSync, stopConfigSync } from './shared/local-config';
 import { useDeviceConfig } from './core/device-config';
 
 // Register all apps
@@ -30,8 +30,8 @@ export default function App() {
   }, [initApps, enabledApps]);
 
   useEffect(() => {
-    startConfigPolling();
-    return () => stopConfigPolling();
+    startConfigSync();
+    return () => stopConfigSync();
   }, []);
 
   useAppGestures(containerRef);

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { execFile } from 'node:child_process';
-import { readDevice, updateDevice } from './fleet-store';
+import { fleetEvents, readDevice, updateDevice } from './fleet-store';
 import { buildCapabilities, STATIC_DEVICE_INFO } from '../src/shared/capabilities';
 import { deviceConfigPatchSchema } from '../src/shared/device-config-schema';
-import type { DeviceState } from '../src/shared/types';
+import type { DeviceConfig, DeviceState } from '../src/shared/types';
 import { resolveDeviceId } from './resolve-device';
 import { adminTokenMiddleware } from './admin-token';
 
@@ -30,6 +30,48 @@ router.get('/network', (_req, res) => {
   execFile('iwgetid', ['-r'], { timeout: 2000 }, (err, stdout) => {
     const ssid = err ? null : stdout.trim() || null;
     res.json({ ssid, connected: ssid !== null });
+  });
+});
+
+// How often a comment frame goes out on an idle stream.
+const HEARTBEAT_MS = 30_000;
+
+// Server-sent config stream. Sends this device's config on connect, then
+// again on every persisted change to it.
+//
+// The 60s poll in src/shared/local-config.ts remains as the fallback, so a
+// dropped stream costs latency, never correctness: EventSource reconnects on
+// its own and the localStorage last-good cache is untouched either way.
+router.get('/config/stream', async (req, res) => {
+  const deviceId = resolveDeviceId();
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-store',
+    Connection: 'keep-alive',
+    // Belt and braces if a reverse proxy is ever put in front of a Pi:
+    // buffering an event stream defeats the point of it.
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+
+  const send = (config: DeviceConfig) => res.write(`data: ${JSON.stringify(config)}\n\n`);
+
+  send(await readDevice(deviceId));
+
+  const onChange = (config: DeviceConfig) => {
+    if (config.deviceId === deviceId) send(config);
+  };
+  fleetEvents.on('device-changed', onChange);
+
+  // Comment frames so an idle connection is not reaped by any timeout between
+  // the kiosk's Chromium and this server.
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), HEARTBEAT_MS);
+
+  // A kiosk holds this open for weeks and reconnects on every network blip;
+  // without both of these, listeners and timers accumulate one per reconnect.
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    fleetEvents.off('device-changed', onChange);
   });
 });
 

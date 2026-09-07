@@ -1,4 +1,5 @@
 import { mkdir, open, readFile, rename } from 'node:fs/promises';
+import { EventEmitter } from 'node:events';
 import { dirname, join } from 'node:path';
 import {
   ALL_DEVICE_IDS,
@@ -18,6 +19,14 @@ const FLEET_EXAMPLE_PATH = join(process.cwd(), 'config', 'fleet.example.json');
 // Serializes every read-modify-write cycle, not just the final file write:
 // two overlapping mutations would otherwise read the same base snapshot and
 // the later write would silently drop the earlier change (both returning 200).
+// Announces a persisted device change to in-process listeners (the SSE route
+// in device-routes.ts). Emitted only AFTER commitFleet resolves, so a listener
+// that reads the store back sees the same bytes that are on disk.
+//
+// The store already serializes every mutation through the lock below, which is
+// what makes this the only place a change can be announced exactly once.
+export const fleetEvents = new EventEmitter();
+
 let mutationLock: Promise<unknown> = Promise.resolve();
 
 function withMutationLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -147,6 +156,7 @@ async function updateDeviceLocked(
   if (updated.deviceId === resolveDeviceId()) {
     applyDisplaySettings(updated);
   }
+  fleetEvents.emit('device-changed', updated);
   return updated;
 }
 
