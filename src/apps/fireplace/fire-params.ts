@@ -89,3 +89,62 @@ export function emberColor(hue: Hue, alpha: number): string {
   const [r, g, b] = EMBER[hue];
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+// ── Soft-particle sprite sheet ───────────────────────────────────────────────
+//
+// The fire used to draw each particle as a hard-edged `arc()` fill, which is
+// the single reason it read as a prototype rather than a flame: a disc has a
+// visible rim, and flame has none. Drawing a radial gradient per particle per
+// frame would fix the edge and cost far too much on a Pi 4 — `createRadialGradient`
+// allocates, and there are ~150 particles at 30fps.
+//
+// So the gradients are built once, one per life-phase bucket, and the render
+// loop only ever calls drawImage. That is both softer and cheaper than what it
+// replaces.
+export const SPRITE_BUCKETS = 12;
+const SPRITE_PX = 64;
+
+/** Life fraction at the centre of bucket `i`. */
+export function bucketT(i: number): number {
+  return (i + 0.5) / SPRITE_BUCKETS;
+}
+
+export function bucketOf(t: number): number {
+  const i = Math.floor(t * SPRITE_BUCKETS);
+  return i < 0 ? 0 : i >= SPRITE_BUCKETS ? SPRITE_BUCKETS - 1 : i;
+}
+
+/**
+ * One soft round sprite per life phase, coloured by `flameColor`.
+ *
+ * Each fades to fully transparent at its rim, so overlapping particles blend
+ * into a body of flame under additive compositing instead of stacking visible
+ * discs. Returns canvases ready for drawImage.
+ */
+export function buildFlameSprites(
+  hue: Hue,
+  make: (w: number, h: number) => HTMLCanvasElement,
+): HTMLCanvasElement[] {
+  const sprites: HTMLCanvasElement[] = [];
+  for (let i = 0; i < SPRITE_BUCKETS; i++) {
+    const c = make(SPRITE_PX, SPRITE_PX);
+    const ctx = c.getContext('2d');
+    if (!ctx) {
+      sprites.push(c);
+      continue;
+    }
+    const { r, g, b } = flameColor(hue, bucketT(i));
+    const mid = SPRITE_PX / 2;
+    const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid);
+    // A hot core that holds its colour across the middle of the radius, then
+    // falls off fast. A linear falloff from the centre reads as a soft ball,
+    // not a flame.
+    grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1)`);
+    grad.addColorStop(0.35, `rgba(${r}, ${g}, ${b}, 0.55)`);
+    grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SPRITE_PX, SPRITE_PX);
+    sprites.push(c);
+  }
+  return sprites;
+}
