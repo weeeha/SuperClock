@@ -6,6 +6,33 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design enforcement + Weather and Fireplace passes
+
+Follow-on from the board audit below. Nick's call was "close the enforcement holes first, then redesign the two apps".
+
+**Enforcement (2 commits).**
+- `318b914` ICO-2 read "zero emoji in chrome" at blocker severity while matching only `U+1F300-1FAFF` plus sparkles, so all of Misc Symbols and Dingbats walked past it. Widened to the pictograph planes, `U+2600-27BF`, `U+2B00-2BFF` and `U+FE0F`; the selector also catches weather's three `\u{...}`-escaped glyphs, the blind spot the rule's own note described. Surfaced 17 pre-existing hits in 8 files, recorded in `BASELINE` rather than fixed, each row naming the substitution it waits for.
+- `20cf85e` `scripts/lib/design-ratchet.mjs` + `src/shared/design-ratchet.test.ts` (new). `src/apps` sits outside SYS-1 on purpose, so nothing measured what that cost: **61 distinct font sizes** against unslop's budget of 7, and **121 distinct raw colours**. Both frozen, shrink-only, held two-way. It also computes hue to catch COL-6's banned indigo/violet/purple, which that rule cannot see because its detector greps Tailwind class names and every occurrence here is raw hex: 8 hits in 4 files, ledgered not recoloured.
+
+**Weather (`2dce94e`).** The conditions dial rendered stock colour emoji. `src/apps/weather/ConditionMark.tsx` (new) draws nine marks — sun, moon, partly, cloud, fog, rain, snow, snow shower, storm — filled at one weight, in a 48-unit box, coloured through `currentColor` so the dial's existing `colorOf` and its 55% night dimming reach them. `Dial` gains an optional `markOf`; every other page stays on text. Paid 8 of the 17 ICO-2 rows.
+
+**Fireplace (`a6119e4`).** Particles were hard-edged `arc()` fills in source-over. Now a 12-bucket pre-rendered soft sprite sheet drawn with `lighter`, which is both softer and cheaper than building a gradient per particle. Ember bed became a disc instead of a full-width rect (two thirds of it was off the round glass), the spawn bed curves to follow the disc, and outer particles rise slower so the fire mounds instead of standing as a column. The trail smear is untouched.
+
+**Verified:** gates green at every step, 938 tests. Weather's mark set reviewed on a contact sheet at shipping size in both day and night opacity. Fireplace judged by re-running its own simulation at full rate in-page.
+
+**Found:**
+- Both HTML shells had linked a `/favicon.svg` that never existed (fixed in the earlier sweep).
+- The crescent moon shipped as a hairline on first draw: a crescent is two arcs between the same points, and setting the large-arc flag on the return makes it bulge the same way as the outer edge.
+
+**Open:**
+- **Nothing here is deployed or seen on a real panel.** Fireplace especially: the still is right, the motion needs a device. The preview pane keeps the page `document.hidden`, which throttles rAF to almost nothing.
+- 9 ICO-2 rows remain across 7 files: the caffeine cup on both Complications faces, fitness hearts and pause bar, todo's ticks/cross/registry icon. Each is app or face visual design, which AGENTS.md reserves for Nick.
+- The 8 banned-hue rows, likewise. Whether COL-6 is even meant to apply to an artistic face (Floral's whole subject is flowers) is unresolved.
+- 61 font sizes and 121 colours are frozen, not fixed. Lowering either is a design pass per app.
+- `codeGlyph` is gone; anything outside this repo that imported it needs `codeMark`.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · local optimization sweep, seven tasks
 
 Spec `docs/superpowers/specs/2026-09-06-local-optimization-design.md`, plan
