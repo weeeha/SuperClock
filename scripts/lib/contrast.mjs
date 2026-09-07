@@ -1,6 +1,9 @@
 // Relative luminance and contrast ratio, WCAG 2.1. Fs-free like its siblings
 // (token-tiers.mjs, token-rules.mjs): the real-tree gate owns reading
-// tokens.css; this module only converts and compares colours.
+// tokens.css and src/index.css; this module converts and compares colours,
+// plus one narrow CSS-reading step neither sibling covers: a literal
+// declared inside src/index.css's @theme block, the kiosk's own token
+// layer that sits outside the tier system tokens.css owns.
 //
 // parseColor deliberately returns null rather than guessing: a value the
 // gate cannot read must be reported as unreadable, never silently scored as
@@ -63,4 +66,21 @@ export function contrastRatio(a, b) {
   const lb = relativeLuminance(b);
   const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
   return (hi + 0.05) / (lo + 0.05);
+}
+
+/** A tier 2 role in tokens.css is not the only place a contrast pair's name
+ *  can resolve: the kiosk also declares plain-hex tokens directly inside
+ *  src/index.css's `@theme { ... }` block, Tailwind's own theme layer,
+ *  outside the tier system entirely. Scoped to the block on purpose, so a
+ *  same-named declaration sitting in a comment or a different rule
+ *  elsewhere in the file can never be mistaken for the theme's own value.
+ *  Returns the trimmed right-hand side, or null when the block does not
+ *  declare the token (including when there is no @theme block at all).
+ *  A caller must treat null as unreadable, never as nothing to check.
+ *  @param {string} cssText @param {string} token @returns {string | null} */
+export function resolveThemeValue(cssText, token) {
+  const theme = /@theme\s*\{([^}]*)\}/.exec(cssText);
+  if (!theme) return null;
+  const decl = new RegExp(`^\\s*${token}\\s*:\\s*([^;]+);`, 'm').exec(theme[1]);
+  return decl ? decl[1].trim() : null;
 }

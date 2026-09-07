@@ -12,7 +12,12 @@
 //
 //   1. every pair's two values must actually resolve to a colour this gate
 //      can read, or the pair is reported unreadable and fails: it is
-//      never silently skipped and scored as a pass;
+//      never silently skipped and scored as a pass. A name resolves
+//      against one of two sources: a tier 2 role in src/styles/tokens.css
+//      (through its ramp), or a literal declared directly inside
+//      src/index.css's @theme block, the kiosk's own token layer outside
+//      the tier system: --sheet-ink's surface, --color-sheet, is the
+//      second kind;
 //   2. every tier 2 role whose name marks it as an ink (the --*ink* family:
 //      --ink, --ink-muted, --brand-ink, --status-warn-ink, --face-ink,
 //      --face-ink-muted today) appears as the ink side of at least one
@@ -22,9 +27,10 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parseTiers } from '../../scripts/lib/token-tiers.mjs';
-import { parseColor, contrastRatio } from '../../scripts/lib/contrast.mjs';
+import { parseColor, contrastRatio, resolveThemeValue } from '../../scripts/lib/contrast.mjs';
 
 const TOKENS = 'src/styles/tokens.css';
+const KIOSK_THEME = 'src/index.css';
 const AA = 4.5;
 
 // Ink against the surface it is designated for. --face-* pairs are the
@@ -41,12 +47,14 @@ const AA = 4.5;
 // foreground at all for ok), so neither appears here; see the report.
 // --sheet-ink is the proof-surface task's own addition (the quick-settings
 // sheet): it is the real, current consumer (bg-fill-knob's sibling), and
-// it is checked against --sheet-bg, a tier 2 role that exists only to
-// mirror src/index.css's --color-sheet literal for this pair. --fill-knob
-// is deliberately not in this list: an opaque mark on the translucent
-// fill track has no single surface a token-level pair could check it
-// against, so it was named outside the --*ink* family instead of added
-// here unchecked.
+// it is checked directly against --color-sheet, the kiosk @theme token
+// declared in src/index.css that the sheet actually paints through
+// bg-sheet (resolveThemeValue below reads the literal straight out of
+// that block; there is no tier 2 mirror of it). --fill-knob is
+// deliberately not in this list: an opaque mark on the translucent fill
+// track has no single surface a token-level pair could check it against,
+// so it was named outside the --*ink* family instead of added here
+// unchecked.
 const PAIRS: Array<[string, string]> = [
   ['--ink', '--surface-ground'],
   ['--ink', '--surface-card'],
@@ -61,25 +69,49 @@ const PAIRS: Array<[string, string]> = [
   ['--face-ink', '--face-bg'],
   ['--face-ink-muted', '--face-bg'],
   ['--face-ink', '--face-plate'],
-  ['--sheet-ink', '--sheet-bg'],
+  ['--sheet-ink', '--color-sheet'],
 ];
 
 describe('token contrast', () => {
   const css = readFileSync(TOKENS, 'utf8');
   const parsed = parseTiers(css);
+  const kioskTheme = readFileSync(KIOSK_THEME, 'utf8');
 
+  /** True when `name` is declared somewhere this gate knows how to read: a
+   *  tier 2 role in TOKENS, or a literal inside KIOSK_THEME's @theme
+   *  block. Neither counts as existing on its own; a name declared in
+   *  neither place is not a role this gate can check anything against. */
+  function declared(name: string): boolean {
+    return parsed.light[name] !== undefined || resolveThemeValue(kioskTheme, name) !== null;
+  }
+
+  /** A tier 2 role resolves through its ramp, one hop, inside TOKENS. A
+   *  name that is not a tier 2 role at all falls back to KIOSK_THEME's
+   *  @theme block, where --color-sheet lives as a plain hex with no ramp
+   *  indirection. A name found in neither place returns null, same as an
+   *  unparseable value: the caller reports it unreadable, it never reads
+   *  as "nothing to check". */
   function value(mode: 'light' | 'dark', role: string): string | null {
     const ref = parsed[mode][role];
-    const ramp = /^var\((--[\w-]+)\)$/.exec(ref ?? '');
-    if (!ramp) return null;
-    const decl = new RegExp(`^\\s*${ramp[1]}\\s*:\\s*([^;]+);`, 'm').exec(css);
-    return decl ? decl[1].trim() : null;
+    if (ref !== undefined) {
+      const ramp = /^var\((--[\w-]+)\)$/.exec(ref);
+      if (!ramp) return null;
+      const decl = new RegExp(`^\\s*${ramp[1]}\\s*:\\s*([^;]+);`, 'm').exec(css);
+      return decl ? decl[1].trim() : null;
+    }
+    return resolveThemeValue(kioskTheme, role);
   }
 
   it('every pair names roles that exist', () => {
     for (const [ink, surface] of PAIRS) {
-      expect(parsed.light[ink], `${ink} is not a tier 2 role`).toBeDefined();
-      expect(parsed.light[surface], `${surface} is not a tier 2 role`).toBeDefined();
+      expect(
+        declared(ink),
+        `${ink} is not a declared role (tier 2 in ${TOKENS}, or a kiosk @theme token in ${KIOSK_THEME})`,
+      ).toBe(true);
+      expect(
+        declared(surface),
+        `${surface} is not a declared role (tier 2 in ${TOKENS}, or a kiosk @theme token in ${KIOSK_THEME})`,
+      ).toBe(true);
     }
   });
 

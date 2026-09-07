@@ -61,13 +61,6 @@
   --scrim-25: 255 255 255 / 0.25;
   --scrim-80: 255 255 255 / 0.8;
   --scrim-knob: 0 0 0;
-
-  /* Mirrors src/index.css's --color-sheet literal (#171717), which stays
-     the value Tailwind reads directly; this task does not move it. This
-     step exists only so tier 2 can declare var(--sheet-bg) below, the
-     role src/shared/token-contrast.test.ts checks --sheet-ink against.
-     Nothing else reads it. */
-  --sheet-950: #171717;
 }
 
 /* ---- Tier 2: semantic roles. Both modes, and only here. ---- */
@@ -123,17 +116,15 @@
      html.dark below: the both-modes gate requires each role in both
      blocks, not that they differ. --sheet-ink is the sheet's own white
      ink (the component applies the /50, /70 opacity modifiers that were
-     on the old text-white/N literals); --fill-knob is the toggle knob's
-     fixed black mark, kept in the scrim (rgb) family rather than named as
-     an --*ink* role, because an opaque mark riding on the translucent
-     fill track has no single surface a contrast pair could check it
-     against. --sheet-bg mirrors --color-sheet's literal (see the
-     ramp comment above --sheet-950) purely so --sheet-ink has a real
-     tier 2 surface to be checked against in
-     src/shared/token-contrast.test.ts. */
+     on the old text-white/N literals), checked directly against
+     src/index.css's --color-sheet in src/shared/token-contrast.test.ts,
+     the kiosk @theme token the sheet actually paints through bg-sheet.
+     --fill-knob is the toggle knob's fixed black mark, kept in the scrim
+     (rgb) family rather than named as an --*ink* role, because an opaque
+     mark riding on the translucent fill track has no single surface a
+     contrast pair could check it against. */
   --sheet-ink: var(--gray-100);
   --fill-knob: var(--scrim-knob);
-  --sheet-bg: var(--sheet-950);
 }
 
 html.dark {
@@ -169,7 +160,6 @@ html.dark {
      there. */
   --sheet-ink: var(--gray-100);
   --fill-knob: var(--scrim-knob);
-  --sheet-bg: var(--sheet-950);
 }
 
 /* The admin has no scheduler, so its mode is the viewer's phone preference.

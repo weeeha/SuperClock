@@ -12,3 +12,4 @@ export interface Rgb {
 export declare function parseColor(value: string): Rgb | null;
 export declare function relativeLuminance(rgb: Rgb): number;
 export declare function contrastRatio(a: Rgb, b: Rgb): number;
+export declare function resolveThemeValue(cssText: string, token: string): string | null;

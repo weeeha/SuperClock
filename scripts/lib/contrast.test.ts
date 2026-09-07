@@ -4,7 +4,7 @@
 // lives here where vitest can reach it directly.
 
 import { describe, it, expect } from 'vitest';
-import { parseColor, contrastRatio } from './contrast.mjs';
+import { parseColor, contrastRatio, resolveThemeValue } from './contrast.mjs';
 
 describe('parseColor', () => {
   it('reads a six-digit hex', () => {
@@ -30,5 +30,39 @@ describe('contrastRatio', () => {
     const a = { r: 10, g: 20, b: 30 };
     const b = { r: 200, g: 210, b: 220 };
     expect(contrastRatio(a, b)).toBeCloseTo(contrastRatio(b, a), 10);
+  });
+});
+
+// A tier 2 role in tokens.css is not the only place a contrast pair's name
+// can resolve: the kiosk also declares plain-hex tokens directly inside
+// src/index.css's @theme block, outside the tier system entirely. These
+// fixtures stand in for that file's shape without reading it from disk.
+describe('resolveThemeValue', () => {
+  const css = [
+    '@theme {',
+    '  --color-accent: #ff8826;',
+    '  --color-sheet: #171717;',
+    '}',
+    '',
+    '.theme-fade {',
+    '  --color-b: #222222;',
+    '  color: red;',
+    '}',
+  ].join('\n');
+
+  it('reads a literal declared inside the @theme block', () => {
+    expect(resolveThemeValue(css, '--color-sheet')).toBe('#171717');
+  });
+
+  it('returns null for a token the block does not declare, so a caller reports it unreadable rather than skipping it', () => {
+    expect(resolveThemeValue(css, '--color-missing')).toBeNull();
+  });
+
+  it('does not match a declaration outside the @theme block', () => {
+    expect(resolveThemeValue(css, '--color-b')).toBeNull();
+  });
+
+  it('returns null when the text has no @theme block at all', () => {
+    expect(resolveThemeValue('.rule { color: red; }', '--color-sheet')).toBeNull();
   });
 });
