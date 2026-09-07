@@ -11,8 +11,8 @@
 // (U+2600-27BF) walked past a blocker rule: a heart, a coffee cup, a tick, a
 // heavy pause bar and the entire weather condition set. Seventeen hits in
 // eight files, none of them new, all of them shipped for months. The eight
-// weather ones were paid the same day, and Todo's three soon after; six
-// remain across six files.
+// weather's eight were paid the same day, then Todo's three and Fitness's
+// three; three remain across three files.
 //
 // They are recorded rather than fixed because every one is a visible design
 // decision inside an app or a face, and this repo's rule is that a face's look
@@ -25,13 +25,10 @@ export const BASELINE = {
   'ICO-2 src/apps/clock/ComplicationsDark.tsx': 1,
   'ICO-2 src/apps/clock/ComplicationsLight.tsx': 1,
 
-  // The monthly streak allowance renders as hearts, and the paused headline as
-  // a heavy double bar. Both are real state, not decoration — the hearts dim to
-  // 0.22 when spent — so they need an icon, not deletion. Substitution: lucide
-  // `Heart` and `Pause`. The test row pins the same string the view model emits.
-  'ICO-2 src/apps/fitness/WatchFace.tsx': 1,
-  'ICO-2 src/apps/fitness/view-model.ts': 1,
-  'ICO-2 src/apps/fitness/view-model.test.ts': 1,
+  // Fitness is paid: the streak hearts are drawn in the face's ink (the ring is
+  // already that screen's one saturated quantity, so red hearts would have
+  // competed with it), and the paused readout is two drawn bars behind a
+  // `paused` flag on the view model instead of a '❚❚' headline.
 
   // TodoApp's three (two ticks and a close cross) are paid: the Todo design
   // pass took them to lucide Check / X, and the mini-keyboard's space and

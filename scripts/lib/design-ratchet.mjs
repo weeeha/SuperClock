@@ -20,7 +20,11 @@
 // fails if a count exceeds its ceiling, and fails as stale if it drops below
 // without the ceiling following it down.
 export const CEILINGS = {
-  fontSizes: 61,
+  // 61 → 60 on 2026-09-07: the Fitness pass drew its streak hearts instead of
+  // setting them as emoji at fontSize 58, and no other element used that size.
+  // This is the ratchet's own first paydown, and the mechanism that forced it —
+  // the gate fails when a count drops and the ceiling does not follow.
+  fontSizes: 60,
   colours: 121,
 };
 
