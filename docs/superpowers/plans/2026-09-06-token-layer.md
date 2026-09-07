@@ -4,7 +4,7 @@
 
 **Goal:** Give both SuperClock stylesheets a three-tier token layer whose middle tier is the only place a light value and a dark value are written, so one mode axis can reach every surface and a density axis has somewhere to live later.
 
-**Architecture:** A new `src/styles/tokens.css` holds tier 1 ramps (raw steps, read only by tier 2) and tier 2 semantic roles (each with a light and a dark value, hung on the `html.light` / `html.dark` classes the kiosk already toggles). Both entry stylesheets import it. The nine `--face-*` names are tier 2 roles already and keep their spelling and values. Tier 3 exists only in the admin, as an `@theme inline` block that turns the shadcn vocabulary into real Tailwind utilities. Gates extend the existing token-liveness module rather than adding a parallel set.
+**Architecture:** A new `src/styles/tokens.css` holds tier 1 ramps (raw steps, read only by tier 2) and tier 2 semantic roles (each with a light and a dark value, hung on the `html.light` / `html.dark` classes the kiosk already toggles). Both entry stylesheets import it. The eight `--face-*` names are tier 2 roles already and keep their spelling and values. Tier 3 exists only in the admin, as an `@theme inline` block that turns the shadcn vocabulary into real Tailwind utilities. Gates extend the existing token-liveness module rather than adding a parallel set.
 
 **Tech Stack:** Tailwind CSS v4 via `@tailwindcss/vite` (no config file), TypeScript strict, vitest 4, Node 22. No new dependencies.
 

@@ -61,7 +61,7 @@ Sized from what the code actually paints, not from a generic palette.
 
 Sixteen roles. Each carries a light value and a dark value in tier 2, and nowhere else.
 
-The nine `--face-*` names keep their spelling and **are** tier 2 roles, not tier 3 aliases. They already carry a light and a dark value and are already semantic, so aliasing them to new names would add a layer that buys nothing. Tier 3 therefore exists only in the admin, where the shadcn names are a vendor vocabulary that genuinely needs the indirection. No face component changes in this sub-project and the face contracts' `night.tokens` claims stay true.
+The eight `--face-*` names keep their spelling and **are** tier 2 roles, not tier 3 aliases. They already carry a light and a dark value and are already semantic, so aliasing them to new names would add a layer that buys nothing. Tier 3 therefore exists only in the admin, where the shadcn names are a vendor vocabulary that genuinely needs the indirection. No face component changes in this sub-project and the face contracts' `night.tokens` claims stay true.
 
 ## The mode axis
 
@@ -140,7 +140,7 @@ So this sub-project leaves the existing triplet declarations in place, untouched
 
 ## Risks
 
-- **The face values must not move.** Thirteen faces and their contracts depend on the nine `--face-*` names resolving as they do now. The promotion to aliases is the riskiest edit here, and the token-level assertion that each alias resolves to its current value is what makes it safe.
+- **The face values must not move.** Thirteen faces and their contracts depend on the eight `--face-*` names resolving as they do now. The promotion to aliases is the riskiest edit here, and the token-level assertion that each alias resolves to its current value is what makes it safe.
 - **A contrast gate can be quietly narrowed.** Checking one pair and reporting green is the failure mode the last sub-project kept finding. The gate must derive its pairs from the role list rather than a hand-kept array, so a role added later arrives already checked.
 - **The admin has never rendered light.** Its light values are invented in sub-project 2, not here, and they will need Nick's eye.
 
