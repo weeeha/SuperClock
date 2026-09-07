@@ -25,7 +25,16 @@ export const CEILINGS = {
   // This is the ratchet's own first paydown, and the mechanism that forced it —
   // the gate fails when a count drops and the ceiling does not follow.
   fontSizes: 60,
-  colours: 121,
+  // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
+  // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
+  // for zero pixel change.
+  //
+  // Both numbers now have somewhere to go. The target scales are declared —
+  // the grey ramp in src/index.css (@theme, --grey-950..300) and the type
+  // scale in src/shared/type-scale.ts — and apps migrate onto them in their
+  // own design passes. Until then this ratchet is what stops the counts
+  // climbing back.
+  colours: 118,
 };
 
 // Files whose colours are data rather than design, so they are not counted.

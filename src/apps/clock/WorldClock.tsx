@@ -107,7 +107,7 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Face */}
-        <circle cx="500" cy="500" r="500" fill="#000" />
+        <circle cx="500" cy="500" r="500" fill="#000000" />
         {ticks}
 
         {/* Mini timezone clocks */}

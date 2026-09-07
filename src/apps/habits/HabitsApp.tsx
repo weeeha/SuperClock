@@ -117,7 +117,7 @@ function DailyView({
             <text
               x={bx} y={by}
               textAnchor="middle" dominantBaseline="middle"
-              fill={done ? '#000' : '#666'}
+              fill={done ? '#000000' : '#666'}
               fontSize="30" fontFamily="Inter, sans-serif" fontWeight="600"
             >
               {habit.name}

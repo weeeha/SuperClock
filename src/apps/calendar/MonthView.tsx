@@ -58,7 +58,7 @@ export default function MonthView({
                     className="flex items-center justify-center rounded-[1.2vmin] w-[5.4vmin] h-[5.4vmin] text-[2.8vmin] tabular-nums"
                     style={{
                       background: isToday ? ORANGE : 'transparent',
-                      color: isToday ? '#fff' : inMonth ? '#fff' : 'rgba(255,255,255,0.25)',
+                      color: isToday ? '#ffffff' : inMonth ? '#ffffff' : 'rgba(255,255,255,0.25)',
                       fontWeight: isToday ? 600 : 400,
                     }}
                   >

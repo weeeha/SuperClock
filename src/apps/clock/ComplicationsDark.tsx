@@ -36,7 +36,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
       <line
         key={i}
         x1="500" y1={isHour ? 22 : 40} x2="500" y2={isHour ? 68 : 60}
-        stroke={isHour ? '#888' : '#555'} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
+        stroke={isHour ? '#888888' : '#555'} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
       />,
     );
@@ -51,7 +51,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Black face */}
-        <circle cx="500" cy="500" r="500" fill="#000" />
+        <circle cx="500" cy="500" r="500" fill="#000000" />
 
         {/* Tick marks */}
         {ticks}

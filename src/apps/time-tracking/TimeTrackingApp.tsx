@@ -124,7 +124,7 @@ function FocusView({
         </text>
 
         {/* Task name */}
-        <text x="500" y="540" textAnchor="middle" fill="#888" fontSize="48" fontFamily="Inter, sans-serif">
+        <text x="500" y="540" textAnchor="middle" fill="#888888" fontSize="48" fontFamily="Inter, sans-serif">
           {task}
         </text>
 
@@ -191,7 +191,7 @@ function TaskPickerView({
               y={y + PILL_H / 2}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill={active ? '#000' : '#aaa'}
+              fill={active ? '#000000' : '#aaa'}
               fontSize="44"
               fontWeight="600"
               fontFamily="Inter, sans-serif"
