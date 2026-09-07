@@ -1,8 +1,9 @@
-// Token liveness predicates. This module's own code touches no files: the
-// one cross-import below (stripComments, from ../rulecheck.mjs) is a pure
-// string-to-string function, not a filesystem read, so every judgment is
-// still here for vitest to drive with fixtures, the same as token-rules.mjs;
-// the real-tree gate (src/shared/token-liveness.test.ts) still owns file
+// Token liveness predicates. This module's own code touches no files, and
+// neither does anything it imports: the one cross-import below
+// (stripComments and stripCssComments, from ./comment-strip.mjs) is a pure,
+// fs-free sibling under scripts/lib, so every judgment is still here for
+// vitest to drive with fixtures, the same as token-rules.mjs; the
+// real-tree gate (src/shared/token-liveness.test.ts) still owns file
 // walking.
 //
 // Why this exists: a token can be declared, themed for night, and mirrored in
@@ -26,22 +27,33 @@
 // consumer because a comment happened to name it, and a reviewer then found
 // the same shape again at src/styles/tokens.css:57. scripts/rulecheck.mjs
 // had already paid the "own tests to trust" cost, comment- and
-// string-aware, for its .ts/.tsx scan, so this module reuses its
-// stripComments for .ts/.tsx sources rather than re-deriving it. CSS has no
-// line-comment form (an unquoted, protocol-relative url() may contain a
-// bare double slash that is ordinary CSS text, not a comment opener), so
-// .css sources get their own block-comment-only stripCssComments below
-// instead, same technique, narrowed to the grammar CSS actually has. Both
-// are fixture-tested here, and every source a caller hands to findReaders
-// must now be pre-stripped through the one that matches its type, the same
-// way stripDeclarations already works for CSS. Run against the real tree
-// (src/shared/token-liveness.test.ts), the only token this changed the
-// textual evidence for is --scrim-knob (the src/styles/tokens.css:57 case),
-// and it stays live regardless: a tier-aware structural predicate
-// (consumedRamps, see auditLiveness's extraLive below) already covered it,
-// so the audited live/dead/ledgered sets are unchanged.
+// string-aware, for its .ts/.tsx scan; CSS needed its own block-comment-only
+// variant, same technique, narrowed to the grammar CSS actually has (CSS has
+// no line-comment form: an unquoted, protocol-relative url() may contain a
+// bare double slash that is ordinary CSS text, not a comment opener). Both
+// variants live in scripts/lib/comment-strip.mjs, a pure sibling module
+// under scripts/lib, and are fixture-tested directly there. This module
+// only imports and re-exports them: for findReaders's own pre-stripping
+// below, and for src/shared/token-liveness.test.ts, which imports both by
+// name from here. An earlier version of this file imported stripComments
+// straight from scripts/rulecheck.mjs (a runner, node:fs at module scope
+// for its own CLI) and defined a second, smaller stripCssComments locally
+// to avoid touching that runner. Both worked but cost something: this
+// module transitively loaded node:fs despite touching no files itself, and
+// the local stripCssComments duplicated most of stripComments's state
+// machine by hand. The shared module fixes both: nothing here pulls in
+// node:fs, directly or transitively, and the two dialects share one
+// implementation instead of two near-copies. Every source a caller hands to
+// findReaders must still be pre-stripped through the one that matches its
+// type, the same way stripDeclarations already works for CSS. Run against
+// the real tree (src/shared/token-liveness.test.ts), the only token this
+// changed the textual evidence for is --scrim-knob (the
+// src/styles/tokens.css:57 case), and it stays live regardless: a
+// tier-aware structural predicate (consumedRamps, see auditLiveness's
+// extraLive below) already covered it, so the audited live/dead/ledgered
+// sets are unchanged.
 
-export { stripComments } from '../rulecheck.mjs';
+export { stripComments, stripCssComments } from './comment-strip.mjs';
 
 const DECLARATION_RE = /^\s*(--[\w-]+)\s*:/;
 
@@ -69,53 +81,6 @@ export function stripDeclarations(cssText) {
     .split('\n')
     .filter((line) => !DECLARATION_RE.test(line))
     .join('\n');
-}
-
-// CSS's only comment form is the block form; there is no double-slash line
-// comment, so a bare // (as in an unquoted, protocol-relative
-// url(//cdn.example.com/x.png)) is ordinary CSS text, not a comment opener.
-// Narrower than stripComments above: same state-machine technique (blank
-// the comment, keep string contents intact, preserve length and line
-// breaks), with the // branch removed and no "glued" check to go with it,
-// since CSS has nothing for that check to guard against. CSS strings are
-// only ' or ", never a backtick, so unlike stripComments this does not
-// treat a backtick as an opener either. Adapted from stripComments
-// (scripts/rulecheck.mjs), not re-derived: same approach, narrowed to the
-// grammar CSS actually has.
-export function stripCssComments(cssText) {
-  const out = [];
-  let mode = 'code'; // 'code' | 'block' | "'" | '"'
-  for (let i = 0; i < cssText.length; i++) {
-    const c = cssText[i];
-    const next = cssText[i + 1];
-    if (mode === 'code') {
-      if (c === '/' && next === '*') {
-        mode = 'block';
-        out.push('  ');
-        i++;
-      } else {
-        if (c === "'" || c === '"') mode = c;
-        out.push(c);
-      }
-      continue;
-    }
-    if (mode === 'block') {
-      if (c === '*' && next === '/') {
-        mode = 'code';
-        out.push('  ');
-        i++;
-      } else out.push(c === '\n' ? '\n' : ' ');
-      continue;
-    }
-    if (c === '\\') {
-      out.push(c, next ?? '');
-      i++;
-      continue;
-    }
-    if (c === mode) mode = 'code';
-    out.push(c);
-  }
-  return out.join('');
 }
 
 function escapeRe(s) {

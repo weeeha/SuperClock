@@ -9,9 +9,14 @@
 // --face-* as var() in face SVG/style attributes, admin tokens as
 // hsl(var(--x)) arbitrary values and .admin-root rules.
 //
-// stripComments / stripCssComments (below, after findReaders) cover the
-// fix for a read inside a comment counting as a real one: see the
-// "comments are not readers" and "historical failure" blocks.
+// stripComments / stripCssComments now live in scripts/lib/comment-strip.mjs
+// (fixture-tested directly there, in scripts/lib/comment-strip.test.ts) and
+// are re-exported here for this module's own callers. The two
+// "comments are not readers" blocks and the "historical failure" block
+// below still cover the fix for a read inside a comment counting as a real
+// one, at the point it matters for this module: composed with findReaders
+// and auditLiveness, the same way the real-tree gate
+// (src/shared/token-liveness.test.ts) actually uses them.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -139,39 +144,7 @@ describe('findReaders — which sources read a token', () => {
   });
 });
 
-describe('stripCssComments: CSS has only the block comment form', () => {
-  it('blanks a block comment, keeps declarations, preserves length and line breaks', () => {
-    const fixture = ['/* Chrome scrims, one per role */', ':root {', '  --scrim-knob: 0 0 0;', '}'].join('\n');
-    const out = stripCssComments(fixture);
-    expect(out.length).toBe(fixture.length);
-    expect(out.split('\n').length).toBe(fixture.split('\n').length);
-    expect(out).not.toContain('Chrome scrims');
-    expect(out).toContain('--scrim-knob: 0 0 0;');
-  });
-
-  it('blanks a token mention on an interior line of a multi-line block comment (the tokens.css:57 shape)', () => {
-    const fixture = [
-      '/* plus one opaque black (--scrim-knob) for the toggle',
-      '   knob: not a translucent overlay */',
-      '--scrim-knob: 0 0 0;',
-    ].join('\n');
-    const out = stripCssComments(fixture);
-    expect(out).not.toContain('(--scrim-knob)');
-    expect(out).toContain('--scrim-knob: 0 0 0;');
-  });
-
-  it('does not treat // as a comment opener: CSS has no line-comment form, so a protocol-relative url survives untouched', () => {
-    const fixture = 'background: url(//cdn.example.com/img.png); color: var(--face-ink);';
-    expect(stripCssComments(fixture)).toBe(fixture);
-  });
-
-  it('keeps a string literal intact even when it contains comment-like text', () => {
-    const fixture = 'content: "/* not a comment */ still here"; color: var(--face-ink);';
-    expect(stripCssComments(fixture)).toBe(fixture);
-  });
-});
-
-describe('comments are not readers: .ts/.tsx sources (stripComments, reused from rulecheck.mjs)', () => {
+describe('comments are not readers: .ts/.tsx sources (stripComments, from scripts/lib/comment-strip.mjs)', () => {
   const sourcesFor = (text: string) => [{ file: 'src/apps/clock/AnalogClock.tsx', text: stripComments(text) }];
 
   it('a var() inside a line comment does not count', () => {
