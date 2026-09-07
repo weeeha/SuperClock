@@ -453,7 +453,7 @@ Add to `src/shared/token-tiers.test.ts`. This is the test that makes the whole r
 ```ts
 // Appended to src/shared/token-tiers.test.ts
 
-// The nine face roles as src/index.css declared them before the token layer
+// The eight face roles as src/index.css declared them before the token layer
 // (commit prior to this work). A face that resolves to anything else is a
 // pixel change on thirteen faces, which this sub-project forbids.
 const FACE_BEFORE = {
