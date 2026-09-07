@@ -6,6 +6,27 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · first deploy to fastclock, and what it cost
+
+Nick ran `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@SuperClockFast.local` (the classifier blocked the agent from running it; the command was handed over instead).
+
+**Deploy verified.** `/api/health` reports `3cbc8ba` on branch `claude/local-folder-optimization-eb398f`, matching the shipped commit; the server restarted (uptime 3s). fastclock was on `b88dc81`/main before this.
+
+**It destroyed the device's photo library, and that is a class, not an accident (`071313d`).** `public/photos/*` is gitignored, so a clean checkout builds an EMPTY `dist/photos/`, and `rsync --delete` on `dist/` mirrored that emptiness onto the Pi. `test1.jpg`, `test2.jpg`, `test3.jpg` are gone with no surviving copy. Every deploy from every machine has done this. deploy.sh already reasons about exactly this hazard for `config/` ("device-local state that must survive deploys") but photos sit *inside* the mirrored directory, so that carve-out could not reach them. Fixed with `--filter='protect photos/***'`, which forbids deletion while still allowing new photos to be sent, and proven both ways against the real device with a planted probe file.
+
+**The Minimalismo sweep drifts when the document is hidden, measured on the deployed build (`223a44d`).** A constant 133° (~22s) error, holding steady — right rate, wrong phase. A hidden document pauses the animation timeline; the `visibilitychange` handler only fires on a transition and a document hidden from load never emits one, so the scheduled re-align was the real bound. It was 5 minutes. Now 60s, which must stay a whole number of minutes so the remount lands at 0° where it cannot be seen. Caveat recorded in the commit: this was a hidden tab, and the Pi runs Chromium fullscreen where the document should never be hidden — but "should" was the problem with 5 minutes.
+
+**Method note worth keeping.** The first reading of that drift looked far worse because the angle was computed from `anim.currentTime` alone, which excludes the negative `animation-delay` that sets the phase. Adding the delay back made the computed angle match the rendered transform matrix exactly — which is what made the residual constant error trustworthy rather than a measurement artifact.
+
+**Three facts about the device, found while verifying:**
+- `window.__nav` is stripped from production builds, so device navigation cannot be driven programmatically the way the dev preview allows. Real gestures or config are the only levers.
+- `POST /api/device/config` returns 401 on fastclock: it has `config/admin.json` provisioned, so the write surface is token-gated. Correct behaviour, and not worked around.
+- fastclock is on **192.168.4.30**. `CLOCK_SPECS.txt` records 192.168.4.28. The `.local` name resolves correctly so nothing is broken, but the doc is stale.
+
+**Still not verified:** the panel itself. Everything above was read through a browser pointed at the device, at a true 1080×1080 viewport, which settles resolution and served-build questions but not what the glass looks like from across the room. The drift fix is committed and NOT deployed.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design passes: Todo, Fitness, Complications; Habits assessed
 
 Continues the pass below. Nick's call was "design-pass more apps", worst-first.
