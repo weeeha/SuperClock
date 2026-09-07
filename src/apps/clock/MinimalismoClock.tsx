@@ -38,11 +38,24 @@ const secondSpec = spec.hands.second;
 const C = spec.space / 2;
 const SECOND_COLOR = resolveSpecColor(secondSpec.color ?? spec.face.ink, {});
 
-// How often the CSS sweep is re-aligned to the wall clock. The document
-// timeline advances on the monotonic clock while the hour and minute hands
-// come from Date, so an NTP step moves one and not the other. These kiosks run
-// for weeks, so alignment cannot be a one-off at mount.
-const REALIGN_MS = 5 * 60_000;
+// How often the CSS sweep is re-aligned to the wall clock.
+//
+// Two things pull it out of phase. An NTP step moves Date, which the hour and
+// minute hands read, without moving the monotonic clock the document timeline
+// runs on. And a hidden document pauses that timeline outright, so time passes
+// in the world while the animation's clock stands still.
+//
+// The visibilitychange handler below catches the second one at the moment it
+// resumes, but only when a transition actually fires — a document hidden from
+// load onward never emits one. So this interval is the real bound on how wrong
+// the hand can be, and it was 5 minutes, which is far too generous for a
+// second hand. Measured on fastclock 2026-09-07 in a hidden tab: a constant
+// 133° error, held for as long as the re-align had not come round.
+//
+// One minute, and it must stay a whole number of minutes: the remount lands on
+// a minute boundary, where the hand is at 0° and the correction is invisible.
+// The cost is remounting one <line> once a minute.
+const REALIGN_MS = 60_000;
 
 /**
  * The gold second hand: drawn at angle 0, rotated by the `.face-sweep`
