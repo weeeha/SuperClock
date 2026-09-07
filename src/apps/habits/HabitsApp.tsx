@@ -28,6 +28,9 @@ const CX = 500;
 const CY = 500;
 const STORAGE_KEY = 'superclock-habits-v2';
 
+// One accent for the month ring — the kiosk's, so the admin's accent reaches it.
+const ACCENT = 'var(--color-accent)';
+
 // LOCAL calendar date, not toISOString() (UTC) — mixing the two shifted
 // day keys by one around midnight in any UTC+ timezone, so a habit toggled
 // today lit up the wrong cell in the monthly ring.
@@ -154,65 +157,116 @@ function MonthlyView({
   const todayDay = now.getDate();
   const monthName = now.toLocaleDateString('en-US', { month: 'long' });
 
-  // Rings spread evenly from RING_MIN to RING_MAX; at 7 habits this yields the
-  // original hardcoded radii (140..368 step 38), and other counts still fit.
-  const RING_MIN = 140;
-  const RING_MAX = 368;
-  const ringR = (hi: number) =>
-    habits.length > 1 ? RING_MIN + (hi * (RING_MAX - RING_MIN)) / (habits.length - 1) : RING_MIN;
-  const STROKE_W = 28;
+  // One ring, not one per habit.
+  //
+  // This was seven concentric rings of 31 segments, each habit its own
+  // saturated hue. It was legible only up close: seven primaries competed at
+  // equal weight, habit identity was carried by seven 6px dots, and there were
+  // no day marks, so it read as decoration. On a wall clock the month view's
+  // job is "how am I doing", and that is one quantity per day.
+  //
+  // Each day's band grows outward with how many habits were completed, and
+  // brightens with it. Radius and lightness carry the same number twice on
+  // purpose — either one alone is too fine to read across a room.
+  //
+  // What this drops is per-habit history: "I have skipped Reading for a
+  // fortnight" is no longer visible here. That was the accepted cost of the
+  // change (Nick, 2026-09-07); the daily view shows every habit by name, but
+  // only for today.
+  const R_BASE = 152;
+  const R_MAX = 384;
   const SEG = 360 / totalDays;
   const GAP = 1.8;
 
+  const doneOn = (dayNum: number) => {
+    const dateStr = toDateStr(new Date(year, month, dayNum));
+    return habits.reduce((n, h) => n + (completions[hKey(h.id, dateStr)] ? 1 : 0), 0);
+  };
+
+  const days = Array.from({ length: totalDays }, (_, d) => {
+    const dayNum = d + 1;
+    return { dayNum, n: dayNum <= todayDay ? doneOn(dayNum) : 0, isFuture: dayNum > todayDay };
+  });
+
+  // Elapsed days only: dividing by the whole month would report a falling
+  // score every day for reasons that have nothing to do with the habits.
+  const possible = todayDay * habits.length;
+  const achieved = days.reduce((sum, d) => sum + d.n, 0);
+  const pct = possible > 0 ? Math.round((achieved / possible) * 100) : 0;
+  const nothingLogged = achieved === 0;
+
   return (
     <svg viewBox="0 0 1000 1000" className="w-full h-full">
-      <defs>
-        {habits.map(h => (
-          <filter key={h.id} id={`gm-${h.id}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        ))}
-      </defs>
-
-      {habits.map((habit, hi) => {
-        const r = ringR(hi);
-        return Array.from({ length: totalDays }, (_, d) => {
-          const dayNum = d + 1;
-          const dateStr = toDateStr(new Date(year, month, dayNum));
-          const done = !!completions[hKey(habit.id, dateStr)];
-          const isFuture = dayNum > todayDay;
-          const startDeg = d * SEG + GAP / 2;
-          const endDeg = (d + 1) * SEG - GAP / 2;
-          const color = done ? habit.color : isFuture ? '#0d0d0d' : '#1e1e1e';
+      {days.map(({ dayNum, n, isFuture }) => {
+        const frac = habits.length > 0 ? n / habits.length : 0;
+        const startDeg = (dayNum - 1) * SEG + GAP / 2;
+        const endDeg = dayNum * SEG - GAP / 2;
+        if (n === 0) {
+          // An empty day is still a day: it keeps a track so the month reads as
+          // a full circle and a gap means "none", not "missing". It has to be
+          // bright enough to actually close that circle — at #1e1e1e/6px the
+          // ring vanished on black and early in a month the view looked like a
+          // few bars floating with nothing to belong to.
           return (
             <path
-              key={`${hi}-${d}`}
-              d={arcPath(r, startDeg, endDeg)}
+              key={dayNum}
+              d={arcPath(R_BASE, startDeg, endDeg)}
               fill="none"
-              stroke={color}
-              strokeWidth={STROKE_W}
+              stroke={isFuture ? '#1e1e1e' : '#2a2a2a'}
+              strokeWidth={9}
               strokeLinecap="round"
-              filter={done ? `url(#gm-${habit.id})` : undefined}
             />
           );
-        });
+        }
+        const outer = R_BASE + (R_MAX - R_BASE) * frac;
+        return (
+          <path
+            key={dayNum}
+            d={arcPath((R_BASE + outer) / 2, startDeg, endDeg)}
+            fill="none"
+            stroke={ACCENT}
+            strokeOpacity={0.34 + 0.66 * frac}
+            strokeWidth={outer - R_BASE}
+            strokeLinecap="butt"
+          />
+        );
       })}
 
-      {/* Center disc */}
+      {/* Day marks at the quarter points, so a band can be located in the month. */}
+      {[1, 8, 15, 22, 29].filter((d) => d <= totalDays).map((d) => {
+        const [x, y] = polarToXY(R_MAX + 28, (d - 1) * SEG + SEG / 2);
+        return (
+          <text
+            key={d}
+            x={x} y={y}
+            textAnchor="middle" dominantBaseline="central"
+            fill="#6a6a70" fontSize="26" fontFamily="Inter, sans-serif"
+          >
+            {d}
+          </text>
+        );
+      })}
+
       <circle cx={CX} cy={CY} r={118} fill="#090909" />
       <text x={CX} y={CY - 26} textAnchor="middle" fill="rgba(255,255,255,0.4)"
         fontSize="28" fontFamily="Inter, sans-serif">{monthName}</text>
       <text x={CX} y={CY + 30} textAnchor="middle" dominantBaseline="middle" fill="white"
         fontSize="72" fontFamily="Inter, sans-serif" fontWeight="700">{todayDay}</text>
 
-      {/* Habit colour dots */}
-      {habits.map((h, i) => (
-        <circle key={h.id} cx={CX - (habits.length - 1) * 15 + i * 30} cy={CY + 88} r={6} fill={h.color} />
-      ))}
+      {/* The month's own number, or an honest empty state. The ring alone
+          cannot say "nothing logged yet" — with no data it is just a faint
+          circle, which is what the old view left on screen with no message. */}
+      {nothingLogged ? (
+        <text x={CX} y={CY + 168} textAnchor="middle" fill="#6a6a70"
+          fontSize="26" fontFamily="Inter, sans-serif">
+          nothing logged this month
+        </text>
+      ) : (
+        <text x={CX} y={CY + 168} textAnchor="middle" fill="#6a6a70"
+          fontSize="26" fontFamily="Inter, sans-serif">
+          {pct}% of {monthName}
+        </text>
+      )}
     </svg>
   );
 }
