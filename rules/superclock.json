@@ -61,7 +61,7 @@
     },
     {
       "id": "COL-6",
-      "title": "Indigo, violet and purple are not this system's hues",
+      "title": "Indigo, violet and purple are not this system\u2019s hues (chrome and data, not artistic faces)",
       "severity": "warning",
       "detect": {
         "method": "heuristic",
@@ -81,7 +81,7 @@
         "falsePositives": "Matches the utility inside a string that quotes or discusses the banned class rather than applying it. Every hit still needs a look, hence warning."
       },
       "fix": "Remove it. The kiosk's colour is the configured accent plus the --face-* palette; the admin's is its semantic tokens. A second categorical hue is a token decision, not a Tailwind class.",
-      "why": "Nothing in SuperClock is purple. Its presence is machine provenance rather than a decision."
+      "why": "They are the model's default reach and they are not in this palette. Scoped 2026-09-07 (Nick): the rule governs chrome and data encodings, NOT a face in the `artistic` category \u2014 a face whose subject is flowers is entitled to violets, a progress quantity or a status tile is not. This detector only matches the Tailwind utility name, and every occurrence in this repo is raw hex, so it has never fired; the hue is computed instead by src/shared/design-ratchet.test.ts, which reads the artistic category from face-registry.ts rather than naming files."
     },
     {
       "id": "ICO-2",

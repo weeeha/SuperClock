@@ -67,6 +67,12 @@ export function hexToHsl(hex) {
 // written as raw hex inside a face, so the rule has never once fired on them.
 // This computes the hue instead of reading the name, which is the only way to
 // catch a colour nobody spelled.
+//
+// Scope decided 2026-09-07 (Nick): the rule governs chrome and data
+// encodings, NOT a face in the `artistic` category. A face whose subject is
+// flowers is entitled to violets; a progress quantity or a status tile is not.
+// The exemption reads the registry's own category rather than naming files, so
+// a new artistic face is covered and a recategorised one loses it.
 export function isBannedHue(hex) {
   const c = hexToHsl(hex);
   if (!c) return false;
@@ -83,8 +89,9 @@ export function isBannedHue(hex) {
 // eighth is a weather condition colour, which is chrome, and COL-6 does mean
 // that one.
 export const BANNED_HUE_LEDGER = {
-  // #f0abfc #c084fc #6366f1 #a78bfa #e879f9 — the petal palette.
-  'src/apps/clock/FloralClock.tsx': 5,
+  // Floral's five petal violets are NOT here: the artistic category is exempt
+  // by the scope decision above, so they are allowed rather than ledgered.
+  //
   // #7c3aed on a data tile.
   'src/apps/clock/ComplicationsDark.tsx': 1,
   // #a855f7 on a progress quantity.
@@ -93,3 +100,28 @@ export const BANNED_HUE_LEDGER = {
   // one a design pass will reach on its own.
   'src/apps/weather/weather-utils.ts': 1,
 };
+
+/**
+ * Face component filenames whose category exempts them from the hue rule.
+ *
+ * Derived from the two registries rather than listed: `face-registry.ts` says
+ * which ids are artistic, `face-components.ts` says which component each id
+ * maps to. Both are already gated for coherence, so this cannot drift.
+ */
+export function artisticFaceFiles(registrySource, componentsSource) {
+  const artistic = new Set();
+  // The lookahead is load-bearing: a plain lazy gap scans forward out of its
+  // own entry into the next one, so `square` matched Floral's category and the
+  // wrong two faces came back exempt. Forbidding another `id:` in between keeps
+  // each match inside one registry entry.
+  for (const m of registrySource.matchAll(
+    /id:\s*'([\w-]+)'(?:(?!\bid:)[\s\S])*?category:\s*'artistic'/g,
+  )) {
+    artistic.add(m[1]);
+  }
+  const files = new Set();
+  for (const m of componentsSource.matchAll(/^\s*'?([\w-]+)'?:\s*(\w+),$/gm)) {
+    if (artistic.has(m[1])) files.add(`${m[2]}.tsx`);
+  }
+  return files;
+}

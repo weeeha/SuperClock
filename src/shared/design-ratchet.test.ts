@@ -5,6 +5,7 @@ import {
   extractColours,
   extractFontSizes,
   isBannedHue,
+  artisticFaceFiles,
   CEILINGS,
   NOT_DESIGN,
   BANNED_HUE_LEDGER,
@@ -27,6 +28,13 @@ const files = ['src/apps', 'src/core']
   .filter((f) => !NOT_DESIGN.includes(f));
 
 const sources = files.map((f) => [f, readFileSync(f, 'utf8')] as const);
+
+// Artistic faces are exempt from the hue rule by decision (2026-09-07): it
+// governs chrome and data encodings, not a face whose subject is flowers.
+const exemptFaces = artisticFaceFiles(
+  readFileSync('src/shared/face-registry.ts', 'utf8'),
+  readFileSync('src/apps/clock/face-components.ts', 'utf8'),
+);
 
 const fontSizes = new Set<string>();
 const colours = new Set<string>();
@@ -67,9 +75,17 @@ describe('kiosk design ratchet', () => {
     ).toEqual({ fontSizes: CEILINGS.fontSizes, colours: CEILINGS.colours });
   });
 
+  it('finds the artistic faces from the registries, not from a list', () => {
+    // Floral is the reason the exemption exists; if the registry stops calling
+    // it artistic, it stops being exempt and its five violets come back.
+    expect(exemptFaces.has('FloralClock.tsx')).toBe(true);
+    expect(exemptFaces.has('ProductivityClock.tsx')).toBe(false);
+  });
+
   it('no banned hue outside the ledger, and no stale ledger row', () => {
     const found: Record<string, number> = {};
     for (const [file, src] of sources) {
+      if ([...exemptFaces].some((name) => file.endsWith(`/${name}`))) continue;
       const n = [...extractColours(src)].filter(isBannedHue).length;
       if (n > 0) found[file] = n;
     }
