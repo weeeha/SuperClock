@@ -107,7 +107,7 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-7 | blocker | rendered | The admin passes at 375px |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 173 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
+Tree scan over 175 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
 
 Baseline rows (`BASELINE`, frozen debt): empty.
 
