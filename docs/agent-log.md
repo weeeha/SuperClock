@@ -6,6 +6,22 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · second deploy, and a false negative in the deploy's own check
+
+**fastclock now runs `a672589`** — every commit through the scales work — verified by build stamp, and Chromium was restarted (`pkill -TERM chromium`, labwc autostart relaunches) so the glass is showing it rather than the 3h25m-old page it was holding.
+
+**The self-verifying deploy reported a failure for a deploy that had landed perfectly (`a672589`).** It printed "server did not come back within 60s"; the device was healthy in ~6s and serving the exact shipped commit. That is worse than having no check: a false negative on the one mechanism that answers "did my deploy land" teaches you to ignore it.
+
+Cause: `--max-time` covers DNS as well as the request, and resolving a `.local` name from macOS costs more than the 3s budget. Measured three consecutive attempts hitting the ceiling at exactly 3.01s — so `curl -f` failed every iteration, `HEALTH_JSON` stayed empty, and **the loop could never have passed against a `.local` host, however long it ran.** Every previous "successful" verification must have been against an IP or a faster resolver.
+
+Fixed: ssh has already proven reachability by that point, so the script asks the device for its own address and polls that, falling back to the passed-in host. The budget also splits into `--connect-timeout 3` plus `--max-time 8`, so slow is distinguishable from unreachable. Re-ran the whole deploy end to end and it verified green.
+
+**Sequence worth noting for anyone reading the last two entries together:** the first deploy today wiped the device's photo library (fixed, `071313d`), and the second one exposed the verification as structurally broken. Both were latent in a script described in AGENTS.md as "guarded and self-verifying". It is now closer to both.
+
+**Open:** still nothing seen on the actual panel by a human — everything here is stamps, logs and DOM reads. The Minimalismo drift fix and all of today's design work are now ON the device, so that observation is finally possible.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · the three open decisions, resolved and built
 
 Nick made all three calls; the third he delegated ("make recommended decisions").
