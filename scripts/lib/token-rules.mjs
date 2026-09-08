@@ -48,6 +48,42 @@ export function findSemanticZoneViolations(file, source) {
 }
 
 // ---------------------------------------------------------------------------
+// No tier skipping (semantic-only zones only): a component reads a tier 2
+// role, or a --face-* alias, never a tier 1 ramp directly, name included.
+// SEMANTIC_ZONE_PATTERNS's raw-colour-function rule exempts anything
+// followed by var( so the admin's hsl(var(--x)) idiom survives — which also
+// means a ramp name spelled as hsl(var(--gray-60)) produced zero findings
+// there. This rule closes exactly that gap: it does not care whether a ramp
+// name sits inside var(), hsl(var()), or nothing at all, only whether the
+// name itself is one of the four prefixes src/styles/tokens.css's tier 1
+// block declares. A tier 2 role (--surface-card, --brand, --status-warn) or
+// a --face-* alias is not a ramp and is never flagged.
+// ---------------------------------------------------------------------------
+
+// The exact prefixes tier 1 uses today (src/styles/tokens.css's own tier 1
+// block: --stone-*, the faces' ramp; --gray-*, the admin's; --scrim-*, the
+// kiosk's white-alpha fills; --dusk-*, face-specific and on no other ramp).
+// A name is only a ramp if it starts with one of these immediately after
+// the leading --, so a hypothetical future role that merely contains one of
+// these words later in its name (there is none today) is not caught by
+// construction, the same "known limitation, not a general parser" trade
+// SEMANTIC_ZONE_PATTERNS's own hex rule already documents above.
+const TIER1_RAMP_RE = /--(?:stone|gray|scrim|dusk)-[\w-]+/g;
+
+export function findTierSkipViolations(file, source) {
+  const found = [];
+  source.split('\n').forEach((line, i) => {
+    if (lineAllowed(line)) return;
+    const m = TIER1_RAMP_RE.exec(line);
+    TIER1_RAMP_RE.lastIndex = 0;
+    if (m) {
+      found.push(`${file}:${i + 1} — tier 1 ramp named directly, skipping tier 2 (${m[0]}): ${line.trim()}`);
+    }
+  });
+  return found;
+}
+
+// ---------------------------------------------------------------------------
 // Muted-on-muted contrast pairing (ported). shadcn's text-muted-foreground on
 // bg-muted/accent/secondary lands at 4.34:1 against a 4.5:1 AA minimum.
 // ---------------------------------------------------------------------------

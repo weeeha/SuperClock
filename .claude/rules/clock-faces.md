@@ -17,7 +17,7 @@ renderer. The one-line rule lives in AGENTS.md; this is the body.
 
 ## Night is a token flip
 
-Night mode is a `--face-*` palette flip in `src/index.css`, never per-face logic: a face that hardcodes its colours silently ignores night. `npm run check:tokens` reconciles the face list from `face-components.ts`'s real imports and holds every face to it (`FCE-3`). Seven legacy faces are exempt via `FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`; that list may only shrink — retrofit a face (consume `--face-bg`/`--face-ink` at minimum), then delete its line. Never fork a night variant of a component.
+Night mode is a `--face-*` palette flip in `src/styles/tokens.css`, never per-face logic: a face that hardcodes its colours silently ignores night. `npm run check:tokens` reconciles the face list from `face-components.ts`'s real imports and holds every face to it (`FCE-3`). Seven legacy faces are exempt via `FACE_TOKEN_EXEMPT` in `scripts/lib/token-rules.mjs`; that list may only shrink — retrofit a face (consume `--face-bg`/`--face-ink` at minimum), then delete its line. Never fork a night variant of a component.
 
 ## Face options come through the schema
 

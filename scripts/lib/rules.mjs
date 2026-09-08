@@ -81,10 +81,10 @@ export const RULES = [
   },
   {
     id: 'R11',
-    statement: 'AA contrast (4.5:1) on the actual surface, in both the day and the night palette',
+    statement:
+      'the tier 2 ink and surface token pairs checked in src/shared/token-contrast.test.ts clear AA contrast (4.5:1) in both the day and the night palette; this is a token-level claim, not a rendered one, and a screen can still fail it with fully compliant tokens',
     why: 'the kiosk is read across a room and the admin on a phone; contrast is the floor, not a polish item',
-    unchecked:
-      'no axe or contrast gate exists; the Minimal-Design-System pattern (an axe run per story in real Chromium, jsdom skips color-contrast) is the port. Checked by eye today.',
+    checkedBy: 'src/shared/token-contrast.test.ts',
   },
   {
     id: 'R12',

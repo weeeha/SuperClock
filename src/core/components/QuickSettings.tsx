@@ -93,9 +93,9 @@ export default function QuickSettings() {
             exit={{ y: '100%', transition: SHEET_SPRING }}
             transition={tracking ? { duration: 0 } : SHEET_SPRING}
           >
-            <div className="mx-auto mb-6 h-2 w-16 rounded-full bg-white/25" />
+            <div className="mx-auto mb-6 h-2 w-16 rounded-full bg-[rgb(var(--fill))]" />
 
-            <label className="block font-mono text-[2vmin] tracking-widest text-white/50">
+            <label className="block font-mono text-[2vmin] tracking-widest text-[hsl(var(--sheet-ink))]/50">
               BRIGHTNESS
               <input
                 type="range"
@@ -111,7 +111,7 @@ export default function QuickSettings() {
             </label>
 
             <div className="mt-5 flex items-center justify-between">
-              <span className="font-mono text-[2vmin] tracking-widest text-white/50">
+              <span className="font-mono text-[2vmin] tracking-widest text-[hsl(var(--sheet-ink))]/50">
                 NIGHT MODE
               </span>
               <button
@@ -122,11 +122,11 @@ export default function QuickSettings() {
                   noteUserGesture();
                 }}
                 className={`h-11 w-20 rounded-full transition-colors ${
-                  nightOn ? 'bg-white/80' : 'bg-white/15'
+                  nightOn ? 'bg-[rgb(var(--fill-strong))]' : 'bg-[rgb(var(--fill-subtle))]'
                 }`}
               >
                 <span
-                  className={`block h-9 w-9 rounded-full bg-black transition-transform ${
+                  className={`block h-9 w-9 rounded-full bg-[rgb(var(--fill-knob))] transition-transform ${
                     nightOn ? 'translate-x-10' : 'translate-x-1'
                   }`}
                 />
@@ -134,10 +134,10 @@ export default function QuickSettings() {
             </div>
 
             <div className="mt-5 flex items-center justify-between">
-              <span className="font-mono text-[2vmin] tracking-widest text-white/50">
+              <span className="font-mono text-[2vmin] tracking-widest text-[hsl(var(--sheet-ink))]/50">
                 WI-FI
               </span>
-              <span className="text-[2.2vmin] text-white/70">
+              <span className="text-[2.2vmin] text-[hsl(var(--sheet-ink))]/70">
                 {net === null
                   ? '…'
                   : net === 'unavailable'
