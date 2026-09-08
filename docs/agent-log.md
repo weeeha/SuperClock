@@ -30,7 +30,8 @@ The first gates run failed, which is the useful part of this entry.
 
 **Open:**
 - Not deployed. `fastclock` still runs `a672589` from the old branch, which is now behind this merge. `squareclock` answers `/api/health` with no build stamp at all, so it is on a pre-PR-#44 bundle, 31 days of uptime. `smallclock` does not ping and does not answer. Nothing here has reached any device.
-- Not pushed. This branch and `claude/local-folder-optimization-eb398f` are both local only. Whether this lands on main, and whether either branch goes to origin, is Nick's call and was not taken here.
+- Landed on local main by fast-forward, at Nick's direction: main is `4e0896a`, 30 ahead of `origin/main`, and was deliberately not pushed. The main worktree carried an unrelated uncommitted change to `mac-daemon/claude-usage/usage-server.mjs`; the merge touches 82 files and none of them is that one, checked before the fast-forward and confirmed intact after.
+- `claude/land-optimization` is pushed to origin as an off-machine backup, nothing more: no PR was opened, and `main` was not pushed. `claude/local-folder-optimization-eb398f` stays local at `2bcafde` as the pre-merge rollback point, so that one commit range still exists on this disk only.
 - The three decisions main's token-layer entry left for Nick are untouched by this merge and still open: which of the three accent oranges wins, whether to layer the admin's `.admin-root *` border-color reset, and whether the kiosk chrome should follow the mode axis into light.
 - `app-design-status-369dea` worktree (branch `claude/compassionate-williams-04ae20`) has 2 uncommitted files. That branch is fully merged into main, so the commits are safe, but the working-tree changes were not examined here.
 
