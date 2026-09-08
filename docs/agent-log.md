@@ -6,6 +6,26 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-08 · branch claude/land-optimization · deployed 2d044af to fastclock and squareclock
+
+Follows the merge entry below. Nothing in the code changed here; this is the deploy and its verification.
+
+**Deployed:** `2d044af` to `fastclock` and `squareclock`, both via `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@<host>`. The override was needed because the guard ships `origin/main` and main is deliberately 31 ahead of it, unpushed. The same commit is on origin as `claude/land-optimization`, so what the fleet runs is recoverable from the remote, just not from `origin/main`.
+
+**Verified, in this order:**
+- The script's own health poll passed on both, which is the first time it has run against a real deploy since `a672589` fixed it: it resolved `fastclock` to 192.168.4.30 and `squareclock` to 192.168.4.44 itself rather than curling the `.local` name, which is exactly the false-negative that commit closed. Both report `build.commit` `2d044af`.
+- `squareclock` now carries a build stamp at all. Before this deploy its `/api/health` returned `{"ok":true,"uptime":...}` with no `build` key, so it was running a bundle from before PR #44 added the stamp, on 31 days of uptime.
+- Chromium restarted on both (`pkill -TERM chromium`, labwc autostart relaunches). Renderer process ages of 14 and 16 seconds confirm the glass is showing the new build, not a held page.
+- Both screens render the Minimalismo face correctly at the wall-clock time, captured with `grim` over the Wayland socket and read back off-device.
+- **The arrow-jump regression is absent on both.** Measured rather than eyeballed: 14 `grim` frames at 150ms, gold second-hand tip angle extracted per frame, angular rate compared against the 6.00 deg/s a smooth sweep must hold. fastclock mean 6.05 deg/s (min 5.30, max 6.97), squareclock mean 6.19 (min 3.94, max 7.01), and zero stalled frames on either, where a stalled frame is under 1 deg/s. A ticking hand shows runs of 0 deg/s broken by 6 deg jumps; neither device shows one. The spread is capture jitter, not hand motion. The script is `/tmp/sweep.py` on both devices, not committed.
+
+**Open:**
+- `smallclock` was not deployed and could not be. Its hostname alias resolves to `superclock-small.local`, which does not resolve at all from this Mac, and its Tailscale IP `100.99.148.91` times out on both SSH and HTTP. `tailscale status` reports it offline, last seen 8 days ago. That is power or boot, not configuration, and it needs hands on the device. The prior `smallclock` boot-crash note (vc4 HVS kernel WARN, lightdm greeter stranding on session death) is the thing to check first, and enabling the persistent journal before the next repro is still not done.
+- `slowclock` is untouched and out of scope here: it runs the native LVGL binary, not this bundle.
+- `squareclock` renders the round 1080x1080 layout into an 800x480 framebuffer, so the face sits centred with wide empty margins. Pre-existing and unrelated to this deploy, but it is what the glass looks like today.
+
+---
+
 ## 2026-09-08 · branch claude/land-optimization · the stranded optimization branch merged with main
 
 `claude/local-folder-optimization-eb398f` was 27 commits ahead of main, 26 behind, and had never been pushed to any remote. It was also the build `fastclock` was actually running (`a672589`, stamped 2026-09-07T21:09), so the fleet depended on work that existed on one disk in one worktree. This entry merges it with main and gets both halves under the same gates.
