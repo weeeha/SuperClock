@@ -18,6 +18,17 @@ describe('design ratchet predicates', () => {
     expect(extractFontSizes('text-xl text-xl text-xl').size).toBe(1);
   });
 
+  // Tailwind overloads text-[…]: a length is a font size, a colour is not.
+  it('does not count an arbitrary text-[] colour as a font size', () => {
+    expect(extractFontSizes('text-[#8b949e]').size).toBe(0);
+    expect(extractFontSizes('text-[hsl(var(--sheet-ink))]').size).toBe(0);
+    expect(extractFontSizes('text-[rgb(1,2,3)] text-[oklch(0.5 0 0)]').size).toBe(0);
+  });
+
+  it('still counts the length form of text-[]', () => {
+    expect(extractFontSizes('text-[3vmin] text-[13px] text-[length:var(--x)]').size).toBe(3);
+  });
+
   it('collects hex colours case-insensitively as one value', () => {
     expect(extractColours('#FF8826 #ff8826').size).toBe(1);
   });

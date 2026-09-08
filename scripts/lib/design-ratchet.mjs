@@ -24,7 +24,16 @@ export const CEILINGS = {
   // setting them as emoji at fontSize 58, and no other element used that size.
   // This is the ratchet's own first paydown, and the mechanism that forced it —
   // the gate fails when a count drops and the ceiling does not follow.
-  fontSizes: 60,
+  //
+  // 60 → 59 on 2026-09-08, merging main: not a design pass, a miscount. The
+  // detector read every arbitrary `text-[…]` as a font size, but Tailwind
+  // overloads that form and two of the matches were colours — `text-[#8b949e]`
+  // in GithubApp, counted here as well as in colours, and
+  // `text-[hsl(var(--sheet-ink))]` from the token layer's proof surface. The
+  // second is why this could not be waved through by raising the ceiling:
+  // sub-project 2 wires more roles the same way, so the error would have grown
+  // with every role. extractFontSizes now excludes the colour form.
+  fontSizes: 59,
   // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
   // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
   // for zero pixel change.
@@ -45,8 +54,21 @@ export const NOT_DESIGN = [
 const FONT_SIZE = /text-\[[^\]]+\]|text-(?:xs|sm|base|lg|xl|[2-9]xl)\b|fontSize=\{?["']?[0-9.]+/g;
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 
+// `text-[…]` is overloaded in Tailwind: a length value sets font-size, a colour
+// value sets colour. Only the length form is a font size. A colour written this
+// way is still counted by extractColours when it is a raw hex, and is counted by
+// neither when it names a token role, which is correct: a role is the fixed
+// state, not the debt this ratchet measures. Anything unrecognised stays a size,
+// so an unfamiliar value fails toward tightening rather than escaping the count.
+const TEXT_COLOUR =
+  /^text-\[(?:#|hsl|rgb|oklch|oklab|lab|lch|color-mix|currentColor|transparent)/i;
+
 export function extractFontSizes(source) {
-  return new Set((source.match(FONT_SIZE) ?? []).map((s) => s.trim()));
+  return new Set(
+    (source.match(FONT_SIZE) ?? [])
+      .map((s) => s.trim())
+      .filter((s) => !TEXT_COLOUR.test(s)),
+  );
 }
 
 export function extractColours(source) {
