@@ -6,6 +6,36 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-08 · branch claude/land-optimization · the stranded optimization branch merged with main
+
+`claude/local-folder-optimization-eb398f` was 27 commits ahead of main, 26 behind, and had never been pushed to any remote. It was also the build `fastclock` was actually running (`a672589`, stamped 2026-09-07T21:09), so the fleet depended on work that existed on one disk in one worktree. This entry merges it with main and gets both halves under the same gates.
+
+The merge was made on a new branch cut from that tip rather than on the branch itself, so the original 27-commit pointer survives untouched as a rollback point.
+
+**Changed:**
+- `docs/agent-log.md`: the merge's one content conflict. Both sides had appended new entries directly under the provenance note. Resolved by date, newest first, interleaving rather than concatenating: the branch's six 2026-09-07 entries, then main's 2026-09-07 token-layer entry, then the branch's 2026-09-06 entry, then the common tail. No entry was rewritten, reordered within its own side, or dropped; the count went from 25 to 26 as expected.
+- `scripts/lib/design-ratchet.mjs`: `extractFontSizes` no longer counts the colour form of Tailwind's arbitrary `text-[...]` class, and `CEILINGS.fontSizes` drops from 60 to 59. See Decisions.
+- `scripts/lib/design-ratchet.test.ts`: two fixture cases, one per direction. A colour value in `text-[...]` contributes no font size; a length value still does, including the explicit `length:` prefix form.
+
+Everything else auto-merged. `src/index.css` was the file most likely to fight, since the branch defined type and grey scales in its `@theme` block while main moved the eight `--face-*` tokens out to `src/styles/tokens.css`, and git resolved it without help. `AGENTS.md` and `scripts/lib/docs-drift.test.ts` also auto-merged.
+
+**Verified:** `./scripts/gates.sh` green end to end on `54e33f1`. Lint clean. `check:tokens`: 51 semantic-zone files and 13 faces clean, 7 legacy faces exempt, 21 tokens ledgered in `UNCONSUMED_LEDGER`, 5 rules with no detector (R09, R12, R13, R14, R15). 1040 tests across 74 files. Both-SPA production build plus the server bundle. `npm ci` was run first: main's `package-lock.json` moved relative to the branch, so the pre-merge `node_modules` would have made the run meaningless.
+
+The first gates run failed, which is the useful part of this entry.
+
+**Decisions:**
+- **The design ratchet was miscounting, and the merge is what proved it.** `src/shared/design-ratchet.test.ts` failed at 61 distinct font sizes against a ceiling of 60. Neither side was over budget alone: the branch's tree measured 60, main's measured 62, and the union came to 61. The 61st was `text-[hsl(var(--sheet-ink))]` in `QuickSettings.tsx`, which is main's token-layer proof surface and is a colour, not a font size. Tailwind overloads the arbitrary `text-[...]` form by value type and the detector matched on form alone. A second, older false positive was already inside the frozen ceiling: `text-[#8b949e]` in `GithubApp.tsx`, counted here as a font size while the colours extractor counted it as a colour, which is where it belongs. Raising the ceiling to 61 was rejected: it would have banked both errors permanently and grown the first one, because sub-project 2 wires the admin's roles through exactly that form, so every role wired would have read as another new font size. The true count is 59 and the ceiling now says 59. No pixel changed.
+- **Unrecognised values still count as font sizes.** The exclusion lists colour markers (`#`, `hsl`, `rgb`, `oklch`, `oklab`, `lab`, `lch`, `color-mix`, `currentColor`, `transparent`) rather than allow-listing length units. An unfamiliar value therefore inflates the count and trips the ceiling, which is the direction this ratchet is built to fail in. An allowlist would have let a new unit slip out of the count silently.
+- **The colours ceiling did not move.** It stays at 118. `text-[#8b949e]` was and remains counted there.
+
+**Open:**
+- Not deployed. `fastclock` still runs `a672589` from the old branch, which is now behind this merge. `squareclock` answers `/api/health` with no build stamp at all, so it is on a pre-PR-#44 bundle, 31 days of uptime. `smallclock` does not ping and does not answer. Nothing here has reached any device.
+- Not pushed. This branch and `claude/local-folder-optimization-eb398f` are both local only. Whether this lands on main, and whether either branch goes to origin, is Nick's call and was not taken here.
+- The three decisions main's token-layer entry left for Nick are untouched by this merge and still open: which of the three accent oranges wins, whether to layer the admin's `.admin-root *` border-color reset, and whether the kiosk chrome should follow the mode axis into light.
+- `app-design-status-369dea` worktree (branch `claude/compassionate-williams-04ae20`) has 2 uncommitted files. That branch is fully merged into main, so the commits are safe, but the working-tree changes were not examined here.
+
+---
+
 ## 2026-09-07 · branch claude/local-folder-optimization-eb398f · second deploy, and a false negative in the deploy's own check
 
 **fastclock now runs `a672589`** — every commit through the scales work — verified by build stamp, and Chromium was restarted (`pkill -TERM chromium`, labwc autostart relaunches) so the glass is showing it rather than the 3h25m-old page it was holding.
