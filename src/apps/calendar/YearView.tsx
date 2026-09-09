@@ -112,7 +112,7 @@ export default function YearView({
         {/* Today: ring outline marker */}
         {dots.filter((d) => d.key === todayKey).map((d) => (
           <circle key="today" cx={d.x} cy={d.y} r={11}
-            fill="none" stroke="#fff" strokeWidth="2" />
+            fill="none" stroke="#ffffff" strokeWidth="2" />
         ))}
 
         {/* Center year */}

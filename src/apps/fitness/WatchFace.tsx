@@ -20,6 +20,8 @@ export interface WatchFaceProps {
   progress: number;
   /** Large centred readout: the countdown, or a label like "FULL BODY". */
   headline: string;
+  /** Two bars in place of the readout while the circuit is held. */
+  paused: boolean;
   /** Small caption under the figure. */
   caption?: string;
   heartsTotal: number;
@@ -30,13 +32,26 @@ export interface WatchFaceProps {
   inverted: boolean;
 }
 
+// The streak allowance, drawn rather than set as an emoji.
+//
+// It was `❤️`, which put full-colour Apple glyphs on a face that is otherwise
+// two inks and one ring, at a weight nothing else on the dial shares. Drawn, it
+// takes the face's own ink like the caption does.
+//
+// Ink and not red on purpose: the progress ring is already this screen's one
+// saturated quantity, and a second one competes with it for the same glance.
+// Spent hearts drop to 0.22, which is how the emoji version marked them too.
+const HEART =
+  'M 0 13 C -15 2, -21 -8, -12 -15 C -6 -19, -1 -15, 0 -10 ' +
+  'C 1 -15, 6 -19, 12 -15 C 21 -8, 15 2, 0 13 Z';
+
 function polar(r: number, deg: number): [number, number] {
   const rad = ((deg - 90) * Math.PI) / 180;
   return [CX + r * Math.cos(rad), CY + r * Math.sin(rad)];
 }
 
 export default function WatchFace(props: WatchFaceProps) {
-  const { progress, headline, caption, heartsTotal, heartsLeft } = props;
+  const { progress, headline, paused, caption, heartsTotal, heartsLeft } = props;
   const { exerciseId, artPhase, playing, inverted } = props;
 
   const circumference = 2 * Math.PI * RING_R;
@@ -76,6 +91,12 @@ export default function WatchFace(props: WatchFaceProps) {
 
         {clamped > 0 && <circle cx={cometX} cy={cometY} r={22} fill="#ffb03a" />}
 
+        {paused ? (
+          <g fill={ink}>
+            <rect x={CX - 54} y={188} width={38} height={92} rx={12} />
+            <rect x={CX + 16} y={188} width={38} height={92} rx={12} />
+          </g>
+        ) : (
         <text
           x={CX} y={230}
           textAnchor="middle" dominantBaseline="middle"
@@ -87,6 +108,7 @@ export default function WatchFace(props: WatchFaceProps) {
         >
           {headline}
         </text>
+        )}
 
         {exerciseId && (
           <foreignObject x={280} y={300} width={440} height={400}>
@@ -108,18 +130,14 @@ export default function WatchFace(props: WatchFaceProps) {
           </text>
         )}
 
-        <g>
+        <g fill={ink}>
           {Array.from({ length: heartsTotal }, (_, i) => (
-            <text
+            <path
               key={i}
-              x={CX - (heartsTotal - 1) * 40 + i * 80}
-              y={860}
-              textAnchor="middle"
-              fontSize={58}
+              d={HEART}
+              transform={`translate(${CX - (heartsTotal - 1) * 40 + i * 80} 846)`}
               opacity={i < heartsLeft ? 1 : 0.22}
-            >
-              {'❤️'}
-            </text>
+            />
           ))}
         </g>
       </svg>

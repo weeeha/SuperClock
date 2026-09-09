@@ -6,6 +6,226 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-09 · branch claude/status-check-3545f6 · hand shadows: direction approved, drawn in Figma, nothing built
+
+Design only. No code changed on this branch. Recorded here because the decisions bind whoever implements it.
+
+Nick asked for an optional shadow across all watchfaces, referencing two Apple Watch faces where white hands cast a shadow over a bright field.
+
+**Decided:**
+- The option is an enum per face, not a boolean: `none | cast | soft`, default `cast`. A boolean forces one treatment across a fleet spanning one Pi 5 and three Pi 4s.
+- `cast` is offset duplicate geometry: offset x +8, y +10 in the 1000-unit face space, black at alpha 0.32, no filter. One extra draw call, nothing per frame.
+- `soft` is `feDropShadow` dx 5, dy 7, stdDeviation 9, alpha 0.38. Opt-in, fastclock only, because it re-rasterizes a blurred filter region every frame. Same cost the Habits pass stripped out on 2026-09-07.
+- The offset is applied OUTSIDE the hand rotation. The light stays fixed while the hand turns; rotating the offset with the hand lights every hour from a new sun.
+- `--face-shadow` stays black in both palettes. No light "lift" at night: that is a glow, a different physical claim, and it reads cheap on an LCD. Black-dial faces default to `none` instead, which is the honest expression of a shadow that would contribute nothing.
+- Rejected: a contrast keyline, a background-coloured stroke under the hand. Free to render and palette-independent, but it is not a shadow. Kept as a candidate fourth value if Floral needs it.
+
+**Open, not decided:**
+- `soft` on Analog would open an LVGL parity drift row: `slow-native/src/clock_face.c` has no drop-shadow primitive. `cast` is one extra line and the C twin can match it. Whether Analog carries the option at all is unresolved.
+- Only 5 of 13 faces have a proposed default: Floral, Productivity and Complications Light get `cast`; Analog and Complications Dark get `none`. The other eight are unreviewed and would ship `none`, which changes nothing on glass.
+- Minimalismo has no `face.*` schema, so a per-face option there means a new schema file, a registry entry and a snapshot regeneration.
+- Adding a defaulted enum to twelve face schemas is a minor schema change under the snapshot gate and needs `npm run snapshot:schemas`. Not run.
+
+**Where it is:** Figma, Clock Design WIP, page "New Drawings", section `Sheet 03 - hand shadows` (node 705:4080). Ten frames on the file's existing sheet grid: the four treatments, a numbers panel, four real faces, and the per-face default rule.
+
+---
+
+## 2026-09-08 · branch claude/land-optimization · deployed 2d044af to fastclock and squareclock
+
+Follows the merge entry below. Nothing in the code changed here; this is the deploy and its verification.
+
+**Deployed:** `2d044af` to `fastclock` and `squareclock`, both via `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@<host>`. The override was needed because the guard ships `origin/main` and main is deliberately 31 ahead of it, unpushed. The same commit is on origin as `claude/land-optimization`, so what the fleet runs is recoverable from the remote, just not from `origin/main`.
+
+**Verified, in this order:**
+- The script's own health poll passed on both, which is the first time it has run against a real deploy since `a672589` fixed it: it resolved `fastclock` to 192.168.4.30 and `squareclock` to 192.168.4.44 itself rather than curling the `.local` name, which is exactly the false-negative that commit closed. Both report `build.commit` `2d044af`.
+- `squareclock` now carries a build stamp at all. Before this deploy its `/api/health` returned `{"ok":true,"uptime":...}` with no `build` key, so it was running a bundle from before PR #44 added the stamp, on 31 days of uptime.
+- Chromium restarted on both (`pkill -TERM chromium`, labwc autostart relaunches). Renderer process ages of 14 and 16 seconds confirm the glass is showing the new build, not a held page.
+- Both screens render the Minimalismo face correctly at the wall-clock time, captured with `grim` over the Wayland socket and read back off-device.
+- **The arrow-jump regression is absent on both.** Measured rather than eyeballed: 14 `grim` frames at 150ms, gold second-hand tip angle extracted per frame, angular rate compared against the 6.00 deg/s a smooth sweep must hold. fastclock mean 6.05 deg/s (min 5.30, max 6.97), squareclock mean 6.19 (min 3.94, max 7.01), and zero stalled frames on either, where a stalled frame is under 1 deg/s. A ticking hand shows runs of 0 deg/s broken by 6 deg jumps; neither device shows one. The spread is capture jitter, not hand motion. The script is `/tmp/sweep.py` on both devices, not committed.
+
+**Open:**
+- `smallclock` was not deployed and could not be. Its hostname alias resolves to `superclock-small.local`, which does not resolve at all from this Mac, and its Tailscale IP `100.99.148.91` times out on both SSH and HTTP. `tailscale status` reports it offline, last seen 8 days ago. That is power or boot, not configuration, and it needs hands on the device. The prior `smallclock` boot-crash note (vc4 HVS kernel WARN, lightdm greeter stranding on session death) is the thing to check first, and enabling the persistent journal before the next repro is still not done.
+- `slowclock` is untouched and out of scope here: it runs the native LVGL binary, not this bundle.
+- `squareclock` renders the round 1080x1080 layout into an 800x480 framebuffer, so the face sits centred with wide empty margins. Pre-existing and unrelated to this deploy, but it is what the glass looks like today.
+
+---
+
+## 2026-09-08 · branch claude/land-optimization · the stranded optimization branch merged with main
+
+`claude/local-folder-optimization-eb398f` was 27 commits ahead of main, 26 behind, and had never been pushed to any remote. It was also the build `fastclock` was actually running (`a672589`, stamped 2026-09-07T21:09), so the fleet depended on work that existed on one disk in one worktree. This entry merges it with main and gets both halves under the same gates.
+
+The merge was made on a new branch cut from that tip rather than on the branch itself, so the original 27-commit pointer survives untouched as a rollback point.
+
+**Changed:**
+- `docs/agent-log.md`: the merge's one content conflict. Both sides had appended new entries directly under the provenance note. Resolved by date, newest first, interleaving rather than concatenating: the branch's six 2026-09-07 entries, then main's 2026-09-07 token-layer entry, then the branch's 2026-09-06 entry, then the common tail. No entry was rewritten, reordered within its own side, or dropped; the count went from 25 to 26 as expected.
+- `scripts/lib/design-ratchet.mjs`: `extractFontSizes` no longer counts the colour form of Tailwind's arbitrary `text-[...]` class, and `CEILINGS.fontSizes` drops from 60 to 59. See Decisions.
+- `scripts/lib/design-ratchet.test.ts`: two fixture cases, one per direction. A colour value in `text-[...]` contributes no font size; a length value still does, including the explicit `length:` prefix form.
+
+Everything else auto-merged. `src/index.css` was the file most likely to fight, since the branch defined type and grey scales in its `@theme` block while main moved the eight `--face-*` tokens out to `src/styles/tokens.css`, and git resolved it without help. `AGENTS.md` and `scripts/lib/docs-drift.test.ts` also auto-merged.
+
+**Verified:** `./scripts/gates.sh` green end to end on `54e33f1`. Lint clean. `check:tokens`: 51 semantic-zone files and 13 faces clean, 7 legacy faces exempt, 21 tokens ledgered in `UNCONSUMED_LEDGER`, 5 rules with no detector (R09, R12, R13, R14, R15). 1040 tests across 74 files. Both-SPA production build plus the server bundle. `npm ci` was run first: main's `package-lock.json` moved relative to the branch, so the pre-merge `node_modules` would have made the run meaningless.
+
+The first gates run failed, which is the useful part of this entry.
+
+**Decisions:**
+- **The design ratchet was miscounting, and the merge is what proved it.** `src/shared/design-ratchet.test.ts` failed at 61 distinct font sizes against a ceiling of 60. Neither side was over budget alone: the branch's tree measured 60, main's measured 62, and the union came to 61. The 61st was `text-[hsl(var(--sheet-ink))]` in `QuickSettings.tsx`, which is main's token-layer proof surface and is a colour, not a font size. Tailwind overloads the arbitrary `text-[...]` form by value type and the detector matched on form alone. A second, older false positive was already inside the frozen ceiling: `text-[#8b949e]` in `GithubApp.tsx`, counted here as a font size while the colours extractor counted it as a colour, which is where it belongs. Raising the ceiling to 61 was rejected: it would have banked both errors permanently and grown the first one, because sub-project 2 wires the admin's roles through exactly that form, so every role wired would have read as another new font size. The true count is 59 and the ceiling now says 59. No pixel changed.
+- **Unrecognised values still count as font sizes.** The exclusion lists colour markers (`#`, `hsl`, `rgb`, `oklch`, `oklab`, `lab`, `lch`, `color-mix`, `currentColor`, `transparent`) rather than allow-listing length units. An unfamiliar value therefore inflates the count and trips the ceiling, which is the direction this ratchet is built to fail in. An allowlist would have let a new unit slip out of the count silently.
+- **The colours ceiling did not move.** It stays at 118. `text-[#8b949e]` was and remains counted there.
+
+**Open:**
+- Not deployed. `fastclock` still runs `a672589` from the old branch, which is now behind this merge. `squareclock` answers `/api/health` with no build stamp at all, so it is on a pre-PR-#44 bundle, 31 days of uptime. `smallclock` does not ping and does not answer. Nothing here has reached any device.
+- Landed on local main by fast-forward, at Nick's direction: main is `4e0896a`, 30 ahead of `origin/main`, and was deliberately not pushed. The main worktree carried an unrelated uncommitted change to `mac-daemon/claude-usage/usage-server.mjs`; the merge touches 82 files and none of them is that one, checked before the fast-forward and confirmed intact after.
+- `claude/land-optimization` is pushed to origin as an off-machine backup, nothing more: no PR was opened, and `main` was not pushed. `claude/local-folder-optimization-eb398f` stays local at `2bcafde` as the pre-merge rollback point, so that one commit range still exists on this disk only.
+- The three decisions main's token-layer entry left for Nick are untouched by this merge and still open: which of the three accent oranges wins, whether to layer the admin's `.admin-root *` border-color reset, and whether the kiosk chrome should follow the mode axis into light.
+- `app-design-status-369dea` worktree (branch `claude/compassionate-williams-04ae20`) has 2 uncommitted files. That branch is fully merged into main, so the commits are safe, but the working-tree changes were not examined here.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · second deploy, and a false negative in the deploy's own check
+
+**fastclock now runs `a672589`** — every commit through the scales work — verified by build stamp, and Chromium was restarted (`pkill -TERM chromium`, labwc autostart relaunches) so the glass is showing it rather than the 3h25m-old page it was holding.
+
+**The self-verifying deploy reported a failure for a deploy that had landed perfectly (`a672589`).** It printed "server did not come back within 60s"; the device was healthy in ~6s and serving the exact shipped commit. That is worse than having no check: a false negative on the one mechanism that answers "did my deploy land" teaches you to ignore it.
+
+Cause: `--max-time` covers DNS as well as the request, and resolving a `.local` name from macOS costs more than the 3s budget. Measured three consecutive attempts hitting the ceiling at exactly 3.01s — so `curl -f` failed every iteration, `HEALTH_JSON` stayed empty, and **the loop could never have passed against a `.local` host, however long it ran.** Every previous "successful" verification must have been against an IP or a faster resolver.
+
+Fixed: ssh has already proven reachability by that point, so the script asks the device for its own address and polls that, falling back to the passed-in host. The budget also splits into `--connect-timeout 3` plus `--max-time 8`, so slow is distinguishable from unreachable. Re-ran the whole deploy end to end and it verified green.
+
+**Sequence worth noting for anyone reading the last two entries together:** the first deploy today wiped the device's photo library (fixed, `071313d`), and the second one exposed the verification as structurally broken. Both were latent in a script described in AGENTS.md as "guarded and self-verifying". It is now closer to both.
+
+**Open:** still nothing seen on the actual panel by a human — everything here is stamps, logs and DOM reads. The Minimalismo drift fix and all of today's design work are now ON the device, so that observation is finally possible.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · the three open decisions, resolved and built
+
+Nick made all three calls; the third he delegated ("make recommended decisions").
+
+**1. Floral's violets — artistic faces exempt (`ab734ee`).** COL-6 now governs chrome and data encodings, not a face in the `artistic` category. Floral's five petal violets are allowed rather than ledgered; three rows remain, all colour standing for data (Productivity's progress quantity, a Complications Dark tile, the extreme-UV weather step). The exemption reads `face-registry.ts` for the category and `face-components.ts` for the file, so a new artistic face is covered and a recategorised one loses it. **A bug worth remembering:** the first regex scanned from an `id:` forward to the nearest `category: 'artistic'`, walking out of its own entry — it exempted Square and Daylight, two faces with no purple in them, while leaving Floral still ledgered. Confidently wrong rather than erroring. A negative lookahead on `id:` fixed it.
+
+**2. Habits month view — density ring (`b457610`).** Seven concentric rings of 31 segments in seven saturated primaries became one ring whose bands grow outward and brighten with how many habits were done that day. Day marks at 1/8/15/22/29; centre shows the month's percentage over ELAPSED days only (dividing by the whole month reports a falling score daily for no reason); empty state is now a sentence. Dropped: per-habit history, the accepted cost — the daily view names every habit but only for today, so that has no home yet. Also dropped seven per-habit Gaussian blurs, which were seven blurred layers a frame on a Pi 4.
+
+**3. The scales — defined (`15da6d5`).** `src/shared/kiosk-scale.ts`: `TYPE` (5 steps from the real frequency peaks) and `GREY` (7 steps from the most-used lightness values among the 44 near-greys). Two calls made rather than asked: face display numerals stay OUT of the type scale (280 and 168 are a dial's proportions, and a face's look is the product), and only true neutrals join the grey ramp (GitHub's #8b949e and the Fitness cream face's #8b8279 are designs, not drift). Three exact-duplicate pairs collapsed for zero pixel change: colours 121 → 118.
+
+**The ratchet earned itself twice today.** It refused the Habits rewrite because I had introduced `#232323`, a grey one shade off ones already present — reused `#1e1e1e` instead. And the token-liveness gate refused the grey ramp when I first declared it in `@theme`, because nothing read those seven tokens; that is what moved both scales into TypeScript, which is where they belonged anyway since they are SVG presentation attributes.
+
+**Verified:** gates green after each commit, 939 tests. Habits rendered with seeded data (30 segments, bands at 166 and 99 units for 5/7 and 3/7, day marks, "55% of September"). The last Habits tweak was confirmed by reading the rendered DOM, not by eye — the browser pane was hidden and could not composite.
+
+**Open:** none of this is deployed; fastclock still runs `3cbc8ba`, which predates every commit from the drift fix onward. Migration of apps onto the two scales. Quote, Images and Breathing never looked at. And still, nothing seen on the actual glass.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · first deploy to fastclock, and what it cost
+
+Nick ran `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@SuperClockFast.local` (the classifier blocked the agent from running it; the command was handed over instead).
+
+**Deploy verified.** `/api/health` reports `3cbc8ba` on branch `claude/local-folder-optimization-eb398f`, matching the shipped commit; the server restarted (uptime 3s). fastclock was on `b88dc81`/main before this.
+
+**It destroyed the device's photo library, and that is a class, not an accident (`071313d`).** `public/photos/*` is gitignored, so a clean checkout builds an EMPTY `dist/photos/`, and `rsync --delete` on `dist/` mirrored that emptiness onto the Pi. `test1.jpg`, `test2.jpg`, `test3.jpg` are gone with no surviving copy. Every deploy from every machine has done this. deploy.sh already reasons about exactly this hazard for `config/` ("device-local state that must survive deploys") but photos sit *inside* the mirrored directory, so that carve-out could not reach them. Fixed with `--filter='protect photos/***'`, which forbids deletion while still allowing new photos to be sent, and proven both ways against the real device with a planted probe file.
+
+**The Minimalismo sweep drifts when the document is hidden, measured on the deployed build (`223a44d`).** A constant 133° (~22s) error, holding steady — right rate, wrong phase. A hidden document pauses the animation timeline; the `visibilitychange` handler only fires on a transition and a document hidden from load never emits one, so the scheduled re-align was the real bound. It was 5 minutes. Now 60s, which must stay a whole number of minutes so the remount lands at 0° where it cannot be seen. Caveat recorded in the commit: this was a hidden tab, and the Pi runs Chromium fullscreen where the document should never be hidden — but "should" was the problem with 5 minutes.
+
+**Method note worth keeping.** The first reading of that drift looked far worse because the angle was computed from `anim.currentTime` alone, which excludes the negative `animation-delay` that sets the phase. Adding the delay back made the computed angle match the rendered transform matrix exactly — which is what made the residual constant error trustworthy rather than a measurement artifact.
+
+**Three facts about the device, found while verifying:**
+- `window.__nav` is stripped from production builds, so device navigation cannot be driven programmatically the way the dev preview allows. Real gestures or config are the only levers.
+- `POST /api/device/config` returns 401 on fastclock: it has `config/admin.json` provisioned, so the write surface is token-gated. Correct behaviour, and not worked around.
+- fastclock is on **192.168.4.30**. `CLOCK_SPECS.txt` records 192.168.4.28. The `.local` name resolves correctly so nothing is broken, but the doc is stale.
+
+**Still not verified:** the panel itself. Everything above was read through a browser pointed at the device, at a true 1080×1080 viewport, which settles resolution and served-build questions but not what the glass looks like from across the room. The drift fix is committed and NOT deployed.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design passes: Todo, Fitness, Complications; Habits assessed
+
+Continues the pass below. Nick's call was "design-pass more apps", worst-first.
+
+**Todo (`4c9d014`).** Ticks, cross and the mini-keyboard's space and backspace were text glyphs doing icons' jobs. Now lucide `Check` / `X` / `Space` / `Delete` at 26, sized to the 24px letter keys beside them, with accessible names they never had. `U+2423` and `U+232B` sit outside even the widened ICO-2 range, so the gate had no opinion on them; they went for the same reason.
+
+**Fitness (`3181bb9`).** Streak hearts were `❤️`, drawn now — and drawn in the face's *ink*, not red, because the progress ring is already that screen's one saturated quantity. The paused readout was a `'❚❚'` headline, i.e. the view model spelling a picture; it is a `paused` flag now and the face draws two bars.
+
+**Complications (`2f594e4`).** The caffeine `☕` is drawn in a shared `CaffeineMark.tsx`. This is a face, so what changed is the rendering of one icon, not palette, geometry or composition.
+
+**Emoji debt: 17 → 1.** The last is `src/apps/todo/index.ts`'s registry `icon`. That field is DEAD — the kiosk never renders it and the admin's tile art comes from `APP_ICONS` — and all fourteen apps carry one, thirteen behind a `\u{...}` escape. Deleting it is a fifteen-file types change, not a design pass, so it is left with its reason recorded.
+
+**Two corrections to my own earlier claims, both found by checking rather than assuming:**
+- The Complications demo values are NOT unlabelled. Both demo tiles already carry a "DEMO" row and the habit ring is live from HabitsApp storage; the board's fabrication concern was closed before this pass. That was the stated reason the face was queued, and it was stale.
+- The Complications weather tile is NOT an emoji. It is a drawn sun and two ellipses. It looks like one in a screenshot because it is full colour on a monochrome face — a real observation, but a different one.
+
+**The design ratchet paid down for the first time**, and forced it: dropping the fitness emoji removed `fontSize` 58, nothing else used it, the count fell 61 → 60 and the gate failed until `CEILINGS.fontSizes` followed.
+
+**Habits: assessed, not changed.** Seeded a month of completions and rendered the month-ring view. The board's "7 rings × 31 segments" risk is real: seven fully saturated primaries compete at once (#FF3333 beside #19A340 beside #0044FF), there are no day labels, and habit identity is carried only by seven ~6px dots under the date. It reads as decoration rather than data. Its empty state is worse — with no completions it is concentric near-black rings with no message, where the state kit calls for a sentence and a creating action. **Not redesigned: choosing the replacement encoding (one hue by lightness, a harmonised palette, or a density ring plus legend) is a design decision with several valid answers and is Nick's.**
+
+**Verified:** gates green after every commit, 938 tests. Each pass rendered and read in the browser: Todo's four keyboard icons and their labels plus the done badge, Fitness on both the work and paused faces, the caffeine cup in its tile with the layout unmoved.
+
+**Open:** nothing here is deployed or seen on a real panel. Habits' encoding. The 8 banned-hue rows (Floral's five violets especially — whether COL-6 is meant to apply to an artistic face is unresolved). 60 font sizes and 121 colours still frozen rather than reduced. Quote, Images and Breathing not yet looked at.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · design enforcement + Weather and Fireplace passes
+
+Follow-on from the board audit below. Nick's call was "close the enforcement holes first, then redesign the two apps".
+
+**Enforcement (2 commits).**
+- `318b914` ICO-2 read "zero emoji in chrome" at blocker severity while matching only `U+1F300-1FAFF` plus sparkles, so all of Misc Symbols and Dingbats walked past it. Widened to the pictograph planes, `U+2600-27BF`, `U+2B00-2BFF` and `U+FE0F`; the selector also catches weather's three `\u{...}`-escaped glyphs, the blind spot the rule's own note described. Surfaced 17 pre-existing hits in 8 files, recorded in `BASELINE` rather than fixed, each row naming the substitution it waits for.
+- `20cf85e` `scripts/lib/design-ratchet.mjs` + `src/shared/design-ratchet.test.ts` (new). `src/apps` sits outside SYS-1 on purpose, so nothing measured what that cost: **61 distinct font sizes** against unslop's budget of 7, and **121 distinct raw colours**. Both frozen, shrink-only, held two-way. It also computes hue to catch COL-6's banned indigo/violet/purple, which that rule cannot see because its detector greps Tailwind class names and every occurrence here is raw hex: 8 hits in 4 files, ledgered not recoloured.
+
+**Weather (`2dce94e`).** The conditions dial rendered stock colour emoji. `src/apps/weather/ConditionMark.tsx` (new) draws nine marks — sun, moon, partly, cloud, fog, rain, snow, snow shower, storm — filled at one weight, in a 48-unit box, coloured through `currentColor` so the dial's existing `colorOf` and its 55% night dimming reach them. `Dial` gains an optional `markOf`; every other page stays on text. Paid 8 of the 17 ICO-2 rows.
+
+**Fireplace (`a6119e4`).** Particles were hard-edged `arc()` fills in source-over. Now a 12-bucket pre-rendered soft sprite sheet drawn with `lighter`, which is both softer and cheaper than building a gradient per particle. Ember bed became a disc instead of a full-width rect (two thirds of it was off the round glass), the spawn bed curves to follow the disc, and outer particles rise slower so the fire mounds instead of standing as a column. The trail smear is untouched.
+
+**Verified:** gates green at every step, 938 tests. Weather's mark set reviewed on a contact sheet at shipping size in both day and night opacity. Fireplace judged by re-running its own simulation at full rate in-page.
+
+**Found:**
+- Both HTML shells had linked a `/favicon.svg` that never existed (fixed in the earlier sweep).
+- The crescent moon shipped as a hairline on first draw: a crescent is two arcs between the same points, and setting the large-arc flag on the return makes it bulge the same way as the outer edge.
+
+**Open:**
+- **Nothing here is deployed or seen on a real panel.** Fireplace especially: the still is right, the motion needs a device. The preview pane keeps the page `document.hidden`, which throttles rAF to almost nothing.
+- 9 ICO-2 rows remain across 7 files: the caffeine cup on both Complications faces, fitness hearts and pause bar, todo's ticks/cross/registry icon. Each is app or face visual design, which AGENTS.md reserves for Nick.
+- The 8 banned-hue rows, likewise. Whether COL-6 is even meant to apply to an artistic face (Floral's whole subject is flowers) is unresolved.
+- 61 font sizes and 121 colours are frozen, not fixed. Lowering either is a design pass per app.
+- `codeGlyph` is gone; anything outside this repo that imported it needs `codeMark`.
+
+---
+
+## 2026-09-07 · branch claude/local-folder-optimization-eb398f · local optimization sweep, seven tasks
+
+Spec `docs/superpowers/specs/2026-09-06-local-optimization-design.md`, plan
+`docs/superpowers/plans/2026-09-06-local-optimization.md`. Seven commits, `7846c0c` to `1f39098`.
+
+**Changed:**
+- `scripts/lib/asset-liveness.{mjs,d.mts,test.ts}`, `src/shared/asset-liveness.test.ts` (new): public/ liveness gate. Nine orphaned assets deleted, `public/favicon.svg` added, `public/fitness/README.md` → `docs/fitness-art.md`.
+- Sixteen 1000x1000 PNGs in `public/` resampled to 512px in place. No source file changed: the filenames are opaque identifiers, not content hashes.
+- `package-lock.json`: `npm audit fix` only. `package.json` untouched.
+- `AGENT-LOG.md` deleted into this file; `AGENTS.md` line 11 and `scripts/lib/docs-drift.test.ts` follow.
+- `src/apps/claude-usage/sprite-codec.{ts,test.ts}`, `scripts/encode-sprites.mjs` (new); `sprites.ts` and `ClawdSprite.tsx` re-encoded to run-length strings.
+- `server/fleet-store.ts` (event emitter), `server/device-routes.ts` (`GET /api/device/config/stream`), `server/config-stream.test.ts` (new), `src/shared/local-config.ts` (`startConfigSync`/`stopConfigSync`, poll 5s → 60s), `src/App.tsx`.
+- `src/index.css` (`.face-sweep` keyframe), `src/apps/clock/MinimalismoClock.tsx` (second hand driven by CSS).
+
+**Measured, before → after:** `dist/` 12.5 MB → 5.99 MB. `public/` 8.36 MB → 4.98 MB. `sprites.ts` 181 KB → 33 KB, its built chunk 188 KB → 40 KB. `npm audit` 12 advisories (6 high) → 0. Config requests per device per day 17,280 → 1,440. Tests 898 → 919, gates green throughout.
+
+**Verified:** every task ends on `./scripts/gates.sh` green. Beyond that: the asset gate was mutation-checked (a planted orphan fails by name); the resampled art was checked in a browser across the kiosk grid and the admin face gallery, 0 broken images, no 404s; the SSE stream was driven against a real server with curl and in the kiosk, where a config change reached the glass in 933ms with zero polls in a 12.7s window, and 15 connect/disconnect cycles produced no MaxListenersExceededWarning; the sprite codec round-trips all 86,400 cells and the canvas paints and animates; the Minimalismo sweep was driven through the Web Animations API and lands within 0.000° at seven wall-clock seconds, moving forward through the minute wrap.
+
+**Found while working, each recorded in its commit:**
+- Both HTML shells have linked `/favicon.svg` since the initial commit and the file never existed, so every kiosk and admin boot took a 404.
+- The first sprite format was ambiguous: with a base-36 index, `[0,1,0,1,2]` encoded to `"01012"` and read back as 1012 zeros. The round-trip test caught it. Letters index the palette and digits count the run precisely so the two alphabets cannot overlap.
+- A CSS-driven sweep introduces a regression the rAF loop did not have: a hidden document pauses the animation timeline and resumes where it stopped, not where the wall clock is. Closed with a `visibilitychange` re-align.
+
+**Decisions:**
+- `docs/agent-log.md` is canonical over `AGENT-LOG.md`; AGENTS.md's primary instruction named it and it held the newest entries.
+- The 28 remaining minor dependency updates were NOT taken. A blanket `npm update` reproducibly breaks the tree 24 type errors and 7 lint errors deep, in code this sweep never touched. See `e50eff6` for the three distinct causes. None carries an advisory, so nothing is at risk by waiting.
+- `eslint-plugin-react-hooks` stays at 7.0.1. 7.1.1 flags six pre-existing `set-state-in-effect` violations and one ref-during-render; fixing them changes behaviour in calendar, weather, complications, playlist and two admin routes.
+
+**Open:**
+- **Nothing here has been deployed or seen on a real display.** The Claude preview pane keeps the page permanently `document.hidden`, which suspends rAF and the animation timeline, so the Minimalismo sweep could not be watched running and the 30-to-1 renders-per-second claim is read off the code path taken, not measured. That is the one claim in this sweep resting on reasoning rather than observation.
+- The Minimalismo change touches a face, and AGENTS.md reserves face changes for Nick. Geometry, colour and sweep rate are identical by construction and verified numerically, but he has not seen it.
+- `useClockHands`'s `sweep` option now has no consumer and no test. Removing it touches a file every face depends on.
+- The seven `set-state-in-effect` violations above, and the dependency-minor bisect.
+- Still coexisting, untouched here: the two rule catalogues.
+
+---
+
 ## 2026-09-07 · branch claude/project-brainstorming-e32502 · design-system step 2, sub-project 1: the token layer, kiosk and gates only
 
 Sub-project 1 of the token-axes step (design-system step 2), spec at `docs/superpowers/specs/2026-09-06-token-layer-design.md`, plan at `docs/superpowers/plans/2026-09-06-token-layer.md`. Six tasks plus one inserted mid-build (5b), each dispatched fresh and reviewed, most through at least one fix round; the round-by-round record is `.superpowers/sdd/2026-09-06-token-layer/progress.md`. This entry closes the sub-project.
@@ -39,6 +259,20 @@ Sub-project 1 of the token-axes step (design-system step 2), spec at `docs/super
 - Nick's call: whether to layer the admin's unlayered `.admin-root *` border-color reset under `@layer base`. It currently outranks every layered Tailwind border utility by specificity; layering it would revive them and change borders across the admin's files at once.
 - Nick's call: whether the kiosk chrome should follow the mode axis into light. The quick-settings sheet stays deliberately dark in both palettes (see Decisions); the rest of the chrome is still hardcoded dark literals outside the layer. Nick has seen the glass at noon; this sub-project has not touched it.
 - Recorded finding for sub-project 2: a named `@theme inline` alias onto a tier 2 role is invisible to this liveness gate. An alias's own declaration line (`--color-x: var(--role)`) is exactly the line the gate strips before searching for readers, the same way a role's own declaration line is stripped before its ramp is searched for, so an alias can never itself count as the reader that makes its target role live. A role stays ledgered until either a real component writes `hsl(var(--role))` directly, bypassing the alias for this gate's purposes, or the gate gains a tier-aware predicate that credits an alias-plus-utility path the way `consumedRamps` now credits a ramp-plus-role path. Sub-project 2 cannot declare its `@theme inline` block and call the twelve Group 2 ledger entries retired in the same breath: it has to wire real consumers first, or extend the gate first.
+
+---
+
+## 2026-09-06 · branch claude/local-folder-optimization-eb398f · the two agent logs merged into one
+
+**Changed:** `AGENT-LOG.md` deleted, its 12 entries appended to this file below the provenance note; `AGENTS.md` Project-context line now names `docs/agent-log.md`, matching the instruction at the top of the file; `scripts/lib/docs-drift.test.ts` exclusion regex updated, since it named a file that no longer exists.
+
+**Why:** AGENTS.md line 5 sent agents to `docs/agent-log.md` and line 11 to `AGENT-LOG.md`. An agent that read one could write a handoff the next agent never found, which is the single failure this log exists to prevent.
+
+**Decision:** `docs/agent-log.md` is canonical — AGENTS.md's primary instruction names it and it holds the newest entries.
+
+**Verified:** `./scripts/gates.sh` green; no reference to the deleted filename survives outside historical entry text.
+
+**Context:** task 4 of the seven-task sweep in `docs/superpowers/plans/2026-09-06-local-optimization.md`.
 
 ---
 
@@ -191,3 +425,359 @@ Approved by Nick as the first of three moves (1 gates, then 3 usage contracts as
 - This log exists; shape approved by Nick (path, entry fields, per-chunk cadence).
 
 **Open:** Nick has not yet picked which move goes first (1 gates, 2 token axes, 3 usage contracts, or all in ladder order). Recorded recommendation: 1 now, then 3 as the face-spec brainstorm, 2 after the admin IA v2 branch is merged locally so it does not conflict with those 45 files. Fleet redeploy to `main` is a separate, unpicked item.
+
+---
+
+## Entries below merged from AGENT-LOG.md on 2026-09-06
+
+These twelve entries were written to a second log file, `AGENT-LOG.md`, by sessions on branch `claude/agentic-design-system-arch-ac2da8`. The 2026-09-06 merge that left two rule catalogues coexisting left two agent logs the same way, and AGENTS.md named both, so a handoff written to one was invisible to an agent reading the other. They are moved here verbatim, newest first as they were, and `AGENT-LOG.md` is deleted. No entry's text was changed: this log's own rule is that an older entry is never rewritten.
+
+---
+
+## 2026-09-05 · item 6: path-scoped rules split (.claude/rules/)
+
+- **What:** three path-specific bodies moved out of the always-loaded AGENTS.md into
+  `.claude/rules/*.md` with `paths:` frontmatter, which Claude Code loads only when a matching
+  file is read: `gestures-and-navigation.md` (`src/core/**`, app components — arc map, the
+  `mode: 'transitioning'` invariant, the guarded cleanup), `clock-faces.md` (`src/apps/clock/**`,
+  `face.*` schemas, `slow-native/src/*` — useClockHands, the `--face-*` night contract, schema
+  reading, the one-accent rule, LVGL parity), `pi-deployment.md` (`scripts/*.sh`, units, CI —
+  what deploy.sh ships, its guards, the systemd naming drift).
+- **AGENTS.md still states every rule.** Each moved section leaves a one-line summary naming its
+  rule file, so agents that do not read `.claude/rules/` (Codex and friends read AGENTS.md) learn
+  the rule exists and where the body is. AGENTS.md 20057 → 14550 bytes; the bodies are 10474
+  bytes that now load only when relevant.
+- **Gate:** `scripts/lib/rules-scoped.test.ts` (20 checks) — every rule has `paths` and a
+  `summary`; every glob matches at least one tracked file (a typo'd glob is worse than a missing
+  rule: it never loads and nothing says so); every rule is named from AGENTS.md; every rule's
+  summary appears there verbatim; every `.claude/rules/…` path AGENTS.md names is a real rule.
+- **Drift gate widened, and it caught the split itself:** moving names out of AGENTS.md made its
+  NOT_IN_TREE and MUST_NOT_EXIST rows stale and dropped the identifier count below the floor.
+  The right fix was scope, not exemptions: the instruction corpus is AGENTS.md PLUS
+  `.claude/rules/*.md` (one contract split by scope), and the rule files are excluded from the
+  CODE corpus so a name mentioned only in prose still does not count as used. 117 → 127 checks.
+- **Also fixed:** the stubs first landed carrying their literal YAML quotes — the parser now
+  strips a quote pair (the gestures summary must be quoted because it contains `mode: '`).
+- **Verified:** gate red on the missing directory, then red on the missing stubs, green after;
+  drift gate red on the stale ledgers, green after widening; gates.sh green: lint, check:tokens,
+  45 files / 708 tests, build.
+- **Open:** none for item 6. All six items from the 2026-09-05 plan are done.
+
+---
+
+## 2026-09-05 · item 5: regenerable health report (docs/health.md)
+
+- **What:** `npm run report` renders `docs/health.md` from the registries, the ledgers and the
+  rule catalogue: 14 apps with capabilities, config schema and whether it is read; 13 faces with
+  night-token state; all 27 schemas plus the SCHEMA_UNREAD ledger; the 25 rules with their method
+  and severity counts, the live tree scan, the BASELINE, the unchecked and delegated lists and
+  every sanctioned exemption with its reason; the 4 devices with features and hardware flags.
+  It asserts nothing — the gates do that — and the committed copy is held to a fresh render by
+  `npm test`, so nobody reads a stale map.
+- **Refactors it forced (both good):** the schema-liveness ledger and predicate moved out of the
+  test into `src/shared/schema-liveness.ts`, and the rule BASELINE into
+  `scripts/lib/rule-baseline.mjs`, so the report and the gates read one implementation each
+  instead of the report re-deriving them.
+- **Changed:** `scripts/lib/health-report.ts` + `.test.ts` (new), `src/shared/schema-liveness.ts`
+  (new), `scripts/lib/rule-baseline.mjs` (new), `schema-liveness.test.ts` and
+  `rulecheck-tree.test.ts` (import the shared modules), `package.json` (`report` script),
+  `AGENTS.md` (command + a Conventions bullet), `docs/health.md` (generated).
+- **Verified:** gate red on the missing module, then red again for naming FACE_TOKEN_EXEMPT only
+  implicitly (the fix names the ledger and its shrink-only contract in the report, which is the
+  more useful output); determinism asserted by rendering twice; a hand-edited copy fails and a
+  regenerated one passes. gates.sh green: lint, check:tokens, 44 files / 679 tests, build.
+- **What the first report shows:** every schema read (27/27), both ledgers empty, 0 rule
+  violations over 165 files, 7 rules permanently unchecked (4 judgment, 3 rendered), 3 delegated,
+  8 sanctioned exemptions, and the fleet's hardware split (audio and radar on fast only).
+- **Open:** none for item 5.
+
+---
+
+## 2026-09-05 · item 4: docs drift gate + the stale entry docs
+
+- **What:** `scripts/lib/docs-drift.test.ts` (117 checks) holds the claims AGENTS.md and the entry
+  docs make about the tree to the tree: every backticked repo path exists (brace-expanded,
+  basename search for bare filenames), every backticked identifier appears in the code roots,
+  every `--token` prefix is declared in a stylesheet, every rule id is in `rules/*.json`, every
+  `npm run` script is in package.json; README's app list and the "N apps registered" counts in
+  `directive/foundation.md` and `docs/architecture.md` match the registry parsed from
+  `src/apps/index.ts`. It catches stale names and counts, never wrong advice.
+- **Ledgers:** `NOT_IN_TREE` (dist/, server.mjs, build-info.json, .env, superclock.service,
+  config/fleet.json, config/admin.json) with reasons, checked two-way against `git ls-files` (a
+  name that becomes tracked must leave); `MUST_NOT_EXIST_IN_CODE` (BackChevron) asserts a
+  deletion AGENTS.md relies on stays deleted.
+- **Docs fixed (the gate's first red):** README app list 10 → 14 with registry descriptions,
+  `VITE_GITHUB_TOKEN` row replaced by the server-side `GITHUB_TOKEN` (docs-site gap 08, open since
+  July), "falls back to mock" wording removed, scripts block gains test + gates.sh, pointer to
+  AGENTS.md; foundation.md and architecture.md 11 → 14 apps; AGENTS.md's hand-kept "Users:" list
+  of swipe registrants (7 of 10, stale) replaced by a pointer to the `multiView` declarations the
+  capability contract already holds to the code.
+- **Gate bugs found on the first run:** dist/ exists on a developer disk after a build, so
+  "in the tree" now means tracked by git; the gate was reading its own ledger as code (excluded).
+- **Verified:** red on exactly the four stale docs plus the two gate bugs; green after.
+  43 files / 673 tests, lint, tsc.
+- **Open:** none for item 4.
+
+---
+
+## 2026-09-05 · item 3: app capability contract + device hardware flags
+
+- **What:** structured metadata that is checked, never trusted. `src/shared/app-capabilities.ts`
+  declares per app what it does (`fetches`, `ticks`, `multiView`) and needs (`audio`, `mic`,
+  `radar`); `app-capabilities.test.ts` (54 checks) holds every row to the code: fetches ⇔ the
+  directory calls fetch() and carries an honest tell, ticks ⇔ it owns a timer/rAF, multiView ⇔ it
+  registers the swipe slot; every hardware need is a `FeatureFlag` some device provides; the wire
+  descriptor carries the list. Declarations were derived from a grep table, not guessed:
+  agents mic (voice design, mock today), breathing radar, fitness audio (circuit cues),
+  time-tracking radar (presence), every fetching app has its tell.
+- **Device flags:** `FeatureFlag` gains `audio` | `mic` | `radar`; `capabilities.ts` declares
+  them from fleet.md and device.json (fast: Fusion HAT mic + speaker, hosts the A121; small and
+  square: USB mic; slow: none). Admin Settings reads flags by name, so the new ones are inert
+  there. `AppDescriptor.capabilities` is optional on the wire (LVGL JSON stays valid).
+  `devicesProviding(flag)` lives in capabilities.ts (app-capabilities.ts is a leaf on purpose:
+  importing capabilities.ts back would be a module cycle).
+- **Scaffolder:** `new:app` now inserts an empty `'<id>': [] // SCAFFOLD-TODO` row
+  (`insertAppCapabilities`, pinned in scaffold-templates.test.ts); the contract test then holds
+  the row to the code as the app is implemented.
+- **Changed:** `src/shared/types.ts`, `app-capabilities.ts` (new), `app-capabilities.test.ts`
+  (new), `capabilities.ts`, `scripts/lib/scaffold-templates.mjs`, `scaffold-templates.test.ts`,
+  `scripts/new-app.mjs`, `AGENTS.md` (adding-an-app list + Conventions bullet).
+- **Verified:** contract red on the missing module, green first run (facts matched the table);
+  scaffold test red on the missing insertion, green after; scaffold smoke `new:app cap-smoke`
+  passed contract + coherence + registry-contract + liveness with only the by-design todo test
+  red, tsc clean, smoke removed surgically (git checkout would have wiped the uncommitted
+  capabilities.ts edits: reverted by line instead). 42 files / 556 tests, tsc, lint green.
+- **Decisions to flag, not taken:** whether a device without `mic` should stop OFFERING Agents
+  (supportedAppIds), and whether the kiosk should show "no mic on this device" tells; both are
+  product calls now backed by data. Radar is declared on fast only (the sidecar runs there).
+- **Open:** none for item 3.
+
+---
+
+## 2026-09-05 · item 2, batch d: the last three apps wired (Claude usage, Fireplace, GitHub) — SCHEMA_UNREAD is empty
+
+- **What:** item 2 complete. Every declared schema (27) is value-imported by its component; the
+  ledger is empty and AGENTS.md says so.
+- **Claude usage:** `refreshSeconds` drives the poll (default aligned 60 → 30, the historical
+  interval); `moodEnabled=false` leaves the metrics without the sprite and stops its rotation
+  tick. `scope` cannot be honoured (the daemon reports one rollup), so it is the first user of
+  a new `FieldMeta.unimplemented` note: the admin renders the control disabled with
+  "Not applied on the glass yet: …" (string, number, enum, boolean branches of schema-form;
+  never hidden, never silently broken).
+- **Fireplace:** `src/apps/fireplace/fire-params.ts` (pure, 11 tests): `spawnPerFrame`
+  (calm 1 / medium 3 / roaring 6), `flameColor` (classic reproduces the original gradient
+  verbatim; cool/blue/purple are a first cut to tune on glass), `emberColor`. The effect
+  restarts on a config push.
+- **GitHub:** `src/apps/github/github-config.ts` (pure, 9 tests): `paletteFor` (default = the
+  historical greens; monochrome greys; accent ramps into `var(--color-accent)` via color-mix),
+  `cacheKeyFor` (blank keeps the historical key so an existing cache still seeds the boot
+  paint; a username gets its own key), `contributionsUrl`. The app is now `GithubApp` (parses
+  config) → `GithubGraph` keyed on the cache key, so a username change remounts with that
+  user's cache instead of briefly painting another user's graph; sub-views take `colors`;
+  `refreshMinutes` drives the interval (default 30 = historical). `server/github-proxy.ts`:
+  `?username=` switches the GraphQL subject from viewer to `user(login:)`, validated by
+  `isValidLogin` before interpolation (400 otherwise), cache and single-flight per login
+  (`server/github-proxy.test.ts`, 4 tests).
+- **Changed:** the files above plus `src/shared/types.ts` (FieldMeta.unimplemented),
+  `src/admin/lib/schema-form.tsx`, `app.claude-usage.ts`, `schema-liveness.test.ts` (3 → 0).
+- **Verified:** gate red on exactly the three; pure suites red on missing modules/exports, green
+  after. 41 files / 501 tests, tsc, lint, check:tokens green; check:rules 0 violations.
+  Dev preview (5181): Fireplace canvas mounted; GitHub honest empty state ("set GITHUB_TOKEN on
+  the server") painting 364 level-0 dots from the palette; Claude usage metrics + sprite +
+  "auth expired" tell. Console carried 17 stale HMR errors from mid-edit churn (Invalid hook
+  call while modules were half-updated); a reload added none. Not exercised in the browser:
+  the disabled `scope` control in the admin form (needs an instance; the change is JSX only),
+  the non-default hues/intensity/palettes, a non-blank username against real GitHub.
+- **Open:** none for item 2. Follow-ups noted, not started: tune the cool/blue/purple flames on
+  glass; the seven legacy faces still on FACE_TOKEN_EXEMPT (night tokens, a separate retrofit).
+
+---
+
+## 2026-09-05 · item 2, batch c: three faces with behaviour wired (Productivity, Flip, World)
+
+- **What:** the last three legacy face schemas. Defaults aligned to today's rendering:
+  `face.productivity` accent #ffcc00 → #ff8826 (date, second hand, hub), `face.flip` accent
+  #f97316 → #ffffff (the digits have always been white), `face.world` accent #3b82f6 → #ee0000
+  (the primary dial's second hand and hub ring). New behaviour only when configured:
+  Productivity `showSeconds=false` hides the second hand; Flip `hour24=false` renders 12-hour
+  digits (two digits kept so the panel width never jumps) plus an AM/PM label in the accent
+  colour; World `primaryTimezone` drives the primary dial's hour and minute hands through
+  `src/apps/clock/world-time.ts` (pure: resolveTimezone, timeInTimezone, handDegreesInTimezone;
+  same formulas as useClockHands). An IANA name Intl rejects degrades to the device clock
+  instead of throwing at render. The mini dials now share the same formatter cache.
+- **Changed:** `ProductivityClock.tsx`, `FlipClock.tsx`, `WorldClock.tsx`, new `world-time.ts`
+  + `world-time.test.ts` (7 cases), the three schemas, `schema-liveness.test.ts` (ledger 6 → 3;
+  every face schema is now read). The seven legacy faces remain on FACE_TOKEN_EXEMPT.
+- **Verified:** liveness gate red on exactly the three and world-time red on the missing module,
+  both green after; 38 files / 479 tests, tsc, lint, check:tokens green. Dev preview face cycle:
+  Flip renders white digits, World its red second hand, Productivity its orange, no console
+  errors. Not exercised on-glass: the non-default paths (12-hour Flip, a non-local primary
+  timezone), which are covered by the pure tests and by construction.
+- **Open:** ledger rows for claude-usage, fireplace, github (batch d).
+
+---
+
+## 2026-09-05 · item 2, batch b: four accent-only faces wired (Square, Floral, Complications Light, Complications Dark)
+
+- **What:** each face now takes `FaceProps`, parses `faceConfig` against its schema with the
+  defaults as fallback (AnalogClock pattern), and draws its accent from the parsed value.
+- **Defaults aligned to what the face has always drawn**, so an unconfigured instance is
+  pixel-identical: `face.square` #22c55e → #e94560 (sub-dial ring + hub), `face.floral`
+  #f59e0b → #fbbf24 (hands). Complications Light/Dark already defaulted to their habit-ring
+  green #22c55e; only the green is bound to `accent` (the amber weather sub-dial, the light
+  face's amber second hand and the dark face's purple second hand are separate decisions and
+  stay literal). A saved instance that stored the OLD default will now render that stored
+  colour, which is what the admin has been displaying for it all along.
+- **Changed:** `SquareClock.tsx`, `FloralClock.tsx`, `ComplicationsLight.tsx`,
+  `ComplicationsDark.tsx`, `face.square.ts`, `face.floral.ts`, `schema-liveness.test.ts`
+  (ledger 10 → 6). These four stay on FACE_TOKEN_EXEMPT: night tokens are a separate retrofit.
+- **Verified:** gate red on exactly the four, green after; 37 files / 472 tests, tsc, lint,
+  check:tokens green. Dev preview (5181): cycled the clock faces via the registered swipe
+  callback; Complications Dark, Complications Light, Floral and Square each rendered with their
+  default accent present in the DOM; no console errors.
+- **Open:** ledger rows for productivity, world, flip (batch c) and claude-usage, fireplace,
+  github (batch d).
+
+---
+
+## 2026-09-05 · item 2, batch a: four schemas wired (Agents, Breathing, Date, Temperature)
+
+- **What:** the four mechanical rows of SCHEMA_UNREAD. Each component now value-imports its
+  schema and reads config through `schema.safeParse(config ?? {})` with the schema defaults as
+  the fallback (the Calendar pattern, decision D4). Behaviour unchanged for valid config;
+  malformed config now yields the defaults instead of partially-filtered raw fields.
+- **Changed:** `src/apps/agents/AgentsApp.tsx` (enabledAgents / defaultAgent via
+  `agentsAppSchema`), `src/apps/breathing/BreathingApp.tsx` (showDistance via
+  `breathingAppSchema`, the raw `as Partial<T>` cast is gone),
+  `src/shared/complications/Date.tsx` and `Temperature.tsx` (mixed value+type imports,
+  safeParse). `schema-liveness.test.ts`: ledger 14 → 10.
+- **Verified:** ledger rows removed first, gate red naming exactly the four; green after the
+  wiring. 37 files / 472 tests, tsc -b, lint green.
+- **Open:** ledger rows for 7 legacy faces + claude-usage, fireplace, github (batches b to d).
+
+---
+
+## 2026-09-05 · item 1: baseline debt paid, NAV-1 promoted to blocker (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** the five BASELINE rows from option 2 are fixed and deleted; the baseline is empty
+  and documented as the steady state. NAV-1 is now a `blocker`.
+- **Changed:** `AgentsApp.tsx` and `WeatherApp.tsx` adopt HabitsApp's exact shape (inactive
+  branch nulls, captured `cb`, cleanup nulls only if the slot is still ours).
+  `src/admin/lib/array-fields.tsx`: the list-editor input gains
+  `focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]` (neither the input nor its row
+  had any focus treatment). `TodoApp.tsx`: `border-[3px]` becomes Tailwind v4's `border-3`
+  (compiles to the same 3px, verified in both built CSS bundles). `src/admin/routes/Apps.tsx`:
+  the instance-count pill snaps from `text-[10px]` to `text-xs` (12px; the only visual change,
+  admin-only). `rules/superclock.json`: NAV-1 severity blocker, provenance note.
+  `rulecheck-tree.test.ts`: BASELINE = {}. `AGENTS.md` Known-gaps bullet rewritten.
+  `.claude/launch.json`: new `dev-alt` config on 5181 so a worktree can preview while another
+  session holds 5180 (5180 was held by a vite for pegbo-proto-starter, left running).
+- **Verified:** tree gate red with exactly the five rows after emptying the baseline, green after
+  the fixes; gates.sh green (lint, check:tokens, 37 files / 472 tests, build). Dev preview on
+  5181: Weather → Habits → Weather → Todo via `window.__nav` + `finishTransition()`, the
+  swipe slot stayed registered after every transition, mode returned to `app`, no console errors.
+  Not exercised: Agents' per-agent view registration (needs an in-app tap; same shape as
+  Weather), the Todo row (list empty in dev, covered by the CSS check), keyboard focus on the
+  admin input (hidden tab cannot deliver keyboard focus).
+- **Open:** none for this item.
+
+---
+
+## 2026-09-05 · option 2: rule catalogue + runner (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** every design rule is one record with its severity and its detector, in
+  `rules/superclock.json` (25 rules: 7 grep, 5 heuristic, 3 requires, 4 judgment, 3 rendered,
+  3 delegated; 19 blocker / 4 review / 2 warning; 8 exemptions, each with a reason). Judgment
+  and rendered rules print as unchecked on every run instead of silently passing (one-accent
+  FCE-1, LVGL parity FCE-2, honest offline CPY-4, states STA-1, contrast STA-5, 375px STA-7,
+  circle crop KIO-2); delegated rules name the gate that enforces them (SYS-1 and FCE-3 the
+  token gate, KIO-3 the ESLint clock setInterval ban).
+- **Changed:** `scripts/rulecheck.mjs` (harvested from design-system-rebuild, stdlib only,
+  comment-stripping; three pinned extensions: `requires` co-occurrence, exemptions as
+  { path, reason }, `delegated`; single-file mode prints findings only). `scripts/lib/rule-schema.mjs`
+  (zod, ported from the ds-architecture starter kit). Tests: `rulecheck.test.ts` (engine
+  claims + CLI), `rule-catalogue.test.ts` (schema, compile, fix, exemption reasons, every
+  mechanical rule fires on `<id>-bad.tsx` and stays quiet on `<id>-good.tsx`),
+  `rulecheck-tree.test.ts` (policy: zero tolerance off the baseline, two-way baseline).
+  33 fixtures under `scripts/lib/__fixtures__/rules/`. `npm run check:rules`. Hook
+  `.claude/hooks/check-tokens-on-edit.sh` also runs blocker rules on the edited file
+  (advisory). `AGENTS.md`: command, Conventions bullet, Known gaps rewritten (two bullets
+  replaced), Gestures pointer, one new trap. `unslop/SKILL.md` Phase 2 points at check:rules.
+- **Tree at freeze:** 0 blockers; baseline debt NAV-1 x2 (AgentsApp, WeatherApp: unconditional
+  null of the shared slot), STA-3 x1 (array-fields.tsx:262), LAY-4 x2 (TodoApp border-[3px],
+  Apps.tsx text-[10px]). Sanctioned exemptions: COL-4 QuickSettings sheet + admin sticky
+  header; MOT-1 SwipeContainer Suspense spinner + breathing/fireplace/clock ambient carve-out;
+  LAY-4 vendored shadcn ui/; KIO-1 useCalendarEvents (gated through `enabled`).
+- **Verified:** `./scripts/gates.sh` green: lint, check:tokens, 37 files / 472 tests, build.
+  Engine claims red before the runner existed (missing module), green after; the CLI footer
+  test was red before the suppression, green after. Hook pipe-tested: blocker probe prints the
+  finding, a review-only file stays silent, an ungated file stays silent, exit 0 throughout.
+- **Found along the way:** `useCalendarEvents.ts` mentions isActive only in a doc comment
+  while gating through `enabled`; a raw grep read it as gated, the comment-stripping runner
+  did not. Recorded as a KIO-1 exemption and a trap in AGENTS.md.
+- **Decisions:** ci.yml and gates.sh unchanged on purpose: the CLI exits 1 on any hit
+  (baseline debt included), so policy lives in `npm test`. Severity is earned: NAV-1 ships at
+  review and is promoted to blocker when Agents and Weather adopt the HabitsApp guard.
+- **Open:** the five baseline rows (each a small app or admin change with its own review);
+  options 3 to 7 from the gap analysis, awaiting Nick.
+
+---
+
+## 2026-09-05 · option 1: schema-liveness gate (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** the consumption half of the registry contract. `src/shared/schema-liveness.test.ts`
+  requires every declared app/face/complication schema to be value-imported by the component
+  that owns it (Calendar pattern, `schema.safeParse(config ?? {})`), or to sit on
+  `SCHEMA_UNREAD`, a shrink-only ledger with a reason per row. Two-way: a row whose schema
+  became read fails as stale. `import type` does not count.
+- **Changed:** new `src/shared/schema-liveness.test.ts` (ledger frozen at 14 of 27: apps
+  agents, breathing, claude-usage, fireplace, github; faces productivity, square, floral,
+  complications-light, complications-dark, world, flip; complications date, temperature).
+  `scripts/lib/scaffold-templates.mjs`: app and face templates now import and safeParse their
+  schema (born schema-live); `scaffold-templates.test.ts` pins it. `AGENTS.md`: gate
+  described next to coherence/contract, scaffolder lines updated.
+- **Verified:** empty ledger went red on the real tree naming the 12 app/face schemas; the
+  widened gate adds the 2 complication renderers (type-only imports, mounted nowhere, D2).
+  A temporary copy with a stale `app.calendar` row failed on exactly the stale-row test.
+  Scaffold smoke (`new:app` + `new:face liveness-smoke`): tsc, lint, check:tokens green;
+  the only red tests were the two by-design todo tests and the missing preview art; reverted.
+  Clean tree: 34 files / 429 tests, lint, check:tokens green.
+- **Decisions:** predicate is a value import (not safeParse presence): honest floor, stated in
+  the file header. Complications included rather than declared out of scope, since renderers
+  exist. Ledger rows carry the fix direction (Calendar / AnalogClock reference).
+- **Open:** the 14 rows themselves (wiring work, each its own change); option 2 next.
+
+---
+
+## 2026-09-05 · agentic design-system gap analysis (branch `claude/agentic-design-system-arch-ac2da8`)
+
+- **What:** brainstorm-only session. Read the six Design Systems Collective "agentic design
+  system" articles (AI-ready DS, agentic DS, structured metadata, codebase index,
+  orchestration, encoding governance) and mapped them onto this repo, the July decisions
+  record, PR #51/#52, and the sibling repos `design-system-rebuild`, `ds-architecture`,
+  `Minimal Design System`.
+- **Changed:** no code. Created this file and one pointer line in `AGENTS.md`. Findings also
+  in the private memory `agentic_ds_gap_analysis.md`.
+- **Verified against the tree (77f742a):**
+  - 11 of 25 declared schemas are never read by their component: apps `agents` (raw fields,
+    no schema), `claude-usage`, `fireplace`, `github`; faces `productivity`, `square`,
+    `floral`, `complications-light`, `complications-dark`, `world`, `flip`. The admin renders
+    forms for all of them.
+  - 10 apps register `setVerticalSwipeCallback`; `AgentsApp` and `WeatherApp` use an
+    unconditional `setVerticalSwipeCallback(null)` instead of the guarded shape AGENTS.md
+    mandates. Whether it stomps in practice depends on effect order; not reproduced.
+    AGENTS.md's "Users:" list names 7 of the 10.
+  - Prose drift: `directive/foundation.md` and `docs/architecture.md` say 11 apps (code: 14);
+    `README.md` still documents `VITE_GITHUB_TOKEN` with a mock fallback.
+  - False positives worth remembering for any detector: `fitness/useCircuitTimer.ts` IS gated
+    (via its `active` param); Claude-usage's offline tell lives in the App, not the hook.
+- **Conclusion:** the articles' enforcement layer already exists here (token gate, coherence +
+  contract tests, scaffolders, hooks, gates.sh, unslop). Missing are the consumption check
+  (is a declared contract read?) and a regenerable report. A TOON index or `.metadata.ts`
+  sidecars are not worth it at 14 apps / 13 faces: the registries are the index.
+- **Options presented to Nick (awaiting pick):** 1 schema-consumption liveness gate;
+  2 rule catalogue + stdlib runner (port `design-system-rebuild` `rules/` + `rulecheck.mjs`);
+  3 capability contract on `AppMetadata` (adds missing audio/mic/radar FeatureFlags);
+  4 AGENTS.md drift gate; 5 regenerable health report; 6 path-scoped rules split;
+  7 deliberately skip index/instance-count/sidecar metadata. Recommended 1 then 2.
+- **Open:** Nick's pick. Each pick gets its own brainstorm classification before any code.

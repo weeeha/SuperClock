@@ -86,7 +86,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const codeFiles = [...CODE_ROOTS.flatMap((d) => walk(d)), ...CODE_FILES].filter(
   (f) =>
     /\.(tsx?|mjs|cjs|js|json|sh|css|c|h|md)$/.test(f) &&
-    !/AGENTS\.md|AGENT-LOG\.md|docs-drift\.test\.ts$|^\.claude\/rules\//.test(f),
+    !/AGENTS\.md|docs\/agent-log\.md|docs-drift\.test\.ts$|^\.claude\/rules\//.test(f),
 );
 const allBasenames = new Set(walk('.').map((f) => basename(f)));
 const codeCorpus = codeFiles.map((f) => read(f)).join('\n');

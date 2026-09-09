@@ -34,6 +34,7 @@ describe('deriveViewModel', () => {
     const vm = deriveViewModel(initialState(W.id), W, T0);
     expect(vm.headline).toBe(W.name.toUpperCase());
     expect(vm.caption).toBe('tap to start');
+    expect(vm.paused).toBe(false);
     expect(vm.progress).toBe(0);
     expect(vm.artId).toBe(W.exerciseIds[0]);
     expect(vm.artPhase).toBe('work');
@@ -87,7 +88,9 @@ describe('deriveViewModel', () => {
     expect(paused.phase).toBe('paused');
 
     const vm = deriveViewModel(paused, SHORT, T0 + 999_999);
-    expect(vm.headline).toBe('❚❚');
+    // The pause mark is drawn by the face, not spelled by the view model.
+    expect(vm.paused).toBe(true);
+    expect(vm.headline).toBe('');
     expect(vm.caption).toBe(`1 of ${SHORT.exerciseIds.length} · ${getExercise('push-ups').name}`);
     expect(vm.artPhase).toBe('work');
     expectValidProgress(vm.progress);

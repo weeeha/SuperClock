@@ -1,0 +1,158 @@
+// The kiosk's own design ceilings.
+//
+// `src/apps` sits outside SYS-1 on purpose: the token gate forbids raw hex in
+// src/admin and src/core, but a face's palette is content, so apps and faces
+// were left free. The cost of that freedom is unbounded: as of 2026-09-07 the
+// kiosk apps and faces between them use 61 distinct font sizes against
+// unslop's budget of 7, and 121 distinct raw colours with no palette behind
+// them. That is the mechanical reason the surfaces read as unfinished — every
+// app invented its own scale.
+//
+// Fixing that is a design pass per app, not a sweep, so this file does the one
+// thing that is safe to do now: it freezes both numbers. They may only shrink.
+// A design pass lowers the ceiling as it lands; nothing may raise it.
+//
+// fs-free by design, like token-liveness.mjs and asset-liveness.mjs beside it:
+// the real-tree gate in src/shared/design-ratchet.test.ts walks the files and
+// hands the text here.
+
+// Frozen 2026-09-07 from the tree. Lower these as design passes land; the gate
+// fails if a count exceeds its ceiling, and fails as stale if it drops below
+// without the ceiling following it down.
+export const CEILINGS = {
+  // 61 → 60 on 2026-09-07: the Fitness pass drew its streak hearts instead of
+  // setting them as emoji at fontSize 58, and no other element used that size.
+  // This is the ratchet's own first paydown, and the mechanism that forced it —
+  // the gate fails when a count drops and the ceiling does not follow.
+  //
+  // 60 → 59 on 2026-09-08, merging main: not a design pass, a miscount. The
+  // detector read every arbitrary `text-[…]` as a font size, but Tailwind
+  // overloads that form and two of the matches were colours — `text-[#8b949e]`
+  // in GithubApp, counted here as well as in colours, and
+  // `text-[hsl(var(--sheet-ink))]` from the token layer's proof surface. The
+  // second is why this could not be waved through by raising the ceiling:
+  // sub-project 2 wires more roles the same way, so the error would have grown
+  // with every role. extractFontSizes now excludes the colour form.
+  fontSizes: 59,
+  // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
+  // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
+  // for zero pixel change.
+  //
+  // Both numbers now have somewhere to go. The target scales are declared —
+  // the grey ramp in src/index.css (@theme, --grey-950..300) and the type
+  // scale in src/shared/type-scale.ts — and apps migrate onto them in their
+  // own design passes. Until then this ratchet is what stops the counts
+  // climbing back.
+  colours: 118,
+};
+
+// Files whose colours are data rather than design, so they are not counted.
+export const NOT_DESIGN = [
+  'src/apps/claude-usage/sprites.ts', // scraped 20x20 sprite palettes
+];
+
+const FONT_SIZE = /text-\[[^\]]+\]|text-(?:xs|sm|base|lg|xl|[2-9]xl)\b|fontSize=\{?["']?[0-9.]+/g;
+const HEX = /#[0-9a-fA-F]{3,8}\b/g;
+
+// `text-[…]` is overloaded in Tailwind: a length value sets font-size, a colour
+// value sets colour. Only the length form is a font size. A colour written this
+// way is still counted by extractColours when it is a raw hex, and is counted by
+// neither when it names a token role, which is correct: a role is the fixed
+// state, not the debt this ratchet measures. Anything unrecognised stays a size,
+// so an unfamiliar value fails toward tightening rather than escaping the count.
+const TEXT_COLOUR =
+  /^text-\[(?:#|hsl|rgb|oklch|oklab|lab|lch|color-mix|currentColor|transparent)/i;
+
+export function extractFontSizes(source) {
+  return new Set(
+    (source.match(FONT_SIZE) ?? [])
+      .map((s) => s.trim())
+      .filter((s) => !TEXT_COLOUR.test(s)),
+  );
+}
+
+export function extractColours(source) {
+  return new Set((source.match(HEX) ?? []).map((s) => s.toLowerCase()));
+}
+
+/** #rgb or #rrggbb → {h, s, l} in degrees and percent, or null if unparseable. */
+export function hexToHsl(hex) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return null;
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const mx = Math.max(r, g, b);
+  const mn = Math.min(r, g, b);
+  const l = (mx + mn) / 2;
+  if (mx === mn) return { h: 0, s: 0, l: Math.round(l * 100) };
+  const d = mx - mn;
+  const s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+  let hue = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: Math.round(hue * 60), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+// COL-6 bans indigo, violet and purple, but its detector only matches Tailwind
+// utility class names (`bg-indigo-500`). Every occurrence in this repo is
+// written as raw hex inside a face, so the rule has never once fired on them.
+// This computes the hue instead of reading the name, which is the only way to
+// catch a colour nobody spelled.
+//
+// Scope decided 2026-09-07 (Nick): the rule governs chrome and data
+// encodings, NOT a face in the `artistic` category. A face whose subject is
+// flowers is entitled to violets; a progress quantity or a status tile is not.
+// The exemption reads the registry's own category rather than naming files, so
+// a new artistic face is covered and a recategorised one loses it.
+export function isBannedHue(hex) {
+  const c = hexToHsl(hex);
+  if (!c) return false;
+  return c.h >= 235 && c.h <= 300 && c.s >= 25 && c.l >= 20 && c.l <= 85;
+}
+
+// Banned-hue colours already on the tree, per file. Shrink-only.
+//
+// Seven of the eight are inside faces, and AGENTS.md is explicit that a face's
+// look is the product: changing a palette to turn a check green is forbidden,
+// and the decision is Nick's. Floral is an artistic face whose whole subject is
+// flowers, so its violets may well be the right answer and COL-6 may simply
+// not be about artistic faces — that question is open, not settled here. The
+// eighth is a weather condition colour, which is chrome, and COL-6 does mean
+// that one.
+export const BANNED_HUE_LEDGER = {
+  // Floral's five petal violets are NOT here: the artistic category is exempt
+  // by the scope decision above, so they are allowed rather than ledgered.
+  //
+  // #7c3aed on a data tile.
+  'src/apps/clock/ComplicationsDark.tsx': 1,
+  // #a855f7 on a progress quantity.
+  'src/apps/clock/ProductivityClock.tsx': 1,
+  // #a05ad0, a condition colour — the only one outside a face, and the only
+  // one a design pass will reach on its own.
+  'src/apps/weather/weather-utils.ts': 1,
+};
+
+/**
+ * Face component filenames whose category exempts them from the hue rule.
+ *
+ * Derived from the two registries rather than listed: `face-registry.ts` says
+ * which ids are artistic, `face-components.ts` says which component each id
+ * maps to. Both are already gated for coherence, so this cannot drift.
+ */
+export function artisticFaceFiles(registrySource, componentsSource) {
+  const artistic = new Set();
+  // The lookahead is load-bearing: a plain lazy gap scans forward out of its
+  // own entry into the next one, so `square` matched Floral's category and the
+  // wrong two faces came back exempt. Forbidding another `id:` in between keeps
+  // each match inside one registry entry.
+  for (const m of registrySource.matchAll(
+    /id:\s*'([\w-]+)'(?:(?!\bid:)[\s\S])*?category:\s*'artistic'/g,
+  )) {
+    artistic.add(m[1]);
+  }
+  const files = new Set();
+  for (const m of componentsSource.matchAll(/^\s*'?([\w-]+)'?:\s*(\w+),$/gm)) {
+    if (artistic.has(m[1])) files.add(`${m[2]}.tsx`);
+  }
+  return files;
+}

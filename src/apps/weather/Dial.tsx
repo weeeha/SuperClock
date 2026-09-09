@@ -1,4 +1,5 @@
 import { polar, ringSlots, type HourSample } from './weather-utils';
+import ConditionMark, { type ConditionMarkId } from './ConditionMark';
 
 const C = 500;
 const R_HOURS = 388;
@@ -7,12 +8,15 @@ const R_VALUES = 278;
 export interface DialProps {
   hours: HourSample[];
   nowHour: number;
-  /** Inner-ring label for one hour. */
+  /** Inner-ring label for one hour. Ignored when `markOf` is given. */
   valueOf: (h: HourSample) => string;
-  /** Inner-ring colour for one hour. Note: emoji-presentation glyphs ignore
-   *  SVG `fill`, so this is a no-op for the conditions dial by design. */
+  /** Inner-ring colour for one hour. Reaches drawn marks too: they are filled
+   *  with `currentColor`, which this sets. */
   colorOf: (h: HourSample) => string;
-  /** Font size for inner-ring labels — glyph pages want this larger. */
+  /** Draw a mark for this hour instead of a text value. The conditions dial is
+   *  the one page whose value is a shape rather than a number. */
+  markOf?: (h: HourSample) => ConditionMarkId;
+  /** Font size for inner-ring labels. */
   valueSize?: number;
   centre: string;
   sub: string;
@@ -23,7 +27,7 @@ export interface DialProps {
  *  clock positions; the inner band carries this metric's value for each hour.
  *  Every metric page is this component with a different formatter and ramp. */
 export default function Dial({
-  hours, nowHour, valueOf, colorOf, valueSize = 46, centre, sub, caption,
+  hours, nowHour, valueOf, colorOf, markOf, valueSize = 46, centre, sub, caption,
 }: DialProps) {
   const slots = ringSlots(hours);
 
@@ -48,15 +52,25 @@ export default function Dial({
             >
               {h.hour}
             </text>
-            <text
-              x={vp.x} y={vp.y}
-              textAnchor="middle" dominantBaseline="central"
-              fontSize={valueSize} fontWeight={500}
-              fill={colorOf(h)}
-              opacity={h.isDay ? 1 : 0.55}
-            >
-              {valueOf(h)}
-            </text>
+            {markOf ? (
+              <g
+                transform={`translate(${vp.x} ${vp.y})`}
+                color={colorOf(h)}
+                opacity={h.isDay ? 1 : 0.55}
+              >
+                <ConditionMark id={markOf(h)} />
+              </g>
+            ) : (
+              <text
+                x={vp.x} y={vp.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={valueSize} fontWeight={500}
+                fill={colorOf(h)}
+                opacity={h.isDay ? 1 : 0.55}
+              >
+                {valueOf(h)}
+              </text>
+            )}
           </g>
         );
       })}

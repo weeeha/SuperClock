@@ -278,6 +278,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
       <WatchFace
         progress={vm.progress}
         headline={vm.headline}
+        paused={vm.paused}
         caption={vm.caption}
         heartsTotal={HEARTS_PER_MONTH}
         heartsLeft={streak.hearts}

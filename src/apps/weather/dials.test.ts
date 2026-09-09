@@ -50,11 +50,22 @@ describe('dialFor', () => {
     expect(d.hours).toHaveLength(12);
   });
 
-  it('formats the conditions dial with glyphs', () => {
+  it('formats the conditions dial with drawn marks, not text values', () => {
     const d = dialFor('conditions', model())!;
     expect(d.centre).toBe('27°');
     expect(d.sub).toBe('Mostly Clear');
-    expect(d.valueOf(hour(2, { code: 0, isDay: false }))).toBe('\u{1F319}');
+    // The one dial whose value is a shape: it supplies markOf, and its
+    // valueOf is empty so the ring draws nothing textual behind the mark.
+    expect(d.markOf).toBeDefined();
+    expect(d.markOf!(hour(2, { code: 0, isDay: false }))).toBe('moon');
+    expect(d.markOf!(hour(14, { code: 0, isDay: true }))).toBe('sun');
+    expect(d.valueOf(hour(2, { code: 0, isDay: false }))).toBe('');
+  });
+
+  it('leaves every other dial on text values', () => {
+    for (const page of ['temp', 'precip', 'wind', 'uv'] as const) {
+      expect(dialFor(page, model())!.markOf, `${page} should not draw marks`).toBeUndefined();
+    }
   });
 
   it('formats the precipitation dial and names the peak hour', () => {

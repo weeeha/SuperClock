@@ -79,7 +79,16 @@ fi
 echo "Free space OK: $(( AVAIL_KB / 1024 )) MB available, $(( NEED_KB / 1024 )) MB required."
 
 # Built client bundle + bundled server (dist/server.mjs).
-rsync -avz --delete dist/ "$PI_HOST:$REMOTE_DIR/dist/"
+#
+# `protect photos/***` keeps --delete off the device's photo library. Photos
+# are the same class of thing as config/fleet.json below — device-local user
+# content that must survive a deploy — but unlike config/ they live INSIDE the
+# mirrored directory, because the build bakes public/photos/ into dist/.
+# public/photos/* is gitignored, so a clean checkout builds an EMPTY
+# dist/photos/, and a mirroring delete then erased whatever was on the Pi.
+# That is not theoretical: this wiped fastclock's three photos on 2026-09-07.
+# Protect still allows new photos to be sent, it only forbids deleting.
+rsync -avz --delete --filter='protect photos/***' dist/ "$PI_HOST:$REMOTE_DIR/dist/"
 
 # Package manifests (npm ci + `npm run start`).
 rsync -avz package.json package-lock.json "$PI_HOST:$REMOTE_DIR/"
@@ -112,18 +121,34 @@ echo "Server restart signal sent (systemd will bring it back)."
 # fail loudly here instead of masquerading as a successful deploy.
 EXPECTED_COMMIT="$(git rev-parse HEAD)"
 PI_ADDR="${PI_HOST#*@}"
-HEALTH_URL="http://$PI_ADDR:$PORT/api/health"
+
+# Poll an IP, not the .local name.
+#
+# mDNS resolution of a .local host from macOS regularly costs more than the
+# curl budget below, and --max-time covers DNS as well as the request — so
+# every poll timed out, HEALTH_JSON stayed empty, and the script reported
+# "server did not come back" for a deploy that had in fact landed perfectly.
+# Measured 2026-09-07: three consecutive attempts each hit the 3s ceiling
+# exactly, which means this check could never pass against a .local name.
+#
+# ssh has already proven it can reach the device, so ask the device for its
+# own address and poll that. Falls back to whatever was passed in if the
+# lookup fails, which is no worse than the old behaviour.
+PI_IP="$(ssh -o ConnectTimeout=8 "$PI_HOST" "hostname -I | awk '{print \$1}'" 2>/dev/null | tr -d '[:space:]' || true)"
+HEALTH_HOST="${PI_IP:-$PI_ADDR}"
+[ -n "$PI_IP" ] && echo "Resolved $PI_ADDR to $PI_IP for the health check."
+HEALTH_URL="http://$HEALTH_HOST:$PORT/api/health"
 echo "=== Verifying deploy against $HEALTH_URL ==="
 DEPLOYED_COMMIT=""
 HEALTH_JSON=""
 for _ in $(seq 1 30); do
   sleep 2
-  HEALTH_JSON="$(curl -fsS --max-time 3 "$HEALTH_URL" 2>/dev/null || true)"
+  HEALTH_JSON="$(curl -fsS --connect-timeout 3 --max-time 8 "$HEALTH_URL" 2>/dev/null || true)"
   DEPLOYED_COMMIT="$(printf '%s' "$HEALTH_JSON" | grep -o '"commit":"[0-9a-f]*"' | cut -d'"' -f4 || true)"
   [ -n "$DEPLOYED_COMMIT" ] && break
 done
 if [ -z "$HEALTH_JSON" ]; then
-  echo "ERROR: server did not come back within 60s — check: ssh $PI_HOST 'systemctl status superclock*.service'" >&2
+  echo "ERROR: server did not come back within ~2 min — check: ssh $PI_HOST 'systemctl status superclock*.service'" >&2
   exit 1
 elif [ -z "$DEPLOYED_COMMIT" ]; then
   echo "ERROR: server is up but reports no build stamp — an OLD (pre-stamp) process is still serving." >&2

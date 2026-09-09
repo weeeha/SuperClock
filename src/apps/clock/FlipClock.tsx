@@ -93,7 +93,7 @@ function FlipPanel({ value, color }: PanelProps) {
           left: 0,
           right: 0,
           height: 3,
-          background: '#000',
+          background: '#000000',
           zIndex: 20,
           transform: 'translateY(-1px)',
         }}

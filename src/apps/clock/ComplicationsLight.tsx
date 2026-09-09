@@ -2,6 +2,7 @@ import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { complicationsLightFaceSchema } from '../../shared/schemas/face.complications-light';
 import { useHabitsToday } from './complications-data';
+import CaffeineMark from './CaffeineMark';
 
 // Complication circle centers (1000×1000 SVG space)
 const COMP_R = 125;
@@ -68,7 +69,9 @@ export default function ComplicationsLight({ isActive, faceConfig }: FaceProps) 
 
         {/* ── Top complication: caffeine (no real data source yet) ── */}
         <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} fill="#1a1a1a" />
-        <text x={COMPS.top.cx} y={COMPS.top.cy - 22} textAnchor="middle" fontSize="62" dominantBaseline="auto">☕</text>
+        <g transform={`translate(${COMPS.top.cx} ${COMPS.top.cy - 46})`} color="white">
+          <CaffeineMark />
+        </g>
         <text x={COMPS.top.cx} y={COMPS.top.cy + 46} textAnchor="middle" fill="white" fontSize="50" fontWeight="700" fontFamily="system-ui">2</text>
         <text x={COMPS.top.cx} y={COMPS.top.cy + 84} textAnchor="middle" fill="#666" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
 

@@ -85,7 +85,7 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | CHT-3 | blocker | grep | Flat marks, never the recharts dash default |
 | COL-1 | blocker | grep | Zero gradient utilities in kiosk and admin chrome |
 | COL-4 | review | heuristic | Glass only over real content |
-| COL-6 | warning | heuristic | Indigo, violet and purple are not this system's hues |
+| COL-6 | warning | heuristic | Indigo, violet and purple are not this system’s hues (chrome and data, not artistic faces) |
 | CPY-1 | blocker | grep | Verb plus object labels, never generic CTAs |
 | CPY-2 | blocker | grep | Banned marketing register |
 | CPY-4 | blocker | judgment | Zero fabrication: mock or fallback data is never rendered as live |
@@ -107,9 +107,9 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-7 | blocker | rendered | The admin passes at 375px |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 173 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
+Tree scan over 177 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
 
-Baseline rows (`BASELINE`, frozen debt): empty.
+Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/todo/index.ts` ×1.
 
 Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1` (judgment), `KIO-2` (rendered), `STA-1` (judgment), `STA-5` (rendered), `STA-7` (rendered).
 

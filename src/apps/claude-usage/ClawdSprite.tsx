@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Sprite } from './sprites';
+import { decodeCells } from './sprite-codec';
 
 const GRID = 20;
 const PANEL_BG = '#0a0a09';
@@ -41,6 +42,10 @@ export default function ClawdSprite({ sprite, size, isActive }: Props) {
     function paint() {
       const frame = sprite.frames[frameIdx.current];
       if (!ctx || !frame) return;
+      // Decode once per frame, not once per cell: 400 entries at up to 25
+      // frames a second is far cheaper than the React work already happening
+      // around it, so there is nothing here worth caching.
+      const cells = decodeCells(frame.rle);
 
       // Panel background fill (uniform — sets the "off" cell colour).
       ctx.fillStyle = PANEL_BG;
@@ -49,7 +54,7 @@ export default function ClawdSprite({ sprite, size, isActive }: Props) {
       // Fill lit cells.
       for (let gy = 0; gy < GRID; gy++) {
         for (let gx = 0; gx < GRID; gx++) {
-          const code = frame.cells[gy * GRID + gx];
+          const code = cells[gy * GRID + gx];
           if (code === 0) continue;
           const color = sprite.palette[code];
           if (!color || color === 'transparent') continue;

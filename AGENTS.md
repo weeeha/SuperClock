@@ -8,7 +8,7 @@ Session handoffs live in `docs/agent-log.md` (what previous sessions did, newest
 
 SuperClock is a smart-clock dashboard for a fleet of four Raspberry Pis driving Waveshare round/square LCDs. Per-device hardware specs live in `superclock-{fast,small,square,slow}/device.json` (fast is a Pi 5; the others are Pi 4-class; `slow` runs a separate native LVGL binary — not Chromium). The UI is laid out for a circular 1080×1080 viewport on the round devices, so most full-screen surfaces assume a 1:1 aspect ratio. Two SPAs ship from one Vite build: the **kiosk** (`index.html`, full-screen touch UI) and the **admin** (`admin/index.html`, fleet management at `/admin`), both served by the bundled Express server on every Pi.
 
-**Agent log:** parallel worktree sessions hand work over through `AGENT-LOG.md`, not PRs. Append an entry (what changed, files, verified, decisions, open) before finishing a chunk of work.
+**Agent log:** parallel worktree sessions hand work over through `docs/agent-log.md`, not PRs. Append an entry (what changed, files, verified, decisions, open) before finishing a chunk of work.
 
 **Path-scoped rules:** this file states every rule, but three bodies live in `.claude/rules/*.md` with `paths:` frontmatter, so Claude Code loads them only when you touch matching files. Read the named file directly if your agent does not do that for you. `scripts/lib/rules-scoped.test.ts` holds the split honest: every rule declares globs that match real files, and its one-line summary must still appear here.
 

@@ -9,6 +9,10 @@ import type { CircuitState } from './circuit';
 
 export interface WatchFaceViewModel {
   headline: string;
+  /** Draw the pause mark in place of the readout. The paused state used to say
+   *  so with a '❚❚' headline, i.e. a text glyph doing an icon's job; the face
+   *  draws two bars from this instead. */
+  paused: boolean;
   caption: string | undefined;
   progress: number;
   artId: string | null;
@@ -34,6 +38,7 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
   // headline, a "tap to start" caption, an empty ring, and the neutral pose
   // for the first exercise in the circuit.
   let headline = workout.name.toUpperCase();
+  let paused = false;
   let caption: string | undefined = 'tap to start';
   let progress = 0;
   let artId: string | null = currentId;
@@ -57,7 +62,8 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
     progress = 1 - left / (workout.restSeconds * 1000);
     artPhase = 'rest';
   } else if (state.phase === 'paused') {
-    headline = '❚❚';
+    headline = '';
+    paused = true;
     caption = `${state.index + 1} of ${workout.exerciseIds.length} · ${getExercise(currentId).name}`;
     artPhase = state.resumePhase === 'rest' ? 'rest' : 'work';
   } else if (state.phase === 'complete') {
@@ -67,5 +73,5 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
     artPhase = 'rest';
   }
 
-  return { headline, caption, progress, artId, artPhase };
+  return { headline, paused, caption, progress, artId, artPhase };
 }

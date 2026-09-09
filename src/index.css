@@ -49,3 +49,26 @@ html, body, #root {
   scrollbar-width: none;
 }
 .calendar-scroll::-webkit-scrollbar { display: none; }
+
+/* A sweeping second hand is one line rotating about the face centre at a
+   constant rate, which is exactly what the compositor does natively. Driving
+   it here rather than through a 30fps React tick takes the Minimalismo face
+   from ~30 renders a second to 1, for weeks at a time, on a Pi 4.
+
+   Both historical second-hand bugs stay impossible, for the same reasons
+   handPoints() gives. The angle never leaves a 60s 0-360 loop, so it cannot
+   reach the absolute-epoch magnitude that loses precision in the compositor's
+   float32 transform matrix. And this is an animation, not a transition, so the
+   minute wrap restarts at 0 rather than interpolating backwards through 359.
+
+   transform-box keeps the rotation in the SVG's own user units, so
+   transform-origin can name the face centre in viewBox coordinates. */
+@keyframes face-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.face-sweep {
+  transform-box: view-box;
+  animation: face-sweep 60s linear infinite;
+}
