@@ -6,6 +6,30 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-09 · branch claude/status-check-3545f6 · hand shadows: direction approved, drawn in Figma, nothing built
+
+Design only. No code changed on this branch. Recorded here because the decisions bind whoever implements it.
+
+Nick asked for an optional shadow across all watchfaces, referencing two Apple Watch faces where white hands cast a shadow over a bright field.
+
+**Decided:**
+- The option is an enum per face, not a boolean: `none | cast | soft`, default `cast`. A boolean forces one treatment across a fleet spanning one Pi 5 and three Pi 4s.
+- `cast` is offset duplicate geometry: offset x +8, y +10 in the 1000-unit face space, black at alpha 0.32, no filter. One extra draw call, nothing per frame.
+- `soft` is `feDropShadow` dx 5, dy 7, stdDeviation 9, alpha 0.38. Opt-in, fastclock only, because it re-rasterizes a blurred filter region every frame. Same cost the Habits pass stripped out on 2026-09-07.
+- The offset is applied OUTSIDE the hand rotation. The light stays fixed while the hand turns; rotating the offset with the hand lights every hour from a new sun.
+- `--face-shadow` stays black in both palettes. No light "lift" at night: that is a glow, a different physical claim, and it reads cheap on an LCD. Black-dial faces default to `none` instead, which is the honest expression of a shadow that would contribute nothing.
+- Rejected: a contrast keyline, a background-coloured stroke under the hand. Free to render and palette-independent, but it is not a shadow. Kept as a candidate fourth value if Floral needs it.
+
+**Open, not decided:**
+- `soft` on Analog would open an LVGL parity drift row: `slow-native/src/clock_face.c` has no drop-shadow primitive. `cast` is one extra line and the C twin can match it. Whether Analog carries the option at all is unresolved.
+- Only 5 of 13 faces have a proposed default: Floral, Productivity and Complications Light get `cast`; Analog and Complications Dark get `none`. The other eight are unreviewed and would ship `none`, which changes nothing on glass.
+- Minimalismo has no `face.*` schema, so a per-face option there means a new schema file, a registry entry and a snapshot regeneration.
+- Adding a defaulted enum to twelve face schemas is a minor schema change under the snapshot gate and needs `npm run snapshot:schemas`. Not run.
+
+**Where it is:** Figma, Clock Design WIP, page "New Drawings", section `Sheet 03 - hand shadows` (node 705:4080). Ten frames on the file's existing sheet grid: the four treatments, a numbers panel, four real faces, and the per-face default rule.
+
+---
+
 ## 2026-09-08 · branch claude/land-optimization · deployed 2d044af to fastclock and squareclock
 
 Follows the merge entry below. Nothing in the code changed here; this is the deploy and its verification.
