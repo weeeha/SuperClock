@@ -77,7 +77,7 @@ describe('buildNewInstance', () => {
     expect(built.config.face).toEqual(expected);
   });
 
-  it('face with no schema (minimalismo) → config.face = {}', () => {
+  it('face defaults are filled in from its schema (minimalismo → handShadow)', () => {
     const built = buildNewInstance({
       kind: 'face',
       faceId: 'minimalismo',
@@ -85,7 +85,7 @@ describe('buildNewInstance', () => {
       preview: '/minimalismo-thumb.svg',
     });
     expect(built.appId).toBe('clock');
-    expect(built.config).toEqual({ faceId: 'minimalismo', face: {} });
+    expect(built.config).toEqual({ faceId: 'minimalismo', face: { handShadow: 'cast' } });
   });
 
   it('app entry → app instance with schema defaults as config, no label', () => {

@@ -3,6 +3,7 @@ import { analogFaceSchema } from '../../shared/schemas/face.analog';
 import { resolveSpecColor, specOf } from '../../shared/part-meta';
 import analogMeta from './AnalogClock.meta.json';
 import type { FaceProps } from './face-components';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 
 const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
 
@@ -30,7 +31,7 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
   // Admin-configured face options (schema fills defaults; invalid saved
   // values fall back to pure defaults rather than crashing the kiosk).
   const parsed = analogFaceSchema.safeParse(faceConfig ?? {});
-  const { accent, numeralStyle, showSeconds } = parsed.success
+  const { accent, numeralStyle, showSeconds, handShadow } = parsed.success
     ? parsed.data
     : analogFaceSchema.parse({});
   const colors = { accent };
@@ -102,6 +103,9 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox={`0 0 ${spec.space} ${spec.space}`} className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         {/* Clock face */}
         <circle cx={C} cy={C} r={spec.radius} className="theme-fade" fill={background} />
 
@@ -110,11 +114,12 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
 
         {numerals}
 
-        {/* Hour hand */}
-        {hand(hourDeg, spec.hands.hour.tip, spec.hands.hour.width, resolveSpecColor(spec.hands.hour.color ?? spec.face.ink, colors))}
-
-        {/* Minute hand */}
-        {hand(minuteDeg, spec.hands.minute.tip, spec.hands.minute.width, resolveSpecColor(spec.hands.minute.color ?? spec.face.ink, colors))}
+        {/* Hour and minute hands, drawn through HandShadow so the cast copy
+            is the same geometry offset outside the rotation. */}
+        <HandShadow mode={handShadow} color={resolveSpecColor(spec.hands.hour.color ?? spec.face.ink, colors)}>
+          {hand(hourDeg, spec.hands.hour.tip, spec.hands.hour.width, 'currentColor')}
+          {hand(minuteDeg, spec.hands.minute.tip, spec.hands.minute.width, 'currentColor')}
+        </HandShadow>
 
         {/* Second hand */}
         {showSeconds &&

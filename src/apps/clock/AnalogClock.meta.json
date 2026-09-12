@@ -25,6 +25,10 @@
     {
       "key": "showSeconds",
       "intent": "Off removes the only moving accent; use it for a still bedside face."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast is the default: an offset copy of the hour and minute hands in --face-shadow, one extra draw call, and the C twin can match it. soft re-rasterises a blurred region every frame, so it is fastclock only. none for a face that should read flat."
     }
   ],
   "antiPatterns": [

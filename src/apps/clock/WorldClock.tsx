@@ -1,6 +1,7 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { worldFaceSchema } from '../../shared/schemas/face.world';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 import { handDegreesInTimezone, resolveTimezone, timeInTimezone } from './world-time';
 
 interface MiniClockProps {
@@ -83,7 +84,7 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
   const { time, secondDeg } = hands;
   // Face options validated against face.world, defaults otherwise (AnalogClock pattern).
   const parsed = worldFaceSchema.safeParse(faceConfig ?? {});
-  const { accent, primaryTimezone } = parsed.success ? parsed.data : worldFaceSchema.parse({});
+  const { accent, primaryTimezone, handShadow } = parsed.success ? parsed.data : worldFaceSchema.parse({});
   // 'local' (or an IANA name Intl rejects) keeps the device clock on the primary dial;
   // seconds are the same in every zone, so the second hand always follows useClockHands.
   const primaryTz = resolveTimezone(primaryTimezone);
@@ -106,6 +107,9 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         {/* Face */}
         <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
         {ticks}
@@ -116,18 +120,19 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
           return <MiniClock key={tz} cx={cx} cy={cy} r={r} h={h} m={m} label={label} />;
         })}
 
-        {/* Main hour hand — gray, overlaid on top */}
-        <line
-          x1="500" y1="530" x2="500" y2="205"
-          className="theme-fade stroke-(--face-ink)" strokeWidth="26" strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-        {/* Main minute hand */}
-        <line
-          x1="500" y1="530" x2="500" y2="130"
-          className="theme-fade stroke-(--face-ink)" strokeWidth="18" strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
+        {/* Main hour and minute hands, over the secondary dials */}
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line
+            x1="500" y1="530" x2="500" y2="205"
+            stroke="currentColor" strokeWidth="26" strokeLinecap="round"
+            style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+          <line
+            x1="500" y1="530" x2="500" y2="130"
+            stroke="currentColor" strokeWidth="18" strokeLinecap="round"
+            style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+        </HandShadow>
         {/* Second hand — red */}
         <line
           x1="500" y1="590" x2="500" y2="115"

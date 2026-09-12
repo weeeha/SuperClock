@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
+import { handShadowField, handShadowFieldMeta } from './hand-shadow';
 
 export const analogFaceSchema = z.object({
   // Default matches the face's historical second-hand gold, so devices
@@ -7,12 +8,14 @@ export const analogFaceSchema = z.object({
   accent: z.string().default('#FFD700'),
   numeralStyle: z.enum(['none', 'arabic', 'roman']).default('none'),
   showSeconds: z.boolean().default(true),
+  handShadow: handShadowField,
 });
 
 export const analogFaceMeta: FieldMetaMap = {
   accent: { format: 'color', description: 'Second-hand and center-dot color' },
   numeralStyle: { description: 'How the hour numerals are drawn' },
   showSeconds: { description: 'Render the second hand' },
+  handShadow: handShadowFieldMeta,
 };
 
 export type AnalogFaceConfig = z.infer<typeof analogFaceSchema>;

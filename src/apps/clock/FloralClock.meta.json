@@ -16,6 +16,10 @@
     {
       "key": "accent",
       "intent": "The hand colour; pick for contrast against the artwork, never to match it."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast is the point of this face: white hands over a mid-tone artwork read as floating rather than painted on. soft is fastclock only."
     }
   ],
   "antiPatterns": [

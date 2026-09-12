@@ -29,6 +29,7 @@ import { todoAppSchema, todoAppMeta } from './schemas/app.todo';
 import { weatherAppSchema, weatherAppMeta } from './schemas/app.weather';
 
 // Faces
+import { minimalismoFaceSchema, minimalismoFaceMeta } from './schemas/face.minimalismo';
 import { analogFaceSchema, analogFaceMeta } from './schemas/face.analog';
 import { productivityFaceSchema, productivityFaceMeta } from './schemas/face.productivity';
 import { squareFaceSchema, squareFaceMeta } from './schemas/face.square';
@@ -74,6 +75,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'app.weather': { schema: weatherAppSchema, meta: weatherAppMeta },
 
   // Faces
+  'face.minimalismo': { schema: minimalismoFaceSchema, meta: minimalismoFaceMeta },
   'face.analog': { schema: analogFaceSchema, meta: analogFaceMeta },
   'face.productivity': { schema: productivityFaceSchema, meta: productivityFaceMeta },
   'face.square': { schema: squareFaceSchema, meta: squareFaceMeta },

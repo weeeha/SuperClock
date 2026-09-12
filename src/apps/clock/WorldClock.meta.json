@@ -24,6 +24,10 @@
     {
       "key": "primaryTimezone",
       "intent": "An IANA name for the dial the owner reads first; local follows the device clock."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast applies to the primary hands only; the secondary dials stay flat, which is another way the hierarchy is stated."
     }
   ],
   "antiPatterns": [

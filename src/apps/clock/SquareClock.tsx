@@ -1,13 +1,14 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { squareFaceSchema } from '../../shared/schemas/face.square';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 
 /** Modern square clock face with rounded corners and minimal design */
 export default function SquareClock({ isActive, faceConfig }: FaceProps) {
   const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   // Face options validated against face.square, defaults otherwise (AnalogClock pattern).
   const parsed = squareFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsed.success ? parsed.data : squareFaceSchema.parse({});
+  const { accent, handShadow } = parsed.success ? parsed.data : squareFaceSchema.parse({});
 
   // Hour numbers at cardinal positions
   const hourLabels = [
@@ -43,6 +44,9 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         {/* Square face with rounded corners */}
         <rect
           x="0"
@@ -90,29 +94,29 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
           </text>
         ))}
 
-        {/* Hour hand */}
-        <line
-          x1="500"
-          y1="500"
-          x2="500"
-          y2="250"
-          className="theme-fade stroke-(--face-ink)"
-          strokeWidth="22"
-          strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-
-        {/* Minute hand */}
-        <line
-          x1="500"
-          y1="500"
-          x2="500"
-          y2="140"
-          className="theme-fade stroke-(--face-ink)"
-          strokeWidth="14"
-          strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
+        {/* Hour and minute hands */}
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line
+            x1="500"
+            y1="500"
+            x2="500"
+            y2="250"
+            stroke="currentColor"
+            strokeWidth="22"
+            strokeLinecap="round"
+            style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+          <line
+            x1="500"
+            y1="500"
+            x2="500"
+            y2="140"
+            stroke="currentColor"
+            strokeWidth="14"
+            strokeLinecap="round"
+            style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+        </HandShadow>
 
         {/* Second hand */}
         <line

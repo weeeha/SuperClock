@@ -13,8 +13,10 @@ import { SCHEMAS, defaultsFor } from './schema-registry';
 import { buildCapabilities, STATIC_DEVICE_INFO } from './capabilities';
 import { ALL_DEVICE_IDS } from './types';
 
-// Faces that intentionally ship without a config schema.
-const FACES_WITHOUT_SCHEMA = ['minimalismo'];
+// Faces that intentionally ship without a config schema. Emptied 2026-09-12:
+// minimalismo gained face.minimalismo when the hand-shadow option landed, so
+// every face now resolves to a schema of its own.
+const FACES_WITHOUT_SCHEMA: string[] = [];
 // Apps whose config is face-driven rather than a flat `app.<id>` schema.
 const APPS_WITHOUT_SCHEMA = ['clock'];
 
@@ -57,7 +59,7 @@ describe('face registry ↔ clock components ↔ schemas', () => {
     expect(componentIds).toEqual(faceIds);
   });
 
-  it('every face schema id resolves (minimalismo intentionally has none)', () => {
+  it('every face schema id resolves', () => {
     for (const face of FACES) {
       if (FACES_WITHOUT_SCHEMA.includes(face.id)) {
         expect(face.configSchemaId).toBeUndefined();

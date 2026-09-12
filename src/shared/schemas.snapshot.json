@@ -565,6 +565,15 @@
           "default": "#FFD700",
           "type": "string"
         },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
+        },
         "numeralStyle": {
           "default": "none",
           "enum": [
@@ -607,6 +616,15 @@
         "accent": {
           "default": "#22c55e",
           "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -622,6 +640,15 @@
     },
     "face.daylight": {
       "properties": {
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
+        },
         "latitude": {
           "default": 0,
           "maximum": 90,
@@ -689,6 +716,29 @@
         "accent": {
           "default": "#fbbf24",
           "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.minimalismo": {
+      "properties": {
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -697,6 +747,15 @@
       "properties": {
         "accent": {
           "default": "#ff8826",
+          "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
           "type": "string"
         },
         "showSeconds": {
@@ -710,6 +769,15 @@
       "properties": {
         "accent": {
           "default": "#e94560",
+          "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
           "type": "string"
         }
       },
@@ -732,6 +800,15 @@
       "properties": {
         "accent": {
           "default": "#ee0000",
+          "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
           "type": "string"
         },
         "primaryTimezone": {

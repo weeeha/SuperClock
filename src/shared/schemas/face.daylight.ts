@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FieldMetaMap } from '../types';
+import { handShadowField, handShadowFieldMeta } from './hand-shadow';
 
 export const daylightFaceSchema = z.object({
   // (0, 0) means "location not set": the face renders a schematic
@@ -10,6 +11,7 @@ export const daylightFaceSchema = z.object({
   latitude: z.number().min(-90).max(90).default(0),
   longitude: z.number().min(-180).max(180).default(0),
   showTimes: z.boolean().default(true),
+  handShadow: handShadowField,
 });
 
 export const daylightFaceMeta: FieldMetaMap = {
@@ -21,6 +23,7 @@ export const daylightFaceMeta: FieldMetaMap = {
   },
   longitude: { min: -180, max: 180, step: 0.01, description: 'Degrees east (negative = west)' },
   showTimes: { description: 'Sunrise and sunset time labels at the band ends' },
+  handShadow: handShadowFieldMeta,
 };
 
 export type DaylightFaceConfig = z.infer<typeof daylightFaceSchema>;

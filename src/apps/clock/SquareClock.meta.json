@@ -18,6 +18,10 @@
     {
       "key": "accent",
       "intent": "The sub-dial colour; keep it the only saturated colour on the face."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast is the default. The shadow falls from a fixed light, so it does not swing around with the hand."
     }
   ],
   "antiPatterns": [

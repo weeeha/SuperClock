@@ -1,13 +1,14 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { productivityFaceSchema } from '../../shared/schemas/face.productivity';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 
 /** Productivity clock with colored segments — based on Figma S3 design (489:20734) */
 export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   // Face options validated against face.productivity, defaults otherwise (AnalogClock pattern).
   const parsed = productivityFaceSchema.safeParse(faceConfig ?? {});
-  const { accent, showSeconds } = parsed.success
+  const { accent, showSeconds, handShadow } = parsed.success
     ? parsed.data
     : productivityFaceSchema.parse({});
   const day = time.toLocaleDateString('en-US', { weekday: 'short' });
@@ -66,6 +67,9 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         {/* Dark inner circle */}
         <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
 
@@ -88,19 +92,19 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
           {date}
         </text>
 
-        {/* Hour hand */}
-        <line
-          x1="500" y1="500" x2="500" y2="260"
-          className="theme-fade stroke-(--face-ink)" strokeWidth="22" strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-
-        {/* Minute hand */}
-        <line
-          x1="500" y1="500" x2="500" y2="175"
-          className="theme-fade stroke-(--face-ink)" strokeWidth="16" strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
+        {/* Hour and minute hands */}
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line
+            x1="500" y1="500" x2="500" y2="260"
+            stroke="currentColor" strokeWidth="22" strokeLinecap="round"
+            style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+          <line
+            x1="500" y1="500" x2="500" y2="175"
+            stroke="currentColor" strokeWidth="16" strokeLinecap="round"
+            style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+        </HandShadow>
 
         {/* Second hand — the face.productivity showSeconds option */}
         {showSeconds && (

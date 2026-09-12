@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { daylightFaceSchema } from '../../shared/schemas/face.daylight';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 import { sunTimes, type SunTimes } from './solar';
 import type { FaceProps } from './face-components';
 
@@ -19,7 +20,7 @@ export default function DaylightClock({ isActive, faceConfig }: FaceProps) {
   const { time } = useClockHands(isActive);
 
   const parsed = daylightFaceSchema.safeParse(faceConfig ?? {});
-  const { latitude, longitude, showTimes } = parsed.success
+  const { latitude, longitude, showTimes, handShadow } = parsed.success
     ? parsed.data
     : daylightFaceSchema.parse({});
 
@@ -76,6 +77,9 @@ export default function DaylightClock({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="theme-fade flex h-full w-full items-center justify-center bg-(--face-bg)">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         <circle cx="500" cy="500" r="470" fill="none" stroke="var(--face-ink)" strokeWidth="3" />
 
         {/* Night ring underneath, day arc on top of it */}
@@ -115,16 +119,19 @@ export default function DaylightClock({ isActive, faceConfig }: FaceProps) {
         <line x1="500" y1="46" x2="500" y2="30" stroke="var(--face-ink)" strokeWidth="6" />
         <line x1="500" y1="954" x2="500" y2="970" stroke="var(--face-ink)" strokeWidth="6" />
 
-        {/* The day hand: one revolution per day, sun disc at the tip */}
-        <line
-          x1="500"
-          y1="500"
-          x2={hx.toFixed(1)}
-          y2={hy.toFixed(1)}
-          stroke="var(--face-ink)"
-          strokeWidth="17"
-          strokeLinecap="round"
-        />
+        {/* The day hand: one revolution per day, sun disc at the tip. The
+            disc is the face's one accent, so only the shaft casts. */}
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line
+            x1="500"
+            y1="500"
+            x2={hx.toFixed(1)}
+            y2={hy.toFixed(1)}
+            stroke="currentColor"
+            strokeWidth="17"
+            strokeLinecap="round"
+          />
+        </HandShadow>
         <circle
           cx={hx.toFixed(1)}
           cy={hy.toFixed(1)}

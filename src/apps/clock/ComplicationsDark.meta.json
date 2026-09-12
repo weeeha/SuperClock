@@ -20,6 +20,10 @@
     {
       "key": "accent",
       "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast is the default. The sub-dials do not cast, only the two main hands, so the shadow says which layer is on top rather than decorating every tile."
     }
   ],
   "antiPatterns": [

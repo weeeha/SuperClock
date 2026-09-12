@@ -3,6 +3,7 @@ import { useClockHands } from '../../core/hooks/useClockHands';
 import { complicationsDarkFaceSchema } from '../../shared/schemas/face.complications-dark';
 import { useHabitsToday } from './complications-data';
 import CaffeineMark from './CaffeineMark';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 
 const COMP_R = 125;
 const COMPS = {
@@ -20,7 +21,7 @@ function arcDash(r: number, pct: number) {
 export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
   // Face options validated against face.complications-dark, defaults otherwise.
   const parsedFace = complicationsDarkFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsedFace.success ? parsedFace.data : complicationsDarkFaceSchema.parse({});
+  const { accent, handShadow } = parsedFace.success ? parsedFace.data : complicationsDarkFaceSchema.parse({});
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   const habits = useHabitsToday(time);
   const habitPct = habits.total > 0 ? habits.done / habits.total : 0;
@@ -50,6 +51,9 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-plate) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         {/* Black face */}
         <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-plate)" />
 
@@ -114,9 +118,11 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
         <circle cx="500" cy="500" r="14" fill="#7c3aed" />
 
         {/* Hour — light gray */}
-        <line x1="500" y1="535" x2="500" y2="310" className="theme-fade stroke-(--face-ink)" strokeWidth="32" strokeLinecap="round" style={style(hourDeg)} />
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line x1="500" y1="535" x2="500" y2="310" stroke="currentColor" strokeWidth="32" strokeLinecap="round" style={style(hourDeg)} />
+          <line x1="500" y1="530" x2="500" y2="182" stroke="currentColor" strokeWidth="22" strokeLinecap="round" style={style(minuteDeg)} />
+        </HandShadow>
         {/* Minute — lighter */}
-        <line x1="500" y1="530" x2="500" y2="182" className="theme-fade stroke-(--face-ink)" strokeWidth="22" strokeLinecap="round" style={style(minuteDeg)} />
         {/* Second — violet */}
         <line x1="500" y1="572" x2="500" y2="152" stroke="#7c3aed" strokeWidth="7" strokeLinecap="round"
           style={{

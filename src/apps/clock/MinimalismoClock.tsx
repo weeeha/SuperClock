@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { AppProps } from '../../core/types';
+import type { FaceProps } from './face-components';
+import { minimalismoFaceSchema } from '../../shared/schemas/face.minimalismo';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { resolveSpecColor, specOf } from '../../shared/part-meta';
 import { handPoints } from './handPoints';
@@ -86,8 +88,11 @@ function SweepHand({ isActive }: { isActive: boolean }) {
   );
 }
 
-export default function MinimalismoClock({ isActive }: AppProps) {
+export default function MinimalismoClock({ isActive, faceConfig }: FaceProps) {
   const { time, hourDeg, minuteDeg } = useClockHands(isActive);
+  // Face options validated against face.minimalismo, defaults otherwise.
+  const parsed = minimalismoFaceSchema.safeParse(faceConfig ?? {});
+  const { handShadow } = parsed.success ? parsed.data : minimalismoFaceSchema.parse({});
 
   // Re-alignment rides the hook's existing per-second tick rather than a timer
   // of this face's own: ESLint bans setInterval throughout src/apps/clock
@@ -111,11 +116,15 @@ export default function MinimalismoClock({ isActive }: AppProps) {
   return (
     <div className="theme-fade flex h-full w-full items-center justify-center bg-(--face-bg)">
       <svg viewBox={`0 0 ${spec.space} ${spec.space}`} className="h-full w-full max-h-screen max-w-screen">
+        <defs>
+          <SoftShadowFilter />
+        </defs>
         <circle cx={C} cy={C} r={spec.radius} className="theme-fade fill-(--face-bg)" />
-        {/* Hour */}
-        <line {...handPoints(hourDeg, spec.hands.hour.tip)} className="theme-fade stroke-(--face-ink)" strokeWidth={spec.hands.hour.width} strokeLinecap="round" />
-        {/* Minute */}
-        <line {...handPoints(minuteDeg, spec.hands.minute.tip)} className="theme-fade stroke-(--face-ink)" strokeWidth={spec.hands.minute.width} strokeLinecap="round" />
+        {/* Hour and minute */}
+        <HandShadow mode={handShadow} color="var(--face-ink)">
+          <line {...handPoints(hourDeg, spec.hands.hour.tip)} stroke="currentColor" strokeWidth={spec.hands.hour.width} strokeLinecap="round" />
+          <line {...handPoints(minuteDeg, spec.hands.minute.tip)} stroke="currentColor" strokeWidth={spec.hands.minute.width} strokeLinecap="round" />
+        </HandShadow>
         {/* Second — gold in both themes, swept by CSS from angle 0 */}
         <SweepHand key={`${alignEpoch}-${visEpoch}`} isActive={isActive} />
       </svg>

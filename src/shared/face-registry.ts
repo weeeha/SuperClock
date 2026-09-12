@@ -13,6 +13,7 @@ export const FACES: FaceDescriptor[] = [
     name: 'Minimalismo',
     preview: '/minimalismo-thumb.svg',
     category: 'classic',
+    configSchemaId: 'face.minimalismo',
     slots: [],
   },
   {

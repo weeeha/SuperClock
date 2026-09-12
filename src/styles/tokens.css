@@ -33,6 +33,13 @@
   --stone-900: #111316;
   --stone-1000: #000000;
 
+  /* Hand shadow, face-specific. The cast alpha and its absence: at night
+     the dial IS the shadow colour, so the honest night value is no shadow
+     rather than a black one nobody can see (see --face-shadow below). */
+  --shade-cast: rgb(0 0 0 / 0.32);
+  --shade-soft: rgb(0 0 0 / 0.38);
+  --shade-none: rgb(0 0 0 / 0);
+
   /* Dusk blues, face-specific, on no neutral ramp. */
   --dusk-light: #8fa9c4;
   --dusk-dark: #2b3d52;
@@ -78,6 +85,8 @@
   --face-dusk: var(--dusk-light);
   --face-spent: var(--stone-100);
   --face-ghost: var(--stone-200);
+  --face-shadow: var(--shade-cast);
+  --face-shadow-soft: var(--shade-soft);
 
   /* Names here must not collide with the admin's own token names: inside
      .admin-root that block wins by specificity, so a tier 3 alias for the
@@ -140,6 +149,8 @@ html.dark {
   --face-dusk: var(--dusk-dark);
   --face-spent: var(--stone-900);
   --face-ghost: var(--stone-800);
+  --face-shadow: var(--shade-none);
+  --face-shadow-soft: var(--shade-none);
 
   /* Identical to today's src/admin/index.css values. */
   --surface-ground: var(--gray-4);

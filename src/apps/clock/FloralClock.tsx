@@ -1,12 +1,13 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { floralFaceSchema } from '../../shared/schemas/face.floral';
+import HandShadow, { SoftShadowFilter } from './HandShadow';
 
 export default function FloralClock({ isActive, faceConfig }: FaceProps) {
   const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   // Face options validated against face.floral, defaults otherwise (AnalogClock pattern).
   const parsed = floralFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsed.success ? parsed.data : floralFaceSchema.parse({});
+  const { accent, handShadow } = parsed.success ? parsed.data : floralFaceSchema.parse({});
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
@@ -34,6 +35,7 @@ export default function FloralClock({ isActive, faceConfig }: FaceProps) {
             <stop offset="0%" stopColor="#e879f9" stopOpacity="0.7" />
             <stop offset="100%" stopColor="#e879f9" stopOpacity="0" />
           </radialGradient>
+          <SoftShadowFilter />
           <clipPath id="fc-clip">
             <circle cx="500" cy="500" r="500" />
           </clipPath>
@@ -72,18 +74,20 @@ export default function FloralClock({ isActive, faceConfig }: FaceProps) {
             reaches it as a veil rather than a repaint. */}
         <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" opacity="0.22" />
 
-        {/* Hour hand */}
-        <line
-          x1="500" y1="520" x2="500" y2="265"
-          stroke="white" strokeWidth="24" strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-        {/* Minute hand */}
-        <line
-          x1="500" y1="525" x2="500" y2="165"
-          stroke="white" strokeWidth="15" strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
+        {/* Hour and minute hands. White on purpose: they are legibility over
+            the artwork, not a palette role. */}
+        <HandShadow mode={handShadow} color="white">
+          <line
+            x1="500" y1="520" x2="500" y2="265"
+            stroke="currentColor" strokeWidth="24" strokeLinecap="round"
+            style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+          <line
+            x1="500" y1="525" x2="500" y2="165"
+            stroke="currentColor" strokeWidth="15" strokeLinecap="round"
+            style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
+          />
+        </HandShadow>
         {/* Second hand */}
         <line
           x1="500" y1="565" x2="500" y2="145"

@@ -22,6 +22,10 @@
     {
       "key": "showSeconds",
       "intent": "Off for a still face; the segments still show the span."
+    },
+    {
+      "key": "handShadow",
+      "intent": "cast lifts the hands off the plate so they are not confused with the rim segments. soft is fastclock only."
     }
   ],
   "antiPatterns": [
