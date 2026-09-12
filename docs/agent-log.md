@@ -6,6 +6,76 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-12 · branch claude/watchfaces-app-design-status-ea9ed9 · every face on the mode axis, and the hand shadow built
+
+Two commits, `66b56ca` and `e2f2732`. Nick picked both items off a status read: retrofit
+the seven legacy faces, then build the hand shadow the 2026-09-09 entry below designed.
+
+**`66b56ca` — FACE_TOKEN_EXEMPT is empty.** Analog, Complications Dark, Flip, Floral,
+Productivity, Square and World read `--face-*` roles, so the night flip reaches all
+thirteen faces. Nick chose full retrofit (faces follow the mode axis) over the two
+narrower readings, knowing it turns Analog's black railway dial white by day.
+
+**The Analog retrofit CLOSED parity drift rather than creating it, which nobody expected.**
+`slow-native/src/clock_face.c` draws `lv_color_white()` on the face and `lv_color_black()`
+ink; `--face-bg` and `--face-ink` resolve to exactly those in light mode. So the four
+colour rows in `PARITY_DRIFT_LEDGER` stopped being mismatches and the shrink-only staleness
+check forced their deletion: 9 rows to 5, all geometry now. The contract that falls out is
+worth keeping: **the C twin mirrors the LIGHT palette.** `specColor` resolves a `--face-*`
+role to its light value, parsed out of `tokens.css` by a new `parseFaceTokens`, because
+LVGL has no custom properties and slowclock has no night schedule. Night divergence is a
+capability gap in the native client, not drift to ledger.
+
+Per-face decisions, all Nick's:
+- Complications Dark grounds on `--face-plate` with `--face-ghost` tiles, the reverse of
+  Complications Light's figure/ground. Without this the two faces collapse into one, since
+  the same tokens on the same layout are the same face.
+- Floral has no plate, so the palette reaches it as a `--face-bg` wash at 0.22 over the
+  artwork: lifting by day, dimming at night. 0.22 is the number to tune on glass.
+- Flip's flaps are `--face-plate` over `--face-spent`, which keeps the top flap one ramp
+  step lighter than the bottom in BOTH palettes so the fold still reads.
+- World's secondary dials moved to `--face-ink-muted`, which its own contract already
+  claimed ("the primary is the answer, the rest are context").
+
+**`e2f2732` — handShadow: none | cast | soft**, default `cast`, on eight faces.
+`--face-shadow` is black 0.32 by day and TRANSPARENT at night, which is the 2026-09-09
+"black-dial faces default to none" rule restated now that black is a mode rather than a
+face. `HandShadow.tsx` draws its children twice for `cast`; children stroke `currentColor`,
+which is how one copy becomes a shadow without every face restating its geometry. Offset
++8/+10 sits outside the rotation, so the light stays fixed while the hand turns.
+
+**The Figma sheet's "twelve face schemas" was wrong, and reading the code is what showed it.**
+Aperture, Depletion and Flip have no hands. Of the ten that do, Strokes is excluded (52
+two-hand dials means 104 offset hands, unmeasured on a Pi 4) and Complications Light is
+excluded (it already draws `cl-shadow`, its own bespoke drop shadow). Eight carry the option.
+Minimalismo needed a schema created to hold it, so `FACES_WITHOUT_SCHEMA` is now empty too.
+8 minor schema changes, 0 breaking, `FLEET_SCHEMA_VERSION` unmoved.
+
+**Verified:** gates green on both commits (1041 tests). Every retrofitted face rendered in
+the browser in both palettes and actually looked at, which found four regressions that green
+gates did not: Floral had no ground at all (its disc sat on the page's black), Flip's white
+digits vanished on a daylight flap, Complications Dark's `--face-bg` tiles were a 2% step
+from their `--face-plate` ground, and its weather clouds punched a dark hole through the sun
+glyph. All four fixed in the same commit. `soft` was driven through the real path (a
+zod-validated POST to `/api/device/config`), which caught the one real bug: `feDropShadow`'s
+`flood-color` is a presentation attribute and `var()` does not resolve there, so `soft`
+applied a filter that painted nothing. Set through `style` now.
+
+Screenshots are in the session, not the repo.
+
+**Open:**
+- **Nothing here is deployed.** fastclock and squareclock run `2d044af`; both commits are
+  local to this worktree. smallclock is still offline.
+- The C twin has no night palette, so slowclock shows the light Analog around the clock.
+  That is now a stated contract rather than an accident, but it is still a gap.
+- `#FF8C00` on World's secondary city labels is a second saturated colour on a face whose
+  contract allows one. Left alone: it is a palette decision.
+- Floral's 0.22 wash, and Strokes' 104-hand cast, both want a real Pi before anyone trusts
+  the number.
+- The Figma sheet `Sheet 03 - hand shadows` (node 705:4080) now disagrees with the code on
+  which faces carry the option. The code is right; the sheet was drawn before anyone counted
+  hands.
+
 ## 2026-09-09 · branch claude/status-check-3545f6 · hand shadows: direction approved, drawn in Figma, nothing built
 
 Design only. No code changed on this branch. Recorded here because the decisions bind whoever implements it.
