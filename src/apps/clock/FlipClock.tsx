@@ -3,6 +3,9 @@ import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { flipFaceSchema } from '../../shared/schemas/face.flip';
 
+/** The schema's accent default; see digitColor in the component. */
+const DEFAULT_DIGIT = flipFaceSchema.parse({}).accent;
+
 interface PanelProps {
   value: string;
   /** Digit colour — the face's `accent` option. */
@@ -63,7 +66,7 @@ function FlipPanel({ value, color }: PanelProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: '#1a1a1a',
+          background: 'var(--face-spent)',
           overflow: 'hidden',
         }}
       >
@@ -78,7 +81,7 @@ function FlipPanel({ value, color }: PanelProps) {
           left: 0,
           right: 0,
           bottom: '50%',
-          background: '#222',
+          background: 'var(--face-plate)',
           overflow: 'hidden',
         }}
       >
@@ -93,7 +96,7 @@ function FlipPanel({ value, color }: PanelProps) {
           left: 0,
           right: 0,
           height: 3,
-          background: '#000000',
+          background: 'var(--face-bg)',
           zIndex: 20,
           transform: 'translateY(-1px)',
         }}
@@ -108,7 +111,7 @@ function FlipPanel({ value, color }: PanelProps) {
             left: 0,
             right: 0,
             bottom: '50%',
-            background: '#222',
+            background: 'var(--face-plate)',
             overflow: 'hidden',
             transformOrigin: 'bottom center',
             animation: 'fc-flip-top 0.36s ease-in forwards',
@@ -128,6 +131,11 @@ export default function FlipClock({ isActive, faceConfig }: FaceProps) {
   // Face options validated against face.flip, defaults otherwise (AnalogClock pattern).
   const parsed = flipFaceSchema.safeParse(faceConfig ?? {});
   const { accent, hour24 } = parsed.success ? parsed.data : flipFaceSchema.parse({});
+  // The schema default is white because that is what the flaps have always
+  // carried. Now that the flaps follow the mode axis, white would vanish on
+  // a daylight flap, so the untouched default means "follow the ink"; any
+  // colour the owner actually picks is drawn as picked, in both palettes.
+  const digitColor = accent === DEFAULT_DIGIT ? 'var(--face-ink)' : accent;
 
   const hours = time.getHours();
   // 12-hour mode keeps two digits so the panel width never jumps (07, not 7).
@@ -136,7 +144,7 @@ export default function FlipClock({ isActive, faceConfig }: FaceProps) {
   const meridiem = hours < 12 ? 'AM' : 'PM';
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <style>{`
         @keyframes fc-flip-top {
           0%   { transform: perspective(600px) rotateX(0deg); }
@@ -144,8 +152,8 @@ export default function FlipClock({ isActive, faceConfig }: FaceProps) {
         }
       `}</style>
       <div style={{ display: 'flex', gap: '2.5vmin', alignItems: 'center' }}>
-        <FlipPanel value={hh} color={accent} />
-        <FlipPanel value={mm} color={accent} />
+        <FlipPanel value={hh} color={digitColor} />
+        <FlipPanel value={mm} color={digitColor} />
         {!hour24 && (
           <div
             style={{
@@ -153,7 +161,7 @@ export default function FlipClock({ isActive, faceConfig }: FaceProps) {
               paddingBottom: '2vmin',
               fontSize: '6vmin',
               fontWeight: 900,
-              color: accent,
+              color: digitColor,
               opacity: 0.7,
               fontFamily: "'system-ui', '-apple-system', 'Helvetica Neue', sans-serif",
             }}

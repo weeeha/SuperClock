@@ -36,7 +36,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
       <line
         key={i}
         x1="500" y1={isHour ? 22 : 40} x2="500" y2={isHour ? 68 : 60}
-        stroke={isHour ? '#888888' : '#555'} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
+        className="theme-fade stroke-(--face-tick)" opacity={isHour ? 1 : 0.6} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
       />,
     );
@@ -48,21 +48,21 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
   });
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-plate) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Black face */}
-        <circle cx="500" cy="500" r="500" fill="#000000" />
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-plate)" />
 
         {/* Tick marks */}
         {ticks}
 
         {/* ── Top complication: caffeine (no real data source yet) ── */}
-        <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} fill="#1e1e1e" />
-        <g transform={`translate(${COMPS.top.cx} ${COMPS.top.cy - 46})`} color="white">
+        <circle cx={COMPS.top.cx} cy={COMPS.top.cy} r={COMP_R} className="theme-fade fill-(--face-ghost)" />
+        <g transform={`translate(${COMPS.top.cx} ${COMPS.top.cy - 46})`} className="theme-fade" color="var(--face-ink)">
           <CaffeineMark />
         </g>
-        <text x={COMPS.top.cx} y={COMPS.top.cy + 46} textAnchor="middle" fill="white" fontSize="50" fontWeight="700" fontFamily="system-ui">2</text>
-        <text x={COMPS.top.cx} y={COMPS.top.cy + 84} textAnchor="middle" fill="#666" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
+        <text x={COMPS.top.cx} y={COMPS.top.cy + 46} textAnchor="middle" className="theme-fade fill-(--face-ink)" fontSize="50" fontWeight="700" fontFamily="system-ui">2</text>
+        <text x={COMPS.top.cx} y={COMPS.top.cy + 84} textAnchor="middle" className="theme-fade fill-(--face-ink-muted)" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
 
         {/* ── Left complication: habit ring (live from HabitsApp storage) ── */}
         <circle
@@ -71,7 +71,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
           strokeDasharray={arcDash(COMP_R + 14, habitPct)}
           transform={`rotate(-90 ${COMPS.left.cx} ${COMPS.left.cy})`}
         />
-        <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r={COMP_R} fill="#1e1e1e" />
+        <circle cx={COMPS.left.cx} cy={COMPS.left.cy} r={COMP_R} className="theme-fade fill-(--face-ghost)" />
         {Array.from({ length: 6 }, (_, i) => (
           <ellipse
             key={i}
@@ -87,7 +87,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
         <text x={COMPS.left.cx} y={COMPS.left.cy + 92} textAnchor="middle" fill={accent} fontSize="28" fontWeight="700" fontFamily="system-ui">{habits.done}/{habits.total}</text>
 
         {/* ── Right complication: weather (no real data source yet) ── */}
-        <circle cx={COMPS.right.cx} cy={COMPS.right.cy} r={COMP_R} fill="#1e1e1e" />
+        <circle cx={COMPS.right.cx} cy={COMPS.right.cy} r={COMP_R} className="theme-fade fill-(--face-ghost)" />
         <circle cx={COMPS.right.cx - 10} cy={COMPS.right.cy - 28} r="22" fill="#fbbf24" />
         {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
           <line
@@ -99,24 +99,24 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
             stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
           />
         ))}
-        <ellipse cx={COMPS.right.cx + 10} cy={COMPS.right.cy - 6} rx="36" ry="20" fill="#ccc" />
-        <ellipse cx={COMPS.right.cx - 14} cy={COMPS.right.cy - 10} rx="22" ry="16" fill="#ccc" />
+        <ellipse cx={COMPS.right.cx + 10} cy={COMPS.right.cy - 6} rx="36" ry="20" className="theme-fade fill-(--face-ink-muted)" opacity="0.55" />
+        <ellipse cx={COMPS.right.cx - 14} cy={COMPS.right.cy - 10} rx="22" ry="16" className="theme-fade fill-(--face-ink-muted)" opacity="0.55" />
         <text x={COMPS.right.cx} y={COMPS.right.cy + 46} textAnchor="middle" fill="#fbbf24" fontSize="38" fontWeight="700" fontFamily="system-ui">42°C</text>
-        <text x={COMPS.right.cx} y={COMPS.right.cy + 84} textAnchor="middle" fill="#666" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
+        <text x={COMPS.right.cx} y={COMPS.right.cy + 84} textAnchor="middle" className="theme-fade fill-(--face-ink-muted)" fontSize="22" fontFamily="system-ui" letterSpacing="2">DEMO</text>
 
         {/* ── Bottom complication: date ── */}
-        <circle cx={COMPS.bottom.cx} cy={COMPS.bottom.cy} r={COMP_R} fill="#1e1e1e" />
-        <text x={COMPS.bottom.cx} y={COMPS.bottom.cy - 22} textAnchor="middle" fill="#666" fontSize="38" fontFamily="system-ui" letterSpacing="3">{dayName}</text>
-        <text x={COMPS.bottom.cx} y={COMPS.bottom.cy + 48} textAnchor="middle" fill="white" fontSize="62" fontWeight="700" fontFamily="system-ui">{dateNum}</text>
+        <circle cx={COMPS.bottom.cx} cy={COMPS.bottom.cy} r={COMP_R} className="theme-fade fill-(--face-ghost)" />
+        <text x={COMPS.bottom.cx} y={COMPS.bottom.cy - 22} textAnchor="middle" className="theme-fade fill-(--face-ink-muted)" fontSize="38" fontFamily="system-ui" letterSpacing="3">{dayName}</text>
+        <text x={COMPS.bottom.cx} y={COMPS.bottom.cy + 48} textAnchor="middle" className="theme-fade fill-(--face-ink)" fontSize="62" fontWeight="700" fontFamily="system-ui">{dateNum}</text>
 
         {/* ── Clock hands ── */}
         {/* Center hub (behind hands) */}
         <circle cx="500" cy="500" r="14" fill="#7c3aed" />
 
         {/* Hour — light gray */}
-        <line x1="500" y1="535" x2="500" y2="310" stroke="#ccc" strokeWidth="32" strokeLinecap="round" style={style(hourDeg)} />
+        <line x1="500" y1="535" x2="500" y2="310" className="theme-fade stroke-(--face-ink)" strokeWidth="32" strokeLinecap="round" style={style(hourDeg)} />
         {/* Minute — lighter */}
-        <line x1="500" y1="530" x2="500" y2="182" stroke="#ddd" strokeWidth="22" strokeLinecap="round" style={style(minuteDeg)} />
+        <line x1="500" y1="530" x2="500" y2="182" className="theme-fade stroke-(--face-ink)" strokeWidth="22" strokeLinecap="round" style={style(minuteDeg)} />
         {/* Second — violet */}
         <line x1="500" y1="572" x2="500" y2="152" stroke="#7c3aed" strokeWidth="7" strokeLinecap="round"
           style={{
@@ -127,7 +127,7 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
         />
         {/* Center pip */}
         <circle cx="500" cy="500" r="16" fill="#7c3aed" />
-        <circle cx="500" cy="500" r="7" fill="#1e1e1e" />
+        <circle cx="500" cy="500" r="7" className="theme-fade fill-(--face-bg)" />
       </svg>
     </div>
   );

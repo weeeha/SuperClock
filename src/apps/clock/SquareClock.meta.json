@@ -2,13 +2,31 @@
   "kind": "face",
   "id": "square",
   "purpose": "A rounded square dial with numerals at the four cardinals and tick marks, designed for the square device's rectangle. Its corners are load-bearing, which no round face can say.",
-  "accent": { "where": "the sub-dial", "color": "config:accent" },
-  "night": { "recipe": "Ignores night: a legacy exempt face with a fixed palette until it is retrofitted.", "tokens": [] },
+  "accent": {
+    "where": "the sub-dial",
+    "color": "config:accent"
+  },
+  "night": {
+    "recipe": "Plate and centre hole are --face-bg, the border, numerals and hands --face-ink, the ticks --face-tick.",
+    "tokens": [
+      "--face-bg",
+      "--face-ink",
+      "--face-tick"
+    ]
+  },
   "options": [
-    { "key": "accent", "intent": "The sub-dial colour; keep it the only saturated colour on the face." }
+    {
+      "key": "accent",
+      "intent": "The sub-dial colour; keep it the only saturated colour on the face."
+    }
   ],
   "antiPatterns": [
-    { "rule": "Do not crop it into the round viewport", "why": "the corners hold the cardinals; on a round device pick another face" }
+    {
+      "rule": "Do not crop it into the round viewport",
+      "why": "the corners hold the cardinals; on a round device pick another face"
+    }
   ],
-  "parity": { "lvgl": null }
+  "parity": {
+    "lvgl": null
+  }
 }

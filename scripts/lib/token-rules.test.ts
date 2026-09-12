@@ -197,16 +197,9 @@ describe('findFaceTokenGap — every face must consume the night-aware --face-* 
     for (const name of FACE_TOKEN_EXEMPT) {
       expect(findFaceTokenGap(`src/apps/clock/${name}`, `const x = 1;`)).toBeNull();
     }
-    expect([...FACE_TOKEN_EXEMPT].sort()).toEqual(
-      [
-        'AnalogClock.tsx',
-        'ComplicationsDark.tsx',
-        'FlipClock.tsx',
-        'FloralClock.tsx',
-        'ProductivityClock.tsx',
-        'SquareClock.tsx',
-        'WorldClock.tsx',
-      ].sort(),
-    );
+    // Emptied 2026-09-12: the last seven faces were retrofitted onto the mode
+    // axis in one pass. The list may only shrink, so this pin is now also the
+    // statement that no face may ever be added back to it.
+    expect([...FACE_TOKEN_EXEMPT].sort()).toEqual([]);
   });
 });

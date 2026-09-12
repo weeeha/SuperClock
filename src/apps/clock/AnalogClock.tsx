@@ -49,6 +49,7 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
         y1={C - t.outer}
         x2={C}
         y2={C - t.inner}
+        className="theme-fade"
         stroke={ink}
         strokeWidth={t.width}
         strokeLinecap="round"
@@ -72,6 +73,7 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
               key={i}
               x={x}
               y={y}
+              className="theme-fade"
               fill={ink}
               fontSize="72"
               fontWeight="500"
@@ -89,6 +91,7 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
       y1={C + tail}
       x2={C}
       y2={C - tip}
+      className="theme-fade"
       stroke={stroke}
       strokeWidth={width}
       strokeLinecap="round"
@@ -97,10 +100,10 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
   );
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox={`0 0 ${spec.space} ${spec.space}`} className="h-full w-full max-h-screen max-w-screen">
         {/* Clock face */}
-        <circle cx={C} cy={C} r={spec.radius} fill={background} />
+        <circle cx={C} cy={C} r={spec.radius} className="theme-fade" fill={background} />
 
         {/* Tick marks */}
         <g>{ticks}</g>

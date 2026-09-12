@@ -6,7 +6,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { faceMetaSchema } from './part-meta';
 import { SCHEMAS } from './schema-registry';
 import { FACES } from './face-registry';
-import { parseGeom, parseColors, compareToSpec, PARITY_DRIFT_LEDGER } from '../../scripts/lib/lvgl-parity.mjs';
+import { parseGeom, parseColors, compareToSpec, parseFaceTokens, PARITY_DRIFT_LEDGER } from '../../scripts/lib/lvgl-parity.mjs';
 
 const parityFaces = readdirSync('src/apps/clock')
   .filter((f) => f.endsWith('.meta.json'))
@@ -36,7 +36,12 @@ describe('React ↔ LVGL parity', () => {
     const colors = parseColors(cSource);
     const schemaId = FACES.find((f) => f.id === meta.id)?.configSchemaId;
     const defaults = schemaId ? SCHEMAS[schemaId].schema.parse({}) : {};
-    const mismatches = compareToSpec(geom, colors, meta.spec, defaults);
+    // The C twin mirrors the LIGHT palette: LVGL has no custom properties
+    // and slowclock has no night schedule, so a --face-* role in the spec
+    // is compared against its light value here. Night divergence is a
+    // capability gap in the native client, not drift to ledger.
+    const faceTokens = parseFaceTokens(readFileSync('src/styles/tokens.css', 'utf8'));
+    const mismatches = compareToSpec(geom, colors, meta.spec, defaults, faceTokens);
     const ledgered = new Set(PARITY_DRIFT_LEDGER.map((e) => e.field));
 
     it(`${meta.id}: the C initializer is fully readable (a moved initializer must not read as clean)`, () => {

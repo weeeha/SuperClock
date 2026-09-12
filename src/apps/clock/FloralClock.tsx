@@ -9,7 +9,7 @@ export default function FloralClock({ isActive, faceConfig }: FaceProps) {
   const { accent } = parsed.success ? parsed.data : floralFaceSchema.parse({});
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         <defs>
           <radialGradient id="floral-bg" cx="38%" cy="35%" r="72%">
@@ -67,6 +67,10 @@ export default function FloralClock({ isActive, faceConfig }: FaceProps) {
           ))}
           <circle cx="500" cy="500" r="65" fill="white" opacity="0.45" />
         </g>
+
+        {/* Mode wash: the artwork has no night variant, so the palette
+            reaches it as a veil rather than a repaint. */}
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" opacity="0.22" />
 
         {/* Hour hand */}
         <line

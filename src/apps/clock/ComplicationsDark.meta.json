@@ -2,13 +2,33 @@
   "kind": "face",
   "id": "complications-dark",
   "purpose": "The dark sibling of Complications Light: the same layout on a fixed dark dial. It is the only face that declares slots in the registry, and it hardcodes what it draws in them rather than reading them.",
-  "accent": { "where": "the sub-dial accents", "color": "config:accent" },
-  "night": { "recipe": "Ignores night: a legacy exempt face that is dark in both palettes until it reads the tokens.", "tokens": [] },
+  "accent": {
+    "where": "the sub-dial accents",
+    "color": "config:accent"
+  },
+  "night": {
+    "recipe": "Grounds on --face-plate with its four tiles in --face-ghost, the reverse of Complications Light's figure/ground, so the two faces stay distinct in both palettes. Ink is --face-ink, the DEMO rows and cloud shapes --face-ink-muted.",
+    "tokens": [
+      "--face-plate",
+      "--face-ghost",
+      "--face-ink",
+      "--face-ink-muted",
+      "--face-tick"
+    ]
+  },
   "options": [
-    { "key": "accent", "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy." }
+    {
+      "key": "accent",
+      "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy."
+    }
   ],
   "antiPatterns": [
-    { "rule": "Do not let the admin assign complications to its four slots as if they rendered", "why": "the slots are declared but the face draws hardcoded content; D2 says wire, never fake" }
+    {
+      "rule": "Do not let the admin assign complications to its four slots as if they rendered",
+      "why": "the slots are declared but the face draws hardcoded content; D2 says wire, never fake"
+    }
   ],
-  "parity": { "lvgl": null }
+  "parity": {
+    "lvgl": null
+  }
 }

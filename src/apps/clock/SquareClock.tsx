@@ -31,7 +31,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
         y1={isHour ? 30 : 45}
         x2="500"
         y2={isHour ? 75 : 65}
-        stroke="white"
+        className="theme-fade stroke-(--face-tick)"
         strokeWidth={isHour ? 6 : 2}
         strokeLinecap="round"
         opacity={isHour ? 0.9 : 0.4}
@@ -41,7 +41,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Square face with rounded corners */}
         <rect
@@ -51,8 +51,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
           height="1000"
           rx="80"
           ry="80"
-          fill="#000000"
-          stroke="white"
+          className="theme-fade fill-(--face-bg) stroke-(--face-ink)"
           strokeWidth="3"
           opacity="0.95"
         />
@@ -66,7 +65,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
           rx="60"
           ry="60"
           fill="none"
-          stroke="white"
+          className="theme-fade stroke-(--face-ink)"
           strokeWidth="1"
           opacity="0.15"
         />
@@ -82,7 +81,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
             y={y}
             textAnchor="middle"
             dominantBaseline="central"
-            fill="white"
+            className="theme-fade fill-(--face-ink)"
             fontSize="72"
             fontWeight="300"
             fontFamily="system-ui, -apple-system, sans-serif"
@@ -97,7 +96,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
           y1="500"
           x2="500"
           y2="250"
-          stroke="white"
+          className="theme-fade stroke-(--face-ink)"
           strokeWidth="22"
           strokeLinecap="round"
           style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
@@ -109,7 +108,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
           y1="500"
           x2="500"
           y2="140"
-          stroke="white"
+          className="theme-fade stroke-(--face-ink)"
           strokeWidth="14"
           strokeLinecap="round"
           style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
@@ -133,7 +132,7 @@ export default function SquareClock({ isActive, faceConfig }: FaceProps) {
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="10" fill={accent} />
-        <circle cx="500" cy="500" r="4" fill="#000000" />
+        <circle cx="500" cy="500" r="4" className="theme-fade fill-(--face-bg)" />
       </svg>
     </div>
   );

@@ -224,16 +224,9 @@ export function findCvaViolations(file, source) {
 
 // Legacy faces that predate the night token set. May only SHRINK — retrofit a
 // face (consume --face-bg/--face-ink at minimum), then delete its line here.
-// New faces never enter this list.
-export const FACE_TOKEN_EXEMPT = [
-  'AnalogClock.tsx',
-  'ComplicationsDark.tsx',
-  'FlipClock.tsx',
-  'FloralClock.tsx',
-  'ProductivityClock.tsx',
-  'SquareClock.tsx',
-  'WorldClock.tsx',
-];
+// New faces never enter this list. Emptied 2026-09-12: the last seven faces
+// were retrofitted onto the mode axis in one pass, so every face now flips.
+export const FACE_TOKEN_EXEMPT = [];
 
 /** Default-imported relative modules in face-components.ts are the faces. */
 export function parseFaceComponentFiles(source) {

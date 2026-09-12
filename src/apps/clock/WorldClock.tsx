@@ -25,7 +25,7 @@ function MiniClock({ cx, cy, r, h, m, label }: MiniClockProps) {
         y1={cy + (r - 9) * Math.sin(rad)}
         x2={cx + (r - 20) * Math.cos(rad)}
         y2={cy + (r - 20) * Math.sin(rad)}
-        stroke="#555"
+        className="theme-fade stroke-(--face-tick)"
         strokeWidth="5"
         strokeLinecap="round"
       />
@@ -37,23 +37,23 @@ function MiniClock({ cx, cy, r, h, m, label }: MiniClockProps) {
 
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill="#1c1c1c" />
+      <circle cx={cx} cy={cy} r={r} className="theme-fade fill-(--face-plate)" />
       {ticks}
       {/* Hour hand */}
       <line
         x1={cx} y1={cy}
         x2={cx + r * 0.52 * Math.cos(hRad)}
         y2={cy + r * 0.52 * Math.sin(hRad)}
-        stroke="white" strokeWidth="9" strokeLinecap="round"
+        className="theme-fade stroke-(--face-ink-muted)" strokeWidth="9" strokeLinecap="round"
       />
       {/* Minute hand */}
       <line
         x1={cx} y1={cy}
         x2={cx + r * 0.72 * Math.cos(mRad)}
         y2={cy + r * 0.72 * Math.sin(mRad)}
-        stroke="white" strokeWidth="6" strokeLinecap="round"
+        className="theme-fade stroke-(--face-ink-muted)" strokeWidth="6" strokeLinecap="round"
       />
-      <circle cx={cx} cy={cy} r="7" fill="#333" />
+      <circle cx={cx} cy={cy} r="7" className="theme-fade fill-(--face-tick)" />
       {/* City label */}
       <text
         x={cx} y={cy + r * 0.46}
@@ -97,17 +97,17 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
       <line
         key={i}
         x1="500" y1={isHour ? 18 : 34} x2="500" y2={isHour ? 60 : 54}
-        stroke={isHour ? '#777' : '#444'} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
+        className="theme-fade stroke-(--face-tick)" opacity={isHour ? 1 : 0.55} strokeWidth={isHour ? 8 : 4} strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
       />,
     );
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Face */}
-        <circle cx="500" cy="500" r="500" fill="#000000" />
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
         {ticks}
 
         {/* Mini timezone clocks */}
@@ -119,13 +119,13 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
         {/* Main hour hand — gray, overlaid on top */}
         <line
           x1="500" y1="530" x2="500" y2="205"
-          stroke="#ccc" strokeWidth="26" strokeLinecap="round"
+          className="theme-fade stroke-(--face-ink)" strokeWidth="26" strokeLinecap="round"
           style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
         />
         {/* Main minute hand */}
         <line
           x1="500" y1="530" x2="500" y2="130"
-          stroke="#ddd" strokeWidth="18" strokeLinecap="round"
+          className="theme-fade stroke-(--face-ink)" strokeWidth="18" strokeLinecap="round"
           style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
         />
         {/* Second hand — red */}
@@ -139,7 +139,7 @@ export default function WorldClock({ isActive, faceConfig }: FaceProps) {
           }}
         />
         {/* Center hub */}
-        <circle cx="500" cy="500" r="18" fill="#111" stroke={accent} strokeWidth="5" />
+        <circle cx="500" cy="500" r="18" className="theme-fade fill-(--face-bg)" stroke={accent} strokeWidth="5" />
       </svg>
     </div>
   );

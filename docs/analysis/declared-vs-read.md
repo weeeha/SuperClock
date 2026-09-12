@@ -7,7 +7,7 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 ## Summary
 
 - Apps: 14 registered; 13 with a schema; config read by 14 (safeParse 13, parse 0, cast 0, raw 1); never read by 0.
-- Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
+- Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 0.
 - Schema fields: 66 declared (43 app, 23 face); 6 unread (6 app, 0 face).
 
 ## Apps
@@ -33,16 +33,16 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 | Face | Component | Parse | Declared | Unread | Tokens | Slots | Night-exempt |
 |---|---|---|---|---|---|---|---|
-| analog | AnalogClock | safeParse | 3 | none | none | 0 | yes |
+| analog | AnalogClock | safeParse | 3 | none | --face-bg | 0 | no |
 | aperture | ApertureClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-plate | 0 | no |
-| complications-dark | ComplicationsDark | safeParse | 1 | none | none | 4 declared, rendered | yes |
+| complications-dark | ComplicationsDark | safeParse | 1 | none | --face-bg --face-ghost --face-ink --face-ink-muted --face-plate --face-tick | 4 declared, rendered | no |
 | complications-light | ComplicationsLight | safeParse | 1 | none | --face-bg --face-tick | 0 | no |
 | daylight | DaylightClock | safeParse | 3 | none | --face-bg --face-dusk --face-ink --face-ink-muted --face-tick | 0 | no |
 | depletion | DepletionClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-spent --face-tick | 0 | no |
-| flip | FlipClock | safeParse | 2 | none | none | 0 | yes |
-| floral | FloralClock | safeParse | 1 | none | none | 0 | yes |
+| flip | FlipClock | safeParse | 2 | none | --face-bg --face-ink --face-plate --face-spent | 0 | no |
+| floral | FloralClock | safeParse | 1 | none | --face-bg | 0 | no |
 | minimalismo | MinimalismoClock | none | 0 | none | --face-bg --face-ink | 0 | no |
-| productivity | ProductivityClock | safeParse | 2 | none | none | 0 | yes |
-| square | SquareClock | safeParse | 1 | none | none | 0 | yes |
+| productivity | ProductivityClock | safeParse | 2 | none | --face-bg --face-ink --face-tick | 0 | no |
+| square | SquareClock | safeParse | 1 | none | --face-bg --face-ink --face-tick | 0 | no |
 | strokes | StrokesClock | safeParse | 1 | none | --face-bg --face-ghost --face-plate | 0 | no |
-| world | WorldClock | safeParse | 2 | none | none | 0 | yes |
+| world | WorldClock | safeParse | 2 | none | --face-bg --face-ink --face-ink-muted --face-plate --face-tick | 0 | no |

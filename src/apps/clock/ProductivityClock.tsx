@@ -37,7 +37,7 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
         y1={isHour ? 90 : 105}
         x2="500"
         y2={isHour ? 130 : 122}
-        stroke="white"
+        className="theme-fade stroke-(--face-tick)"
         strokeWidth={isHour ? 6 : 2}
         strokeLinecap="round"
         transform={`rotate(${angle} 500 500)`}
@@ -64,10 +64,10 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="flex h-full w-full items-center justify-center bg-(--face-bg) theme-fade">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
         {/* Dark inner circle */}
-        <circle cx="500" cy="500" r="500" fill="#000000" />
+        <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
 
         {/* Colored segments */}
         {segments.map((seg, i) => (
@@ -75,13 +75,13 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
         ))}
 
         {/* Inner black circle */}
-        <circle cx="500" cy="500" r="435" fill="#000000" />
+        <circle cx="500" cy="500" r="435" className="theme-fade fill-(--face-bg)" />
 
         {/* Tick marks */}
         {ticks}
 
         {/* Date display */}
-        <text x="500" y="310" textAnchor="middle" fill="white" fontSize="48" fontWeight="500" fontFamily="Inter, sans-serif">
+        <text x="500" y="310" textAnchor="middle" className="theme-fade fill-(--face-ink)" fontSize="48" fontWeight="500" fontFamily="Inter, sans-serif">
           {day}
         </text>
         <text x="555" y="310" textAnchor="start" fill={accent} fontSize="48" fontWeight="700" fontFamily="Inter, sans-serif">
@@ -91,14 +91,14 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
         {/* Hour hand */}
         <line
           x1="500" y1="500" x2="500" y2="260"
-          stroke="white" strokeWidth="22" strokeLinecap="round"
+          className="theme-fade stroke-(--face-ink)" strokeWidth="22" strokeLinecap="round"
           style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
         />
 
         {/* Minute hand */}
         <line
           x1="500" y1="500" x2="500" y2="175"
-          stroke="white" strokeWidth="16" strokeLinecap="round"
+          className="theme-fade stroke-(--face-ink)" strokeWidth="16" strokeLinecap="round"
           style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
         />
 
@@ -117,7 +117,7 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="10" fill={accent} />
-        <circle cx="500" cy="500" r="5" fill="black" />
+        <circle cx="500" cy="500" r="5" className="theme-fade fill-(--face-bg)" />
       </svg>
     </div>
   );

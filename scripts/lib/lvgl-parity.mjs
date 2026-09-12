@@ -78,18 +78,43 @@ export function parseColors(cSource) {
 /** Spec colours for comparison: config:<key> reads the option default the
  *  gate passes in; a --token cannot equal a C literal and stays as-is (a
  *  real mismatch, ledgered with its reason); literals are lower-cased. */
-function specColor(value, options) {
+function specColor(value, options, tokens) {
   if (value === undefined) return undefined;
   if (value.startsWith('config:')) {
     const v = options[value.slice('config:'.length)];
     return typeof v === 'string' ? v.toLowerCase() : null;
   }
+  // A --face-* role resolves to its LIGHT value: LVGL has no custom
+  // properties and slowclock has no night schedule, so the C twin mirrors
+  // the light palette and that is the member worth comparing. An unknown
+  // token resolves to null, which reads as a mismatch rather than as clean.
+  if (value.startsWith('--')) return tokens[value] ?? null;
   return value.toLowerCase();
+}
+
+/** The light-mode value of every --face-* role, read out of tokens.css.
+ *  Fs-free like the rest of this module: the caller supplies the source. */
+export function parseFaceTokens(cssSource) {
+  const ramp = {};
+  for (const m of cssSource.matchAll(/(--(?:stone|gray|scrim|dusk)-[\w-]+):\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
+    ramp[m[1]] = m[2].toLowerCase();
+  }
+  // html.dark redefines the same role names, so only the text before it is
+  // the light palette.
+  const light = cssSource.split(/html\.dark\s*\{/)[0];
+  const out = {};
+  for (const m of light.matchAll(/(--face-[\w-]+):\s*var\((--[\w-]+)\)\s*;/g)) {
+    if (ramp[m[2]]) out[m[1]] = ramp[m[2]];
+  }
+  for (const m of light.matchAll(/(--face-[\w-]+):\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
+    out[m[1]] = m[2].toLowerCase();
+  }
+  return out;
 }
 
 /** Every spec field that has a C twin, with the number the twin holds. Dot
  *  values are radii in the spec and diameters in C. */
-export function compareToSpec(geom, colors, spec, options) {
+export function compareToSpec(geom, colors, spec, options, tokens = {}) {
   const out = [];
   const check = (field, react, lvgl) => {
     if (react === undefined) return;
@@ -106,7 +131,7 @@ export function compareToSpec(geom, colors, spec, options) {
     check('hands.second.tip', spec.hands.second.tip, num('sec_fwd'));
     check('hands.second.tail', spec.hands.second.tail ?? 0, num('sec_back'));
     check('hands.second.width', spec.hands.second.width, num('sec_w'));
-    check('hands.second.color', specColor(spec.hands.second.color ?? spec.face.ink, options), colors.hands.sec ?? null);
+    check('hands.second.color', specColor(spec.hands.second.color ?? spec.face.ink, options, tokens), colors.hands.sec ?? null);
   }
   if (spec.ticks) {
     check('ticks.hour.outer', spec.ticks.hour.outer, num('hour_tick_outer'));
@@ -120,13 +145,13 @@ export function compareToSpec(geom, colors, spec, options) {
     const half = (name) => (num(name) === null ? null : num(name) / 2);
     check('dot.outer', spec.dot.outer, half('dot_outer'));
     check('dot.inner', spec.dot.inner, half('dot_inner'));
-    check('dot.outerColor', specColor(spec.dot.outerColor ?? spec.face.ink, options), colors.dots.outer ?? null);
-    check('dot.innerColor', specColor(spec.dot.innerColor ?? spec.face.background, options), colors.dots.inner ?? null);
+    check('dot.outerColor', specColor(spec.dot.outerColor ?? spec.face.ink, options, tokens), colors.dots.outer ?? null);
+    check('dot.innerColor', specColor(spec.dot.innerColor ?? spec.face.background, options, tokens), colors.dots.inner ?? null);
   }
-  check('face.background', specColor(spec.face.background, options), colors.face);
-  check('face.ink', specColor(spec.face.ink, options), colors.hands.hour ?? null);
-  check('face.ink.tick', specColor(spec.face.ink, options), colors.tick);
-  check('face.ink.minute', specColor(spec.face.ink, options), colors.hands.min ?? null);
+  check('face.background', specColor(spec.face.background, options, tokens), colors.face);
+  check('face.ink', specColor(spec.face.ink, options, tokens), colors.hands.hour ?? null);
+  check('face.ink.tick', specColor(spec.face.ink, options, tokens), colors.tick);
+  check('face.ink.minute', specColor(spec.face.ink, options, tokens), colors.hands.min ?? null);
   return out;
 }
 
@@ -137,10 +162,6 @@ export function compareToSpec(geom, colors, spec, options) {
 // is a palette decision for Nick (AGENTS.md: a red check on a deliberate
 // design is a conversation, not a fix-forward).
 export const PARITY_DRIFT_LEDGER = [
-  { field: 'face.background', reason: 'React draws a black dial, the C a white one; the two renderers were never reconciled' },
-  { field: 'face.ink', reason: 'React ink is white on black, C ink is black on white; follows the background decision' },
-  { field: 'face.ink.tick', reason: 'React draws tick marks in ink (white), the C ticks are drawn black; follows the background decision' },
-  { field: 'face.ink.minute', reason: 'React draws the minute hand in ink (white), the C minute hand is drawn black; follows the background decision' },
   { field: 'radius', reason: 'React fills the whole 1000 disc; the C draws a 460 face inside a black backdrop' },
   { field: 'ticks.hour.outer', reason: 'the C ticks sit 40 units inside the React ones because its face radius is 460' },
   { field: 'ticks.hour.inner', reason: 'the C ticks sit 40 units inside the React ones because its face radius is 460' },

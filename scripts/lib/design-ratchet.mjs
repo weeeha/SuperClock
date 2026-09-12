@@ -43,7 +43,7 @@ export const CEILINGS = {
   // scale in src/shared/type-scale.ts — and apps migrate onto them in their
   // own design passes. Until then this ratchet is what stops the counts
   // climbing back.
-  colours: 118,
+  colours: 112,
 };
 
 // Files whose colours are data rather than design, so they are not counted.

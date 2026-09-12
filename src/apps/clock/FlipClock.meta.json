@@ -2,15 +2,37 @@
   "kind": "face",
   "id": "flip",
   "purpose": "Split-flap digits that flip when they change. The mechanism is the face, so the flip is content, not chrome.",
-  "accent": { "where": "the digits", "color": "config:accent" },
-  "night": { "recipe": "Ignores night: a legacy exempt face; the flaps keep their fixed colours until retrofitted.", "tokens": [] },
+  "accent": {
+    "where": "the digits",
+    "color": "config:accent"
+  },
+  "night": {
+    "recipe": "The flaps read --face-plate on top and --face-spent below, which keeps the top half one ramp step lighter than the bottom in both palettes so the fold still reads. The separator is --face-bg.",
+    "tokens": [
+      "--face-plate",
+      "--face-spent",
+      "--face-bg",
+      "--face-ink"
+    ]
+  },
   "options": [
-    { "key": "accent", "intent": "The digit colour, the only colour on the face." },
-    { "key": "hour24", "intent": "On for 24-hour digits; off adds an AM/PM tag and drops the leading zero." }
+    {
+      "key": "accent",
+      "intent": "The digit colour, the only colour on the face. Left at its white default the digits follow --face-ink so they stay legible on both flap tones; set it and that colour is drawn literally in both palettes."
+    },
+    {
+      "key": "hour24",
+      "intent": "On for 24-hour digits; off adds an AM/PM tag and drops the leading zero."
+    }
   ],
   "antiPatterns": [
-    { "rule": "Do not animate anything but the digit that changed", "why": "the flip is the only sanctioned motion; ambient motion elsewhere makes it noise" }
+    {
+      "rule": "Do not animate anything but the digit that changed",
+      "why": "the flip is the only sanctioned motion; ambient motion elsewhere makes it noise"
+    }
   ],
-  "parity": { "lvgl": null },
+  "parity": {
+    "lvgl": null
+  },
   "specless": "Digits on flaps, no hands or ticks; the hand vocabulary does not describe it."
 }

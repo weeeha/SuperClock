@@ -29,5 +29,7 @@ export declare function compareToSpec(
   colors: ParsedColors,
   spec: unknown,
   options: Record<string, unknown>,
+  tokens?: Record<string, string>,
 ): Mismatch[];
+export declare function parseFaceTokens(cssSource: string): Record<string, string>;
 export declare const PARITY_DRIFT_LEDGER: DriftEntry[];

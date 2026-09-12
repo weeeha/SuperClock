@@ -24,8 +24,16 @@ const faceParts: FacePart[] = Object.entries(FACE_COMPONENTS).map(([id, componen
   return { id, name, tsx: `src/apps/clock/${name}.tsx`, metaPath: `src/apps/clock/${name}.meta.json` };
 });
 
-function readsToken(source: string, token: string): boolean {
-  return source.includes(`(${token})`);
+function readsToken(source: string, token: string, meta?: FaceMeta): boolean {
+  if (source.includes(`(${token})`)) return true;
+  // A spec-driven face never spells its colours: the meta holds them and
+  // resolveSpecColor turns a --token into var(--token) at render time. That
+  // is reading the token, one indirection away. Only the face's OWN spec
+  // counts, and only when the TSX actually resolves through it — the import
+  // check below pins that the meta it imports is this one.
+  const spec = meta?.spec;
+  if (!spec || !source.includes('resolveSpecColor')) return false;
+  return spec.face.background === token || spec.face.ink === token;
 }
 
 function loadFace(part: FacePart): FaceMeta {
@@ -124,7 +132,7 @@ describe('face contracts', () => {
       const meta = loadFace(part);
       const source = readFileSync(part.tsx, 'utf8');
       for (const token of meta.night.tokens) {
-        expect(readsToken(source, token), `${part.id} claims ${token} but ${part.tsx} never reads (${token})`).toBe(true);
+        expect(readsToken(source, token, meta), `${part.id} claims ${token} but ${part.tsx} never reads (${token}) and does not resolve it from its spec`).toBe(true);
       }
       const exempt = FACE_TOKEN_EXEMPT.includes(`${part.name}.tsx`);
       if (!exempt) {
@@ -176,7 +184,7 @@ describe('face contracts', () => {
       expect(source.includes(`from './${part.name}.meta.json'`), `${part.tsx} carries spec but does not import ${part.name}.meta.json`).toBe(true);
       for (const token of [meta.spec.face.background, meta.spec.face.ink]) {
         if (token.startsWith('--')) {
-          expect(readsToken(source, token), `${part.id}: spec names ${token} but the TSX never reads it`).toBe(true);
+          expect(readsToken(source, token, meta), `${part.id}: spec names ${token} but the TSX neither spells it nor resolves it through resolveSpecColor`).toBe(true);
         }
       }
     }
