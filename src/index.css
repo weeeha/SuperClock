@@ -73,17 +73,19 @@ html, body, #root {
   animation: face-sweep 60s linear infinite;
 }
 
-/* Photo Frame's cross-dissolve. An animation rather than a transition so the
-   incoming layer fades from its first painted frame: a transition would need a
-   second render to flip opacity, and requestAnimationFrame does not run while
-   Chromium has the page backgrounded. Duration is set inline from FADE_MS. */
-@keyframes photo-dissolve {
+/* Cross-dissolve for a layer arriving on screen: Photo Frame's incoming slide,
+   Quote's next line. An animation rather than a transition so the layer fades
+   from its first painted frame: a transition would need a second render to
+   flip opacity, and requestAnimationFrame does not run while Chromium has the
+   page backgrounded. Consumers may override the duration inline. */
+@keyframes dissolve-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.photo-dissolve {
-  animation-name: photo-dissolve;
+.dissolve-in {
+  animation-name: dissolve-in;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
+  animation-duration: 500ms;
 }

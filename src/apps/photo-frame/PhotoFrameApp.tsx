@@ -159,7 +159,7 @@ export default function PhotoFrameApp({ isActive, config }: AppProps) {
           key={photos[incoming % photos.length]}
           src={`/photos/${photos[incoming % photos.length]}`}
           alt=""
-          className="photo-dissolve absolute inset-0 h-full w-full object-cover"
+          className="dissolve-in absolute inset-0 h-full w-full object-cover"
           style={{ animationDuration: `${FADE_MS}ms` }}
           draggable={false}
         />
