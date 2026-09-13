@@ -6,6 +6,36 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-09-13 · branch claude/design-untouched-apps-5a79b4 · design passes: Photo Frame, Quote, Breathing
+
+Closes the "Quote, Images and Breathing not yet looked at" line from the 2026-09-07 design-pass entry. Three commits, `7489db3`, `8628432`, `678dde6`, worst-first by function rather than by appearance: Photo Frame was the only one of the three that did not work on real hardware.
+
+**Photo Frame (`7489db3`).** `/api/photos` returns `[]` on fastclock and `public/photos/*` is gitignored and baked in at build time, so the app renders a monospace filepath on black on every device in the fleet. The transition was not a crossfade either: it faded the single container to zero and back, so every slide passed through black. Two layers cross-dissolve now, the incoming one `decode()`d before the fade starts, and the dissolve is a keyframe animation rather than a transition because `requestAnimationFrame` does not run while Chromium has the page backgrounded, which a transition needing a second render to flip opacity would depend on. The slide cursor moved to module scope: `SwipeContainer` unmounts the app on swipe-away, so `photoIndex` reset to 0 on every visit and at the default 8s interval only the first photo or two was ever seen. Empty, loading and error are designed states now, the loading tell held back 600ms so a fast local fetch never flashes it. The error copy said "offline", which was wrong: `/api/photos` is same-origin, served by the device's own Express, so a failure means the local server.
+
+**Quote (`8628432`).** The portrait is gone: it was the largest element on the face carrying the least important content, it fetched a 330px Wikipedia image per view with no cache on a source labelled `builtin`, and it fell back to a random-hue `hsl()` gradient, which is both an off-palette colour and a banned gradient fill. Attribution is typographic now, below the line rather than above it. Three length-keyed type tiers become two, and the library is curated to fit them: 10 entries, three of them Steve Jobs, replaced by 31 on time, attention and making, each carrying a `source` field naming the work it comes from. Lines whose provenance is folklore were left out rather than labelled "attributed" (the Kornfield line sold as the Buddha's, "simplicity is the ultimate sophistication", the Sessions paraphrase of Einstein). The full-surface `onClick` div is a button with an accessible name.
+
+**Breathing (`678dde6`).** The ring was orange in all four radar states, so a dead sensor and a live reading looked equally alive. The accent now belongs to a signal: no-radar and absent draw a resting ring in `--fill-subtle` with no number and no halo, the accent arrives with presence, and the breath animation starts only against a real rate. The green presence dot is gone (a second saturated accent, a raw Tailwind colour, and redundant with the state sentence). The footer moved to `bottom-[7.5%]` absolute so it stops pushing the ring off the centre of the disc. Fixed rem type became vmin, which matters because squareclock renders the round layout into an 800x480 framebuffer. `text-white/N` literals became `--sheet-ink` and the `--fill-*` roles, the mode-invariant surface pattern the token layer set for the quick-settings sheet.
+
+**Shared:** `src/index.css` gains one keyframe, `.dissolve-in`, used by Photo Frame's incoming slide and Quote's next line.
+
+**The design ratchet's font-size ceiling fell twice, 59 to 56 to 54.** Both drops were demanded by the gate, not volunteered: the Quote pass removed three distinct sizes and the Breathing pass two more. The colours ceiling did not move; it stays at 118.
+
+**Verified** at a true 1080x1080 in the browser, measured rather than eyeballed. Photo Frame: across two transitions sampled every 100ms the base layer held opacity exactly 1 in every frame while the incoming layer travelled 0 to 1, and leaving the app and returning resumed on the slide it left on. Quote: all 31 entries cycled and measured, the farthest corner of any text block 431px from centre against a 540px disc radius, zero overflow, exactly two computed sizes. Breathing: all four states driven through the live snapshot stream, the two no-signal states confirmed at `rgba(255,255,255,0.15)` with zero halo elements, and the reading state's halo animation measured at exactly 6000ms against a reported 10 breaths/min with the ring's scale sampled 24 times over six seconds across its full 1.000 to 1.080 range. `./scripts/gates.sh` green after each commit, 1040 tests.
+
+**Found while working:**
+- A percentage `gap` on a shrink-to-fit flex child resolves to nothing. Quote's `gap-[3%]` measured 4px of line leading; it is `gap-[3vmin]` now and measures 32px. Photo Frame's `gap-[2%]` is on a definite-height container and does work.
+- The Claude preview pane keeps the page `document.hidden`, so `requestAnimationFrame` never fires there. WAAPI and CSS animations still progress, and Framer Motion's own loop still runs, which is why the breath cycle could be measured at all.
+- The A121 radar is genuinely live on fastclock: `/api/radar/stream` reports `source: "sensor"` with presence flipping. The app is inert on the other three devices, which have no radar flag.
+
+**Open:**
+- **Nothing here is deployed or seen on a real panel.** All three are local commits on this branch.
+- There is still no way to get a photo onto a clock without a rebuild. Ingestion (a writable directory outside the build, plus an admin upload) was scoped out deliberately; without it Photo Frame's designed empty state is the only state the fleet will ever show.
+- `transition: 'zoom'` (Photo Frame) and `source: 'url'` / `theme` (Quote) are still unimplemented. Quote's two now say so in their schema meta; rendering an unimplemented option disabled in the admin is a `SchemaForm` change and was not made.
+- Whether Photo Frame should overlay the time is undecided.
+- Breathing's `confidence` field is read by nothing, and whether an app should appear in the swipe order of a device that cannot run it is the capability-gating decision already listed as open.
+
+---
+
 ## 2026-09-09 · branch claude/status-check-3545f6 · hand shadows: direction approved, drawn in Figma, nothing built
 
 Design only. No code changed on this branch. Recorded here because the decisions bind whoever implements it.
