@@ -37,7 +37,10 @@ export const CEILINGS = {
   // length-keyed scale (3.2 / 4 / 5vmin, plus a 3.5vmin author and a 6vmin
   // inline fallback-initials size) with two steps that already existed, and
   // dropped the author portrait that carried the 6vmin one.
-  fontSizes: 56,
+  // Same day, 56 to 54: the Breathing pass moved text-8xl, text-lg, text-base
+  // and text-xs to vmin steps that already existed. Two of those four were
+  // this app's only use anywhere the ratchet scans.
+  fontSizes: 54,
   // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
   // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
   // for zero pixel change.
