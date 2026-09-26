@@ -10,7 +10,7 @@
     "nameContract": "src/tokens.ts",
     "styleEntry": ["src/styles/tokens.css", "src/index.css", "src/admin/index.css"]
   },
-  "axes": [{ "attribute": "data-theme", "values": ["dark"] }],
+  "axes": [{ "attribute": "class", "values": ["dark"] }],
   "commands": {
     "test": "npm test && npm run check:tokens && npm run check:rules",
     "lint": "npm run lint"
