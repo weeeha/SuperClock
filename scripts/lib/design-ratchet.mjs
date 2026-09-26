@@ -33,7 +33,14 @@ export const CEILINGS = {
   // second is why this could not be waved through by raising the ceiling:
   // sub-project 2 wires more roles the same way, so the error would have grown
   // with every role. extractFontSizes now excludes the colour form.
-  fontSizes: 59,
+  // 2026-09-13: 59 to 56. The Quote design pass replaced a three-tier
+  // length-keyed scale (3.2 / 4 / 5vmin, plus a 3.5vmin author and a 6vmin
+  // inline fallback-initials size) with two steps that already existed, and
+  // dropped the author portrait that carried the 6vmin one.
+  // Same day, 56 to 54: the Breathing pass moved text-8xl, text-lg, text-base
+  // and text-xs to vmin steps that already existed. Two of those four were
+  // this app's only use anywhere the ratchet scans.
+  fontSizes: 54,
   // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
   // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
   // for zero pixel change.

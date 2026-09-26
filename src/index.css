@@ -72,3 +72,20 @@ html, body, #root {
   transform-box: view-box;
   animation: face-sweep 60s linear infinite;
 }
+
+/* Cross-dissolve for a layer arriving on screen: Photo Frame's incoming slide,
+   Quote's next line. An animation rather than a transition so the layer fades
+   from its first painted frame: a transition would need a second render to
+   flip opacity, and requestAnimationFrame does not run while Chromium has the
+   page backgrounded. Consumers may override the duration inline. */
+@keyframes dissolve-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dissolve-in {
+  animation-name: dissolve-in;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  animation-duration: 500ms;
+}

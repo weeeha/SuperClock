@@ -4,18 +4,6 @@ import { quoteAppSchema } from '../../shared/schemas/app.quote';
 import type { QuoteAppConfig } from '../../shared/schemas/app.quote';
 import { quotes } from './quotes';
 
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function hueOf(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return h % 360;
-}
-
 /** Deterministic index for the current calendar day (and hour, when hourly). */
 function scheduledIndex(rotation: QuoteAppConfig['rotation'], now = new Date()): number {
   const dayOfYear = Math.floor(
@@ -29,7 +17,8 @@ function scheduledIndex(rotation: QuoteAppConfig['rotation'], now = new Date()):
 // swipe-away — component state would reset to the same quote on every visit.
 let visitSerial = 0;
 
-/** Quote of the Day — based on Figma S16 design (489:21143). Tap to cycle. */
+/** Quote of the Day. The line is the whole screen: set at one of two sizes
+ *  depending on its length, with the author below it. Tap to move on. */
 export default function QuoteApp({ isActive, config }: AppProps) {
   const cfg = useMemo(() => {
     const parsed = quoteAppSchema.safeParse(config ?? {});
@@ -37,13 +26,13 @@ export default function QuoteApp({ isActive, config }: AppProps) {
   }, [config]);
   // `source: 'url'` is not implemented — a remote list needs a fetch hook with
   // an honest offline tell, so every source falls back to the built-in quotes.
-  // `theme` is likewise unused: colors come from the global --face-* tokens
-  // and this component has no local theming hook.
+  // `theme` is likewise unused: the face reads the global --face-* roles, so it
+  // follows the device's day/night palette rather than a per-app setting. Both
+  // say so in their schema meta.
 
   const [scheduled, setScheduled] = useState(() => scheduledIndex(cfg.rotation));
   const [visit, setVisit] = useState(visitSerial);
   const [offset, setOffset] = useState(0); // tap-to-next steps past the base quote
-  const [failedIndex, setFailedIndex] = useState<number | null>(null);
 
   // daily/hourly: re-derive the scheduled quote at day/hour boundaries.
   // Same-value setState bails out, so the minute cadence is free in between.
@@ -73,49 +62,26 @@ export default function QuoteApp({ isActive, config }: AppProps) {
   const base = cfg.rotation === 'every-visit' ? visit : scheduled;
   const index = (base + offset) % quotes.length;
   const quote = quotes[index];
-  const initials = useMemo(() => initialsOf(quote.author), [quote.author]);
-  const hue = useMemo(() => hueOf(quote.author), [quote.author]);
-  const fallbackBg = `linear-gradient(135deg, hsl(${hue} 55% 55%), hsl(${(hue + 40) % 360} 60% 40%))`;
-  const showImg = quote.portrait && failedIndex !== index;
 
-  // Length-based type scale so long quotes fit the round display; the author
-  // portrait gives up a step on the smallest tier to make room.
-  const len = quote.text.length;
-  const quoteSize = len > 140 ? 'text-[3.2vmin]' : len > 60 ? 'text-[4vmin]' : 'text-[5vmin]';
-  const portraitSize = len > 140 ? 'h-[16%] w-[16%]' : 'h-[22%] w-[22%]';
+  // Two sizes, not a per-string scale: the library is capped at 140 characters
+  // so the long tier always fits the disc without a third step.
+  const quoteSize = quote.text.length > 70 ? 'text-[4.2vmin]' : 'text-[5.4vmin]';
 
   return (
-    <div
+    <button
+      type="button"
+      aria-label="Next quote"
       onClick={() => setOffset((o) => o + 1)}
-      className="theme-fade flex h-full w-full flex-col items-center justify-center bg-(--face-bg) p-[12%] gap-[4%] cursor-pointer select-none"
+      className="theme-fade flex h-full w-full cursor-pointer select-none flex-col items-center justify-center bg-(--face-bg) px-[13%] text-center"
     >
-      {/* Author portrait — Wikipedia thumbnail, initials-gradient fallback */}
-      <div
-        className={`flex ${portraitSize} items-center justify-center overflow-hidden rounded-full text-white font-semibold`}
-        style={!showImg ? { background: fallbackBg, fontSize: '6vmin' } : undefined}
-      >
-        {showImg ? (
-          <img
-            src={quote.portrait}
-            alt={quote.author}
-            referrerPolicy="no-referrer"
-            onError={() => setFailedIndex(index)}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          initials
-        )}
+      {/* Keyed on the quote so a tap remounts the group and replays the
+          dissolve; the animation is the only feedback a tap gets. */}
+      <div key={index} className="dissolve-in flex flex-col items-center gap-[3vmin]">
+        <p className={`theme-fade ${quoteSize} font-semibold leading-snug text-balance text-(--face-ink)`}>
+          {quote.text}
+        </p>
+        <p className="theme-fade text-[2.6vmin] text-(--face-ink-muted)">{quote.author}</p>
       </div>
-
-      {/* Author name */}
-      <p className="theme-fade text-[3.5vmin] text-(--face-ink-muted)">{quote.author}</p>
-
-      {/* Quote text */}
-      <p
-        className={`theme-fade ${quoteSize} font-semibold text-center leading-snug text-(--face-ink)`}
-      >
-        "{quote.text}"
-      </p>
-    </div>
+    </button>
   );
 }

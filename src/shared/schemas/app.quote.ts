@@ -9,14 +9,20 @@ export const quoteAppSchema = z.object({
 });
 
 export const quoteAppMeta: FieldMetaMap = {
-  source: { description: 'Where quotes come from (url not implemented yet — falls back to built-in)' },
+  source: {
+    description:
+      'Where quotes come from. Only "builtin" is implemented; "url" falls back to the built-in library.',
+  },
   sourceUrl: {
     format: 'url',
     description: 'JSON endpoint returning [{ text, author }]',
     placeholder: 'https://example.com/quotes.json',
     showIf: (v) => v.source === 'url',
   },
-  theme: { description: 'Background and text color pairing' },
+  theme: {
+    description:
+      'Not implemented. The face reads the device day/night palette, so this setting changes nothing.',
+  },
   rotation: { description: 'How often a new quote is picked' },
 };
 
