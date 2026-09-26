@@ -565,6 +565,15 @@
           "default": "#FFD700",
           "type": "string"
         },
+        "handShadow": {
+          "default": "none",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
+        },
         "numeralStyle": {
           "default": "none",
           "enum": [
@@ -607,6 +616,15 @@
         "accent": {
           "default": "#22c55e",
           "type": "string"
+        },
+        "handShadow": {
+          "default": "none",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -615,6 +633,15 @@
       "properties": {
         "accent": {
           "default": "#22c55e",
+          "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
           "type": "string"
         }
       },
@@ -689,6 +716,15 @@
         "accent": {
           "default": "#fbbf24",
           "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
+          "type": "string"
         }
       },
       "type": "object"
@@ -697,6 +733,15 @@
       "properties": {
         "accent": {
           "default": "#ff8826",
+          "type": "string"
+        },
+        "handShadow": {
+          "default": "cast",
+          "enum": [
+            "none",
+            "cast",
+            "soft"
+          ],
           "type": "string"
         },
         "showSeconds": {
