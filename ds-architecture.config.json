@@ -1,0 +1,18 @@
+{
+  "profile": "component-library",
+  "adoption": "retrofit",
+  "scopeRoles": {
+    "components": ["src/apps/**", "src/admin/components/**", "src/shared/**"],
+    "styles": ["src/index.css", "src/admin/index.css", "src/styles/**"],
+    "app": ["src/admin/routes/**"]
+  },
+  "paths": {
+    "nameContract": "src/tokens.ts",
+    "styleEntry": ["src/styles/tokens.css", "src/index.css", "src/admin/index.css"]
+  },
+  "axes": [{ "attribute": "data-theme", "values": ["dark"] }],
+  "commands": {
+    "test": "npm test && npm run check:tokens && npm run check:rules",
+    "lint": "npm run lint"
+  }
+}

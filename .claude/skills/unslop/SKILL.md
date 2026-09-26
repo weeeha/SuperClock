@@ -17,8 +17,8 @@ named defaults, require provenance, audit with counts — not vibes.
 Portable origin: the `unslop` skill shared by Minimal-Design-System and
 Super-AI-Components (research: 12 lenses, ~110 indicators, ~40 sources in
 Minimal-Design-System's `docs/superpowers/specs/2026-08-11-anti-slop-rules.md`).
-Phase 0 below rebinds it to this repo; Phases 1–3 are the portable core with
-SuperClock amendments marked.
+Phase 0 below rebinds it to this repo and holds every SuperClock amendment;
+Phases 1–3 are the portable core, generated from me:unslop.
 
 ## Phase 0 — SuperClock's bindings
 
@@ -51,97 +51,165 @@ This repo has already decided, and these are law:
   Strokes' junction-gap digits).
 - Unimplemented schema options render **disabled with their schema-meta
   note** — never hidden, never silently broken.
+- **Compose from what exists:** RoundList, StateRing, SchemaForm, and the
+  shadcn primitives under `src/admin/components/ui/`.
 
-## Phase 1 — Constraints while generating
+**Exceptions to the core** (these override Phases 1–3):
 
-Universal hard bans (researched AI tells — any occurrence needs an explicit
-justification):
+- Effects: pure `#000`/`#fff` only through the night palette tokens, above.
+- Motion: the ambient carve-out above. Scroll-reveal, marquee, typewriter and
+  parallax stay banned everywhere; kiosk timers gate on `isActive`.
+- Copy: fabrication includes fake device names, fake fleet health, and mock
+  weather rendered as live.
+- States: offline/stale is a fifth designed state, with its honest tell. AA
+  contrast holds in BOTH the day and night palettes. Visible keyboard focus
+  is an admin requirement.
+- Responsive: the admin gets the 375px pass (no horizontal scroll, ≥24px tap
+  targets, 44px in sticky bars, no hover-only actions, `dvh` not `vh`). The
+  kiosk gets the circle-crop pass instead: nothing load-bearing outside the
+  disc, arc gesture zones unobstructed.
+- Counts: one saturated accent per face; that is the rule, not per viewport.
+- Hostile fixtures add: offline, stale cache, empty playlist, 90-char device
+  name.
 
-1. **Effects** — no gradient text (`bg-clip-text`), no gradients on controls
+**Mechanical audit.** `npm run check:tokens` (token contract), `npm run
+check:rules` (the greps as records in `rules/superclock.json`:
+gradients/glass, arbitrary `[Npx]`, `transition-all`, unbound `animate-`,
+chart defaults, emoji in chrome, marketing copy, guarded nav cleanup,
+isActive-gated timers, each with a severity, sanctioned exemptions and their
+reasons; judgment rules print as unchecked, never as passed) and `npm test`
+(registry coherence + contract + schema liveness + the rule ratchet) all
+green. Raw `#hex|rgba?(|hsl(` outside `index.css` token blocks stays the
+token gate's job (`SYS-1`, delegated).
+
+**Extra fix rows** (these win over the core's rows of the same name):
+
+| Violation | Substitute |
+|---|---|
+| Emoji/icon leak | lucide at its sizes, or nothing |
+| Loops/scroll FX outside ambient apps | Bind to real state change or render static |
+| Contrast fail | Move UP the ink/tone ramp or lighten surface; never a one-off darker hex |
+| Mock data shown as live | Honest offline/stale tell (WeatherApp pattern); never a silent fallback |
+| Timer ticking while inactive | Gate the effect on `props.isActive` |
+| Face broken at night | Consume `--face-*`; never fork a night variant of the component |
+
+<!-- unslop-core:start me@1.18.0 sha256:4cecae21f48d349e -->
+<!-- Generated from me:unslop by its scripts/sync.mjs. Edit that skill, not this block; this repo's own rules go in Phase 0 above. -->
+<!-- prettier-ignore-start -->
+## Phase 1: Constraints while generating
+
+Universal hard bans (researched AI tells; any occurrence needs an explicit
+justification, and an exception written in the repo's Phase 0 wins over this
+list):
+
+1. **Effects.** No gradient text (`bg-clip-text`), no gradients on controls
    or text, no indigo→violet gradient anywhere, no glassmorphism without real
    underlying content, no blurred orbs / spotlights / grain layers, no colored
-   or glowing shadows, no new pure #000/#fff pairs (see Phase 0 night
-   exception).
-2. **Type** — only the project's declared families and scale; no new fonts,
+   or glowing shadows, no pure #000/#fff pairs.
+2. **Type.** Only the project's declared families and scale; no new fonts,
    ad-hoc sizes, or blanket `tracking-tight`; no italic-serif accent words;
    no caps eyebrow repeated per section; hierarchy = size/weight, never
    decoration.
-3. **Layout** — container nesting ≤1 (no cards in cards); separation ladder:
+3. **Layout.** Container nesting ≤1 (no cards in cards); separation ladder:
    spacing → hairline → surface tint → card; radii and gaps only from the
    project's scale; no exactly-3-equal-cards reflex; no identical stat-card
-   strips; the screen's most important element visibly dominant.
-4. **Components** — compose from what exists (RoundList, StateRing,
-   SchemaForm, the shadcn primitives under `src/admin/components/ui/`);
-   search before creating; no V2 duplicates; no colored left-border accent
-   strips; no "✨ AI-powered" badge theater; unlabeled sparkle icons never.
-5. **Icons** — lucide only, one weight, 2–3 sizes; zero emoji in chrome.
-6. **Motion** — only on state change *except the Phase 0 ambient carve-out*;
-   no scroll-reveal, marquee, typewriter, parallax; never `transition: all`;
-   transform/opacity only; anything with keyframes respects
-   `prefers-reduced-motion`; kiosk timers gate on `isActive`.
-7. **Copy** — verb + object labels (never "Get Started"/"Learn More"); banned
+   strips; the screen's most important element visibly dominant. **Layout
+   does not move on state change**: hover, focus and selection may change
+   colour/shadow/ring/opacity, never padding, gap, size, border-width or
+   type; space for anything conditional is reserved at rest (disclosure
+   components are the declared exception).
+4. **Components.** Compose from the project's library (search before
+   creating; no V2 duplicates); no colored left-border accent strips; no
+   "✨ AI-powered" badge theater; unlabeled sparkle icons never.
+5. **Icons.** One library, one weight, 2–3 sizes; zero emoji in chrome.
+6. **Motion.** Only on state change; no idle loops, scroll-reveal, marquee,
+   typewriter, parallax; never `transition: all`; transform/opacity only;
+   `prefers-reduced-motion` guard whenever keyframes exist.
+7. **Copy.** Verb + object labels (never "Get Started"/"Learn More"); banned
    register: elevate/unlock/empower/seamless/effortless/supercharge,
-   "not just X — it's Y", exclamation marks in microcopy; zero fabricated
-   numbers, quotes, or demo data no real system could emit — including fake
-   device names, fake fleet health, and mock weather rendered as live.
-8. **Charts** — project palette only (never `#8884d8`/`#82ca9d`);
-   linear/step interpolation; no gradient area fills; flat marks; units
-   visible; bars zero-based; <4 data points is a stat, not a chart.
-9. **States & a11y** — empty/loading/error/populated all designed — plus
-   SuperClock's fifth state, **offline/stale**, with its honest tell; visible
-   focus on everything interactive in the admin; AA contrast on the actual
-   surface in BOTH day and night palettes; semantic elements (no onClick
-   divs); accessible names on icon buttons.
-10. **Responsive** — admin: verify at 375px — no horizontal scroll, ≥24px tap
-    targets (44px in sticky bars), no hover-only actions, `dvh` not `vh`.
-    Kiosk: verify in the circular crop — nothing load-bearing outside the
-    disc, arc gesture zones unobstructed.
+   "not just X, it's Y", exclamation marks in microcopy; zero fabricated
+   numbers, names, quotes, logos, or demo data no real system could emit.
+8. **Charts.** Project palette only (never `#8884d8`/`#82ca9d`); linear/step
+   interpolation; no gradient area fills; flat marks; units visible; bars
+   zero-based; <4 data points is a stat, not a chart.
+9. **States & a11y.** Empty/loading/error/populated all designed; anything
+   that fetches also gets an honest offline/stale tell, never fallback or
+   mock data rendered as live; visible focus on everything interactive; AA
+   contrast on the actual surface, in every theme the project ships;
+   semantic elements (no onClick divs); accessible names on icon buttons.
+   **Chrome states count too**: every collapsed/compact/truncating mode a
+   component declares is designed and checked, and truncation is decided for
+   the tree, not per leaf.
+10. **Responsive.** Verify at 375px: no horizontal scroll, ≥24px tap targets
+    (44px in sticky bars), no hover-only actions, tables get a small-screen
+    strategy, `dvh` not `vh` for shells.
 
-## Phase 2 — Audit before "done"
+## Phase 2: Audit before "done"
 
-Mechanical: `npm run check:tokens` (token contract), `npm run check:rules`
-(the Phase 2 greps as records in `rules/superclock.json`: gradients/glass,
-arbitrary `[Npx]`, `transition-all`, unbound `animate-`, chart defaults, emoji
-in chrome, marketing copy, guarded nav cleanup, isActive-gated timers, each
-with a severity, sanctioned exemptions and their reasons; judgment rules print
-as unchecked, never as passed) and `npm test` (registry coherence + contract +
-schema liveness + the rule ratchet) all green. Raw `#hex|rgba?(|hsl(` outside
-`index.css` token blocks stays the token gate's job (`SYS-1`, delegated).
+Audit what you changed. Older code that already breaks a rule is its own
+scoped task; do not sweep it uninvited.
+
+**Mechanical first.** If the project has a rule detector or token gate
+(Phase 0 names it), run it and apply each hit's own `fix` rather than
+inventing one. Do not re-grep what a gate already owns: greps run from
+memory go stale, and two of this skill's own greps once sat broken for weeks
+that way. Then work the detector's `unchecked` list, the rules no script can
+run. They are reported so they cannot be forgotten, and most of them
+discharge in the rendered passes below.
+
+**Without a detector**, grep the changed files (expect zero, exceptions
+justified), over the same roots the project's gate scans if it has one; a
+grep list that disagrees with the gate's scope is where a violation
+survives: `bg-gradient-|bg-clip-text|backdrop-blur` · raw
+`#hex|rgba?(|hsl(` in components when a token system exists · arbitrary
+`[Npx]` values · `transition-all|animate-` outside sanctioned loaders ·
+`8884d8|82ca9d|strokeDasharray="3 3"` · emoji codepoints in chrome ·
+`elevate|unlock|empower|supercharge|seamless|effortless` in copy.
 
 Rendered passes: **squint** (one thing dominant, no identical section
 anatomy) · **counts** (font sizes ≤7, radii/shadows ⊆ project scale, ≤1
-saturated accent per viewport — per face, it's the rule) · **contrast**
-(≥4.5:1, day AND night palette) · **keyboard** (admin: focus visible
-everywhere) · **circle-crop** (kiosk) / **375px** (admin) · **hostile
-fixtures** (offline, stale cache, empty playlist, 90-char device name, 3×
-strings, mixed-sign data) · **ratchet** (distinct radii/shadows/sizes did not
+saturated accent per viewport) · **contrast** (≥4.5:1, every theme) ·
+**keyboard** (focus visible everywhere) · **375px** · **state stability**
+(at rest, hovered, focused, selected: only colour/shadow/ring/opacity
+differ, nothing reflows a neighbour) · **chrome states** (render every
+collapsed/compact/truncating mode; a clipped focus ring still passes the
+DOM, so this pass is a screenshot or it did not happen) · **hostile
+fixtures** (3× strings, empty, error, offline, mixed-sign data) · **motion
+at rest** (idle viewport: nothing animates outside genuine, state-bound
+progress indicators) · **ratchet** (distinct radii/shadows/sizes did not
 grow vs. before the change).
 
-## Phase 3 — Fix ladder
+## Phase 3: Fix ladder
 
-Never fix by bare deletion — slop is a **faked decision**. Find the job the
-decoration was doing and do it with the system's device:
+Never fix by bare deletion: slop is a **faked decision**. Find the job the
+decoration was doing and do it with the system's device. A repo's Phase 0
+may add rows, and where one names the same violation as a row here, the
+repo's row wins.
 
 | Violation | Substitute |
 |---|---|
 | Gradient fill/text | Flat token; emphasis via size/weight/position; one accent word max |
 | Glass/glow/orbs | Delete layer; separate via spacing → hairline → tint → card |
-| Colored/new shadow | Project elevation; focus → focus ring; attention → hierarchy |
+| Colored/new shadow | Project elevation token; focus → focus ring; attention → hierarchy |
 | Raw hex/px | The project's token (match by usage); none fits → propose it, don't inline |
 | Off-scale value | Snap to the project's nearest scale step |
 | New font/size/weight | Nearest declared style; emphasis = weight step, not new size |
-| Emoji/icon leak | lucide at its sizes, or nothing |
-| Loops/scroll FX outside ambient apps | Bind to real state change or render static |
+| Emoji/icon leak | Project icon set at its sizes, or nothing |
+| Loops/scroll FX | Bind to real state change or render static; named transitions, ease-out |
 | Copy register | Verb + object; unprovable adjective/number → delete the claim |
 | Chart defaults | Project palette, plain line, linear/step, add unit, direct labels |
-| Contrast fail | Move UP the ink/tone ramp or lighten surface — never one-off darker hex |
+| Contrast fail | Move UP the text ramp or lighten surface; never a one-off darker hex |
 | Nested cards | Dissolve inner boundaries down the ladder, keep content |
 | 3-card reflex/stat strip | Rank content; dominant cell for the answering item, rest → row/table |
-| Happy-path only | Empty = sentence + creating action; loading = matched skeleton; error = cause + retry; offline = honest tell |
-| Mock data as live | Honest offline/stale tell (WeatherApp pattern) — never silent fallback |
-| Timer ticking while inactive | Gate the effect on `props.isActive` |
-| Face broken at night | Consume `--face-*`; never fork a night variant of the component |
+| Happy-path only | Empty = sentence + creating action; loading = matched skeleton; error = cause + retry |
+| Mock data shown as live | Honest offline/stale tell; never a silent fallback |
+| Layout moves on a state | Reserve the space at rest (`invisible`/`opacity-0`, or the same border in `transparent`); put the signal on colour/shadow/ring/opacity |
+| Collapsed state loses content | Design the collapsed mode as its own state; icons keep their labels as tooltips/accessible names |
+| Indicator clipped by an ancestor | Draw it on the ancestor that owns the boundary, or lift the clip one level |
+| 375px fails | Mobile-first bases, `dvh`, padded hit areas, kebab menus, table strategy |
 | Duplicate component | Delete new one; extend existing via its variant props |
 | Ratchet growth | Converge onto existing steps; new steps enter via the token system only |
 
 Report as: violation → rule area → fix applied. Re-run Phase 2 until clean.
+<!-- prettier-ignore-end -->
+<!-- unslop-core:end -->
