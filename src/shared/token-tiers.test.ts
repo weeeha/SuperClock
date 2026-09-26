@@ -34,8 +34,11 @@ describe('token tiers', () => {
 });
 
 // The eight face roles as src/index.css declared them before the token layer
-// (commit prior to this work). A face that resolves to anything else is a
-// pixel change on thirteen faces, which this sub-project forbids.
+// (commit prior to this work), plus --face-shadow, added 2026-09-26 for the
+// hand-shadow option and pinned black in BOTH modes on purpose: a lighter
+// value at night would be a glow, a different physical claim, and black-dial
+// faces default the option off instead. A face that resolves to anything
+// else is a pixel change on thirteen faces.
 const FACE_BEFORE = {
   light: {
     '--face-bg': '#ffffff',
@@ -46,6 +49,7 @@ const FACE_BEFORE = {
     '--face-dusk': '#8fa9c4',
     '--face-spent': '#e4e4e1',
     '--face-ghost': '#d9d9d4',
+    '--face-shadow': '#000000',
   },
   dark: {
     '--face-bg': '#000000',
@@ -56,6 +60,7 @@ const FACE_BEFORE = {
     '--face-dusk': '#2b3d52',
     '--face-spent': '#111316',
     '--face-ghost': '#2c2f35',
+    '--face-shadow': '#000000',
   },
 } as const;
 

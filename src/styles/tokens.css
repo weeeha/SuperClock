@@ -78,6 +78,11 @@
   --face-dusk: var(--dusk-light);
   --face-spent: var(--stone-100);
   --face-ghost: var(--stone-200);
+  /* The hand shadow (2026-09-26). Black in both modes on purpose: a
+     lighter value at night is a glow, a different physical claim, and
+     black-dial faces default the option off instead. Read by
+     src/apps/clock/Hands.tsx. */
+  --face-shadow: var(--stone-1000);
 
   /* Names here must not collide with the admin's own token names: inside
      .admin-root that block wins by specificity, so a tier 3 alias for the
@@ -140,6 +145,7 @@ html.dark {
   --face-dusk: var(--dusk-dark);
   --face-spent: var(--stone-900);
   --face-ghost: var(--stone-800);
+  --face-shadow: var(--stone-1000);
 
   /* Identical to today's src/admin/index.css values. */
   --surface-ground: var(--gray-4);
