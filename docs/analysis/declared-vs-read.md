@@ -8,7 +8,7 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 - Apps: 14 registered; 13 with a schema; config read by 14 (safeParse 13, parse 0, cast 0, raw 1); never read by 0.
 - Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
-- Schema fields: 71 declared (43 app, 28 face); 11 unread (6 app, 5 face).
+- Schema fields: 71 declared (43 app, 28 face); 6 unread (6 app, 0 face).
 
 ## Apps
 
@@ -33,16 +33,16 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 | Face | Component | Parse | Declared | Unread | Tokens | Slots | Night-exempt |
 |---|---|---|---|---|---|---|---|
-| analog | AnalogClock | safeParse | 4 | handShadow | none | 0 | yes |
+| analog | AnalogClock | safeParse | 4 | none | none | 0 | yes |
 | aperture | ApertureClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-plate | 0 | no |
-| complications-dark | ComplicationsDark | safeParse | 2 | handShadow | none | 4 declared, rendered | yes |
-| complications-light | ComplicationsLight | safeParse | 2 | handShadow | --face-bg --face-tick | 0 | no |
+| complications-dark | ComplicationsDark | safeParse | 2 | none | none | 4 declared, rendered | yes |
+| complications-light | ComplicationsLight | safeParse | 2 | none | --face-bg --face-tick | 0 | no |
 | daylight | DaylightClock | safeParse | 3 | none | --face-bg --face-dusk --face-ink --face-ink-muted --face-tick | 0 | no |
 | depletion | DepletionClock | safeParse | 3 | none | --face-bg --face-ink --face-ink-muted --face-spent --face-tick | 0 | no |
 | flip | FlipClock | safeParse | 2 | none | none | 0 | yes |
-| floral | FloralClock | safeParse | 2 | handShadow | none | 0 | yes |
+| floral | FloralClock | safeParse | 2 | none | none | 0 | yes |
 | minimalismo | MinimalismoClock | none | 0 | none | --face-bg --face-ink | 0 | no |
-| productivity | ProductivityClock | safeParse | 3 | handShadow | none | 0 | yes |
+| productivity | ProductivityClock | safeParse | 3 | none | none | 0 | yes |
 | square | SquareClock | safeParse | 1 | none | none | 0 | yes |
 | strokes | StrokesClock | safeParse | 1 | none | --face-bg --face-ghost --face-plate | 0 | no |
 | world | WorldClock | safeParse | 2 | none | none | 0 | yes |

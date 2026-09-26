@@ -1,19 +1,12 @@
 import type { CSSProperties } from 'react';
-import type { HandShadowMode } from '../../shared/hand-shadow';
+import { CAST, SOFT, type HandShadowMode } from '../../shared/hand-shadow';
 
 // Every face draws its hands in the same 1000-unit space about the same
 // centre, as a vertical stroke rotated by useClockHands' angle. This is the
 // one place that stroke is drawn, so the shadow option (agent log
-// 2026-09-09) is one implementation and not five.
+// 2026-09-09) is one implementation and not five. The treatments' numbers
+// (CAST, SOFT) live beside the option in src/shared/hand-shadow.ts.
 const C = 500;
-
-// The two treatments' numbers, from the 2026-09-09 decision (Figma, Clock
-// Design WIP, Sheet 03, node 705:4080). Offsets are in face units.
-export const CAST = { dx: 8, dy: 10, alpha: 0.32 } as const;
-export const SOFT = { dx: 5, dy: 7, blur: 9, alpha: 0.38 } as const;
-
-/** The second hand's spring, shared so a hand and its shadow move as one. */
-export const SECOND_HAND_SPRING = 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)';
 
 export interface HandSpec {
   /** Rotation in degrees from 12, from useClockHands. */

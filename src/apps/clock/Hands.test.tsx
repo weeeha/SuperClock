@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import { Hands, CAST, SOFT, type HandSpec } from './Hands';
+import { Hands, type HandSpec } from './Hands';
+import { CAST, SOFT } from '../../shared/hand-shadow';
 
 // Vitest runs without globals, so testing-library cannot self-register its
 // afterEach cleanup; every jsdom test file does this explicitly.

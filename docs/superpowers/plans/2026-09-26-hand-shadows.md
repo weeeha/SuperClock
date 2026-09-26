@@ -241,7 +241,7 @@ undecided none."
 
 **Interfaces:**
 - Consumes: `HandShadowMode` from Task 2.
-- Produces: `interface HandSpec { deg; tip; tail?; width; stroke; core?: { width; stroke }; transition? }`, `function Hands({ id, shadow, hands }: { id: string; shadow: HandShadowMode; hands: HandSpec[] })`, constants `CAST = { dx: 8, dy: 10, alpha: 0.32 }`, `SOFT = { dx: 5, dy: 7, blur: 9, alpha: 0.38 }`, `SECOND_HAND_SPRING`.
+- Produces: `interface HandSpec { deg; tip; tail?; width; stroke; core?: { width; stroke }; transition? }`, `function Hands({ id, shadow, hands }: { id: string; shadow: HandShadowMode; hands: HandSpec[] })`. The constants `CAST = { dx: 8, dy: 10, alpha: 0.32 }`, `SOFT = { dx: 5, dy: 7, blur: 9, alpha: 0.38 }` and `SECOND_HAND_SPRING` live in `src/shared/hand-shadow.ts` (Task 2's fragment), because a component file may export only components (react-refresh lint); `Hands.tsx` and the faces import them from there.
 - DOM contract the faces' tests rely on: each cast shadow is a `<g data-hand-shadow="cast" transform="translate(8 10)" opacity="0.32">` holding one `<line class="stroke-(--face-shadow)">`, immediately before the hand it shadows; soft is one `<g data-hand-shadow="soft" filter="url(#<id>-hand-shadow)">` around every hand plus a `<filter>` in `<defs>`.
 
 - [ ] **Step 1: Write the failing test.** `src/apps/clock/Hands.test.tsx`:

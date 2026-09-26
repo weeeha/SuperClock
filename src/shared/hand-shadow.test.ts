@@ -33,7 +33,7 @@ describe('hand shadow option', () => {
         expect(entry.schema.safeParse({ handShadow: m }).success, `face.${id} rejects ${m}`).toBe(true);
       }
       expect(entry.schema.safeParse({ handShadow: 'glow' }).success, `face.${id} accepts an unknown mode`).toBe(false);
-      expect(entry.meta.handShadow?.description, `face.${id}: meta lacks a description`).toBeTruthy();
+      expect(entry.meta?.handShadow?.description, `face.${id}: meta lacks a description`).toBeTruthy();
     }
   });
 
