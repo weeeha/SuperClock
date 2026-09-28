@@ -51,10 +51,16 @@
   user-select: auto;
 }
 
-.admin-root *,
-.admin-root *::before,
-.admin-root *::after {
-  border-color: hsl(var(--border));
+/* Default border color, shadcn's standard base-layer reset. Must stay inside
+   @layer base: unlayered author CSS outranks every Tailwind layer, so an
+   unlayered version of this rule silently overrides all border-color
+   utilities (that bug shipped once; computed-style verified 2026-08-14). */
+@layer base {
+  .admin-root *,
+  .admin-root *::before,
+  .admin-root *::after {
+    border-color: hsl(var(--border));
+  }
 }
 
 .admin-root ::-webkit-scrollbar {
