@@ -5,7 +5,8 @@
   "accent": { "where": "the hands", "color": "config:accent" },
   "night": { "recipe": "Ignores night: a legacy exempt face; the artwork has no night variant until one is drawn.", "tokens": [] },
   "options": [
-    { "key": "accent", "intent": "The hand colour; pick for contrast against the artwork, never to match it." }
+    { "key": "accent", "intent": "The hand colour; pick for contrast against the artwork, never to match it." },
+    { "key": "handShadow", "intent": "cast by default: white hands over a bright field need the shadow to read; soft only on the Pi 5, where a blurred region per frame is affordable." }
   ],
   "antiPatterns": [
     { "rule": "Do not add ticks or numerals over the artwork", "why": "the art carries the composition and marks fight it" }

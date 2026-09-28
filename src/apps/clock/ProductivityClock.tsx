@@ -1,17 +1,28 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { productivityFaceSchema } from '../../shared/schemas/face.productivity';
+import { Hands, type HandSpec } from './Hands';
+import { SECOND_HAND_SPRING } from '../../shared/hand-shadow';
 
 /** Productivity clock with colored segments — based on Figma S3 design (489:20734) */
 export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   // Face options validated against face.productivity, defaults otherwise (AnalogClock pattern).
   const parsed = productivityFaceSchema.safeParse(faceConfig ?? {});
-  const { accent, showSeconds } = parsed.success
+  const { accent, showSeconds, handShadow } = parsed.success
     ? parsed.data
     : productivityFaceSchema.parse({});
   const day = time.toLocaleDateString('en-US', { weekday: 'short' });
   const date = time.getDate();
+
+  // The hands, bottom first; the second hand is the face.productivity showSeconds option.
+  const hands: HandSpec[] = [
+    { deg: hourDeg, tip: 240, width: 22, stroke: 'white' },
+    { deg: minuteDeg, tip: 325, width: 16, stroke: 'white' },
+  ];
+  if (showSeconds) {
+    hands.push({ deg: secondDeg, tip: 320, tail: 60, width: 4, stroke: accent, transition: SECOND_HAND_SPRING });
+  }
 
   // Colored time block segments around the rim
   const segments = [
@@ -88,32 +99,8 @@ export default function ProductivityClock({ isActive, faceConfig }: FaceProps) {
           {date}
         </text>
 
-        {/* Hour hand */}
-        <line
-          x1="500" y1="500" x2="500" y2="260"
-          stroke="white" strokeWidth="22" strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-
-        {/* Minute hand */}
-        <line
-          x1="500" y1="500" x2="500" y2="175"
-          stroke="white" strokeWidth="16" strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-
-        {/* Second hand — the face.productivity showSeconds option */}
-        {showSeconds && (
-          <line
-            x1="500" y1="560" x2="500" y2="180"
-            stroke={accent} strokeWidth="4" strokeLinecap="round"
-            style={{
-              transform: `rotate(${secondDeg}deg)`,
-              transformOrigin: '500px 500px',
-              transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
-            }}
-          />
-        )}
+        {/* Hands; the shadow is the face.productivity handShadow option */}
+        <Hands id="productivity" shadow={handShadow} hands={hands} />
 
         {/* Center dot */}
         <circle cx="500" cy="500" r="10" fill={accent} />

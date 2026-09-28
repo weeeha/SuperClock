@@ -3,6 +3,8 @@ import { analogFaceSchema } from '../../shared/schemas/face.analog';
 import { resolveSpecColor, specOf } from '../../shared/part-meta';
 import analogMeta from './AnalogClock.meta.json';
 import type { FaceProps } from './face-components';
+import { Hands, type HandSpec } from './Hands';
+import { SECOND_HAND_SPRING } from '../../shared/hand-shadow';
 
 const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
 
@@ -30,12 +32,38 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
   // Admin-configured face options (schema fills defaults; invalid saved
   // values fall back to pure defaults rather than crashing the kiosk).
   const parsed = analogFaceSchema.safeParse(faceConfig ?? {});
-  const { accent, numeralStyle, showSeconds } = parsed.success
+  const { accent, numeralStyle, showSeconds, handShadow } = parsed.success
     ? parsed.data
     : analogFaceSchema.parse({});
   const colors = { accent };
   const ink = resolveSpecColor(spec.face.ink, colors);
   const background = resolveSpecColor(spec.face.background, colors);
+
+  // The hands, from the contract's numbers, bottom first.
+  const hands: HandSpec[] = [
+    {
+      deg: hourDeg,
+      tip: spec.hands.hour.tip,
+      width: spec.hands.hour.width,
+      stroke: resolveSpecColor(spec.hands.hour.color ?? spec.face.ink, colors),
+    },
+    {
+      deg: minuteDeg,
+      tip: spec.hands.minute.tip,
+      width: spec.hands.minute.width,
+      stroke: resolveSpecColor(spec.hands.minute.color ?? spec.face.ink, colors),
+    },
+  ];
+  if (showSeconds) {
+    hands.push({
+      deg: secondDeg,
+      tip: secondSpec.tip,
+      tail: secondSpec.tail ?? 0,
+      width: secondSpec.width,
+      stroke: resolveSpecColor(secondSpec.color ?? spec.face.ink, colors),
+      transition: SECOND_HAND_SPRING,
+    });
+  }
 
   // Generate tick marks
   const ticks = [];
@@ -83,19 +111,6 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
           );
         });
 
-  const hand = (deg: number, tip: number, width: number, stroke: string, tail = 0, style = {}) => (
-    <line
-      x1={C}
-      y1={C + tail}
-      x2={C}
-      y2={C - tip}
-      stroke={stroke}
-      strokeWidth={width}
-      strokeLinecap="round"
-      style={{ transform: `rotate(${deg}deg)`, transformOrigin: `${C}px ${C}px`, ...style }}
-    />
-  );
-
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
       <svg viewBox={`0 0 ${spec.space} ${spec.space}`} className="h-full w-full max-h-screen max-w-screen">
@@ -107,22 +122,8 @@ export default function AnalogClock({ isActive, faceConfig }: FaceProps) {
 
         {numerals}
 
-        {/* Hour hand */}
-        {hand(hourDeg, spec.hands.hour.tip, spec.hands.hour.width, resolveSpecColor(spec.hands.hour.color ?? spec.face.ink, colors))}
-
-        {/* Minute hand */}
-        {hand(minuteDeg, spec.hands.minute.tip, spec.hands.minute.width, resolveSpecColor(spec.hands.minute.color ?? spec.face.ink, colors))}
-
-        {/* Second hand */}
-        {showSeconds &&
-          hand(
-            secondDeg,
-            secondSpec.tip,
-            secondSpec.width,
-            resolveSpecColor(secondSpec.color ?? spec.face.ink, colors),
-            secondSpec.tail ?? 0,
-            { transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)' },
-          )}
+        {/* Hands, drawn from the contract's numbers; the shadow is the handShadow option, none by default */}
+        <Hands id="analog" shadow={handShadow} hands={hands} />
 
         {/* Center dot */}
         <circle cx={C} cy={C} r={dotSpec.outer} fill={resolveSpecColor(dotSpec.outerColor ?? spec.face.ink, colors)} />

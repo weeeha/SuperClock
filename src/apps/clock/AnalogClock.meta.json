@@ -10,11 +10,13 @@
   "options": [
     { "key": "accent", "intent": "One saturated colour that paints the second hand and the pip together; never two colours on one dial." },
     { "key": "numeralStyle", "intent": "none keeps the railway look; arabic or roman only when the dial is read at a glance from across a room." },
-    { "key": "showSeconds", "intent": "Off removes the only moving accent; use it for a still bedside face." }
+    { "key": "showSeconds", "intent": "Off removes the only moving accent; use it for a still bedside face." },
+    { "key": "handShadow", "intent": "none by default: a black dial gives a shadow nothing to fall on, and the LVGL twin cannot draw one, so cast or soft here is React-only." }
   ],
   "antiPatterns": [
     { "rule": "Do not thin the hands to make room for numerals", "why": "the 28 and 20 widths are the railway signature and the LVGL twin draws the same" },
-    { "rule": "Do not change a number here without the C twin", "why": "the parity test diffs clock_face.c against this file; a one-sided change is a red gate, not a fix" }
+    { "rule": "Do not change a number here without the C twin", "why": "the parity test diffs clock_face.c against this file; a one-sided change is a red gate, not a fix" },
+    { "rule": "Do not default handShadow to cast or soft", "why": "clock_face.c draws no shadow; a default other than none is React-only drift the parity ledger cannot see" }
   ],
   "parity": { "lvgl": "slow-native/src/clock_face.c" },
   "spec": {

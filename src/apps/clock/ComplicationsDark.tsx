@@ -3,6 +3,8 @@ import { useClockHands } from '../../core/hooks/useClockHands';
 import { complicationsDarkFaceSchema } from '../../shared/schemas/face.complications-dark';
 import { useHabitsToday } from './complications-data';
 import CaffeineMark from './CaffeineMark';
+import { Hands } from './Hands';
+import { SECOND_HAND_SPRING } from '../../shared/hand-shadow';
 
 const COMP_R = 125;
 const COMPS = {
@@ -20,7 +22,7 @@ function arcDash(r: number, pct: number) {
 export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
   // Face options validated against face.complications-dark, defaults otherwise.
   const parsedFace = complicationsDarkFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsedFace.success ? parsedFace.data : complicationsDarkFaceSchema.parse({});
+  const { accent, handShadow } = parsedFace.success ? parsedFace.data : complicationsDarkFaceSchema.parse({});
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   const habits = useHabitsToday(time);
   const habitPct = habits.total > 0 ? habits.done / habits.total : 0;
@@ -41,11 +43,6 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
       />,
     );
   }
-
-  const style = (deg: number) => ({
-    transform: `rotate(${deg}deg)`,
-    transformOrigin: '500px 500px',
-  });
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
@@ -113,17 +110,15 @@ export default function ComplicationsDark({ isActive, faceConfig }: FaceProps) {
         {/* Center hub (behind hands) */}
         <circle cx="500" cy="500" r="14" fill="#7c3aed" />
 
-        {/* Hour — light gray */}
-        <line x1="500" y1="535" x2="500" y2="310" stroke="#ccc" strokeWidth="32" strokeLinecap="round" style={style(hourDeg)} />
-        {/* Minute — lighter */}
-        <line x1="500" y1="530" x2="500" y2="182" stroke="#ddd" strokeWidth="22" strokeLinecap="round" style={style(minuteDeg)} />
-        {/* Second — violet */}
-        <line x1="500" y1="572" x2="500" y2="152" stroke="#7c3aed" strokeWidth="7" strokeLinecap="round"
-          style={{
-            transform: `rotate(${secondDeg}deg)`,
-            transformOrigin: '500px 500px',
-            transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
-          }}
+        {/* Light grey hour, lighter minute, violet second; the shadow is the handShadow option */}
+        <Hands
+          id="complications-dark"
+          shadow={handShadow}
+          hands={[
+            { deg: hourDeg, tip: 190, tail: 35, width: 32, stroke: '#ccc' },
+            { deg: minuteDeg, tip: 318, tail: 30, width: 22, stroke: '#ddd' },
+            { deg: secondDeg, tip: 348, tail: 72, width: 7, stroke: '#7c3aed', transition: SECOND_HAND_SPRING },
+          ]}
         />
         {/* Center pip */}
         <circle cx="500" cy="500" r="16" fill="#7c3aed" />

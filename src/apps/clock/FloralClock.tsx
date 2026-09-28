@@ -1,12 +1,14 @@
 import type { FaceProps } from './face-components';
 import { useClockHands } from '../../core/hooks/useClockHands';
 import { floralFaceSchema } from '../../shared/schemas/face.floral';
+import { Hands } from './Hands';
+import { SECOND_HAND_SPRING } from '../../shared/hand-shadow';
 
 export default function FloralClock({ isActive, faceConfig }: FaceProps) {
   const { hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   // Face options validated against face.floral, defaults otherwise (AnalogClock pattern).
   const parsed = floralFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsed.success ? parsed.data : floralFaceSchema.parse({});
+  const { accent, handShadow } = parsed.success ? parsed.data : floralFaceSchema.parse({});
 
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -68,27 +70,15 @@ export default function FloralClock({ isActive, faceConfig }: FaceProps) {
           <circle cx="500" cy="500" r="65" fill="white" opacity="0.45" />
         </g>
 
-        {/* Hour hand */}
-        <line
-          x1="500" y1="520" x2="500" y2="265"
-          stroke="white" strokeWidth="24" strokeLinecap="round"
-          style={{ transform: `rotate(${hourDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-        {/* Minute hand */}
-        <line
-          x1="500" y1="525" x2="500" y2="165"
-          stroke="white" strokeWidth="15" strokeLinecap="round"
-          style={{ transform: `rotate(${minuteDeg}deg)`, transformOrigin: '500px 500px' }}
-        />
-        {/* Second hand */}
-        <line
-          x1="500" y1="565" x2="500" y2="145"
-          stroke={accent} strokeWidth="5" strokeLinecap="round"
-          style={{
-            transform: `rotate(${secondDeg}deg)`,
-            transformOrigin: '500px 500px',
-            transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
-          }}
+        {/* Hands over the artwork; the shadow is the face.floral handShadow option */}
+        <Hands
+          id="floral"
+          shadow={handShadow}
+          hands={[
+            { deg: hourDeg, tip: 235, tail: 20, width: 24, stroke: 'white' },
+            { deg: minuteDeg, tip: 335, tail: 25, width: 15, stroke: 'white' },
+            { deg: secondDeg, tip: 355, tail: 65, width: 5, stroke: accent, transition: SECOND_HAND_SPRING },
+          ]}
         />
         <circle cx="500" cy="500" r="14" fill={accent} />
         <circle cx="500" cy="500" r="7" fill="white" />

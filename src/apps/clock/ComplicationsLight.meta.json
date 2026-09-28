@@ -8,7 +8,8 @@
     "tokens": ["--face-bg", "--face-tick"]
   },
   "options": [
-    { "key": "accent", "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy." }
+    { "key": "accent", "intent": "One colour for every sub-dial accent; the sub-dials are siblings, not a hierarchy." },
+    { "key": "handShadow", "intent": "cast by default, replacing the blurred filter the hands carried per frame; soft brings a blur back, on the Pi 5 only." }
   ],
   "antiPatterns": [
     { "rule": "Do not present the sub-dial positions as configurable complication slots", "why": "the face reads no slot today; D2 says wire complications, never fake them" }

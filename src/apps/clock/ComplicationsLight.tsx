@@ -3,6 +3,8 @@ import { useClockHands } from '../../core/hooks/useClockHands';
 import { complicationsLightFaceSchema } from '../../shared/schemas/face.complications-light';
 import { useHabitsToday } from './complications-data';
 import CaffeineMark from './CaffeineMark';
+import { Hands } from './Hands';
+import { SECOND_HAND_SPRING } from '../../shared/hand-shadow';
 
 // Complication circle centers (1000×1000 SVG space)
 const COMP_R = 125;
@@ -21,7 +23,7 @@ function arcDash(r: number, pct: number) {
 export default function ComplicationsLight({ isActive, faceConfig }: FaceProps) {
   // Face options validated against face.complications-light, defaults otherwise.
   const parsedFace = complicationsLightFaceSchema.safeParse(faceConfig ?? {});
-  const { accent } = parsedFace.success ? parsedFace.data : complicationsLightFaceSchema.parse({});
+  const { accent, handShadow } = parsedFace.success ? parsedFace.data : complicationsLightFaceSchema.parse({});
   const { time, hourDeg, minuteDeg, secondDeg } = useClockHands(isActive);
   const habits = useHabitsToday(time);
   const habitPct = habits.total > 0 ? habits.done / habits.total : 0;
@@ -43,20 +45,9 @@ export default function ComplicationsLight({ isActive, faceConfig }: FaceProps) 
     );
   }
 
-  const style = (deg: number) => ({
-    transform: `rotate(${deg}deg)`,
-    transformOrigin: '500px 500px',
-  });
-
   return (
     <div className="flex h-full w-full items-center justify-center">
       <svg viewBox="0 0 1000 1000" className="h-full w-full max-h-screen max-w-screen">
-        <defs>
-          <filter id="cl-shadow">
-            <feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" />
-          </filter>
-        </defs>
-
         {/* Face (white by day, black at night) */}
         <circle cx="500" cy="500" r="500" className="theme-fade fill-(--face-bg)" />
 
@@ -124,20 +115,15 @@ export default function ComplicationsLight({ isActive, faceConfig }: FaceProps) 
         <text x={COMPS.bottom.cx} y={COMPS.bottom.cy - 22} textAnchor="middle" fill="#999" fontSize="38" fontFamily="system-ui" letterSpacing="3">{dayName}</text>
         <text x={COMPS.bottom.cx} y={COMPS.bottom.cy + 48} textAnchor="middle" fill="white" fontSize="62" fontWeight="700" fontFamily="system-ui">{dateNum}</text>
 
-        {/* ── Clock hands ── */}
-        {/* Hour — white border + dark fill */}
-        <line x1="500" y1="535" x2="500" y2="310" stroke="white" strokeWidth="44" strokeLinecap="round" style={style(hourDeg)} />
-        <line x1="500" y1="535" x2="500" y2="310" stroke="#111" strokeWidth="32" strokeLinecap="round" filter="url(#cl-shadow)" style={style(hourDeg)} />
-        {/* Minute */}
-        <line x1="500" y1="530" x2="500" y2="182" stroke="white" strokeWidth="34" strokeLinecap="round" style={style(minuteDeg)} />
-        <line x1="500" y1="530" x2="500" y2="182" stroke="#111" strokeWidth="24" strokeLinecap="round" filter="url(#cl-shadow)" style={style(minuteDeg)} />
-        {/* Second — golden */}
-        <line x1="500" y1="572" x2="500" y2="152" stroke="#f59e0b" strokeWidth="7" strokeLinecap="round"
-          style={{
-            transform: `rotate(${secondDeg}deg)`,
-            transformOrigin: '500px 500px',
-            transition: 'transform 0.2s cubic-bezier(0.4, 2.08, 0.55, 0.44)',
-          }}
+        {/* ── Clock hands: bordered hour and minute, golden second; the shadow is the handShadow option ── */}
+        <Hands
+          id="complications-light"
+          shadow={handShadow}
+          hands={[
+            { deg: hourDeg, tip: 190, tail: 35, width: 44, stroke: 'white', core: { width: 32, stroke: '#111' } },
+            { deg: minuteDeg, tip: 318, tail: 30, width: 34, stroke: 'white', core: { width: 24, stroke: '#111' } },
+            { deg: secondDeg, tip: 348, tail: 72, width: 7, stroke: '#f59e0b', transition: SECOND_HAND_SPRING },
+          ]}
         />
         {/* Center pip */}
         <circle cx="500" cy="500" r="18" fill="#f59e0b" />
