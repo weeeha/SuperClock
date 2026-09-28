@@ -62,6 +62,10 @@ async function poll() {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1,
+        // Claude Code subscription OAuth tokens are rejected with HTTP 401
+        // unless the request identifies as Claude Code via this exact system
+        // prompt (paired with the oauth-2025-04-20 beta header above).
+        system: "You are Claude Code, Anthropic's official CLI for Claude.",
         messages: [{ role: 'user', content: 'hi' }],
       }),
     });
@@ -70,8 +74,10 @@ async function poll() {
     return;
   }
 
-  // Read body to free the socket, but discard.
-  try { await res.text(); } catch {}
+  // Read body to free the socket. Capture it for diagnostics on auth failure.
+  let bodyText = '';
+  try { bodyText = await res.text(); } catch {}
+  if (res.status >= 400) console.error(`[claude-usage] HTTP ${res.status} body:`, bodyText.slice(0, 500));
 
   const h = res.headers;
   const num = (k) => {
