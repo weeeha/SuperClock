@@ -1,7 +1,7 @@
 # Countdown app — design
 
 **Date:** 2026-10-01
-**Status:** Approved (Nick, this session). Sub-project 1 of 4 in the missing-apps round
+**Status:** Approved (Nick, this session). Amended while planning, same day: number size and colour roles (decisions 6 and 6a). Sub-project 1 of 4 in the missing-apps round
 (Countdown → background alerts + Timer → Alarm → admin-editable content + Notes).
 **Source:** Admin wireframe D20 (`122:1079`, Admin Panel page) and the kiosk draft drawn this
 session, section **Countdown** `177:1011` on the Designs page of the
@@ -19,44 +19,48 @@ own config (`screenInstanceSchema.config`), so nothing extra is built for that.
 
 | # | Decision | Choice | Why |
 |---|---|---|---|
-| 1 | After the date | **Count up** in `--ink-muted`: "12 days since Tokyo" (Nick, this session) | The screen stays true; the same app serves "days since" |
+| 1 | After the date | **Count up** in `--face-ink-muted`: "12 days since Tokyo" (Nick, this session) | The screen stays true; the same app serves "days since" |
 | 2 | Targets per screen | **One.** Several countdowns = several instances | Instances already carry per-instance config |
 | 3 | Day arithmetic | **Local calendar dates**, never `ms / 86 400 000` | A DST change makes a day 23 or 25 hours; division drops or adds a day |
 | 4 | Re-render | **One `setTimeout` to the next local midnight**, only while `isActive`; recompute on activation | Day resolution needs nothing faster; no per-second work on a weeks-long kiosk |
 | 5 | Accent | **Only the progress ring**, and only before the date | One saturated accent quantity; the days/weeks styles carry none |
-| 6 | Type | **Only sizes already in the tree**: number `27vmin`, label `2.6vmin` (`TYPE.md`), caption `2.2vmin` (`TYPE.sm`) | The font-size ratchet (`CEILINGS.fontSizes` 54) may not grow. `TYPE.lg` (3.4vmin) is not in the tree, so the label takes the glance default |
+| 6 | Type | **Only sizes the ratchet already counts**: number `text-[17vmin]` (Breathing's reading), label `text-[2.6vmin]` (`TYPE.md`), caption `text-[2.2vmin]` (`TYPE.sm`) | The font-size ratchet (`CEILINGS.fontSizes` 54) may not grow. `TYPE.lg` (3.4vmin) is not in the tree. `27vmin` exists only as FlipClock's `style={{ fontSize }}`, which the ratchet does not count, so `text-[27vmin]` would be a new size; using the uncounted style form to dodge the gate is not an option |
+| 6a | Colour | **The face palette**, as Quote does: `--face-bg`, `--face-ink`, `--face-ink-muted`, ring track `--face-ghost` | Quote is the sibling full-screen typographic app and follows the night flip through these roles. The tier-2 `--ink` roles follow the light/dark mode axis, which kiosk apps do not adopt yet (open decision) |
 | 7 | 10 000+ days | **Render in weeks** regardless of `style` | Keeps the number at four digits or fewer inside the disc |
 | 8 | Out of scope | slowclock (LVGL), the clock-face complication variant | Slow is excluded fleet-wide for new apps; the complication is marked "candidate" on D20 |
 
 ## Screens and states (board frames 1 to 6)
 
 Coordinates are in 1000 × 1000 disc units (the 1080 px viewport; `vmin` = 10 units).
-Text is HTML, absolutely positioned and centred horizontally, so the label can wrap. The
-ring is an SVG with `viewBox="0 0 1000 1000"`.
+Text is HTML so the label can wrap: one column centred on the disc, holding the number
+(`leading-none`, `tabular-nums`), a `3vmin` gap, the label, a `1.5vmin` gap, and the caption
+slot. The ring is an absolutely positioned SVG with `viewBox="0 0 1000 1000"` behind the
+column. Background `--face-bg`, ink `--face-ink`, muted `--face-ink-muted`, with Quote's
+`theme-fade` class so the night flip cross-fades like Quote's.
 
 | # | State | Number / headline | Label | Other |
 |---|---|---|---|---|
-| 1 | **Days** (default) | days remaining, `27vmin`, `--ink`, centre at y 444 | "days to {label}", `2.6vmin`, `--ink`, centre at y 678 | Singular: "1 day to {label}" |
+| 1 | **Days** (default) | days remaining, `17vmin`, `--face-ink` | "days to {label}", `2.6vmin`, `--face-ink` | Singular: "1 day to {label}" |
 | 2 | **Weeks** | whole weeks | "weeks, {n} days to {label}"; remainder 0 → "weeks to {label}"; 1 week → "week" | |
-| 3 | **Progress ring** | as Days | as Days | Ring, plus caption "since {startDate, d MMM yyyy}" `2.2vmin` `--ink-muted` at y 733 |
-| 4 | **Today** | "Today", `27vmin`, `--ink` | "{label}" | Applies to every style; the ring renders full in `--ink-muted` |
-| 5 | **Since** | days since, `27vmin`, `--ink-muted` | "days since {label}" / "1 day since {label}", `--ink-muted` | Weeks style: "weeks, {n} days since {label}". Ring style: full ring in `--ink-muted`, no accent |
-| 6 | **Not set up** | "No date yet", `2.6vmin` weight 500, `--ink`, y 467 | "Set a target date for this screen in the admin." `2.2vmin` `--ink-muted`, y 533, max width 520 | Rendered whenever `targetDate` is empty or not a valid date |
+| 3 | **Progress ring** | as Days | as Days | Ring, plus caption "since {startDate, d MMM yyyy}" `2.2vmin` `--face-ink-muted` |
+| 4 | **Today** | "Today", `17vmin`, `--face-ink` | "{label}" | Applies to every style; the ring renders full in `--face-ink-muted` |
+| 5 | **Since** | days since, `17vmin`, `--face-ink-muted` | "days since {label}" / "1 day since {label}", `--face-ink-muted` | Weeks style: "weeks, {n} days since {label}". Ring style: full ring in `--face-ink-muted`, no accent |
+| 6 | **Not set up** | "No date yet", `2.6vmin` weight 500, `--face-ink` | "Set a target date for this screen in the admin." `2.2vmin` `--face-ink-muted`, max width 52vmin | Rendered whenever `targetDate` is empty or not a valid date |
 
 **Label rules.** Empty label → the label line drops the "to {label}" part: "214 days",
 "Today", "12 days since". Labels are capped at 40 characters by the schema, wrap within a
-620-unit width, and are clamped to two lines (`line-clamp: 2`). At y 678 the disc's chord
-is 934 units wide and at the second line (y ≈ 722) 896 units, so both lines stay inside
-the disc.
+62vmin width, and are clamped to two lines (`line-clamp-2`). The whole column is under
+260 units tall and centred on the disc, so its widest line sits where the chord is over
+930 units: nothing reaches the edge.
 
 **Progress ring geometry.** Circle centred at (500, 500), `r = 447`, `stroke-width = 26`
-(outer edge at radius 460, inside the disc). Track: `--fill-subtle`, full circle. Elapsed:
+(outer edge at radius 460, inside the disc). Track: `--face-ghost`, full circle. Elapsed:
 `--color-accent`, drawn from 12 o'clock clockwise (`rotate(-90 500 500)`), length
 `2πr × elapsedFraction` via `stroke-dasharray`, `stroke-linecap="butt"`.
 `elapsedFraction = clamp((today − startDate) / (targetDate − startDate), 0, 1)` in
 calendar days. If `startDate` is empty, invalid, or not before `targetDate`, the screen
 renders as state 1 and the caption slot reads "Add a start date to show progress"
-(`--ink-muted`), never a guessed fraction.
+(`--face-ink-muted`), never a guessed fraction.
 
 **Motion.** None. The screen changes once a day at local midnight with no transition.
 
@@ -123,7 +127,8 @@ swiped away for three days is right on return. Cleanup clears the timeout. No
   text input with `type="date"`, value `YYYY-MM-DD`, empty allowed. This is the D20 date
   widget and the last missing field type in the admin template.
 - `src/admin/lib/app-names.ts`: `countdown: 'Countdown'`.
-- `src/admin/lib/screen-art.ts`: an `APP_ICONS` entry for `countdown`.
+- `src/shared/app-icons.ts`: an `APP_ICONS` entry for `countdown` (read by the admin's
+  `screen-art.ts`), pointing at a new `public/countdown-thumb.svg`.
 
 ## Wiring
 
@@ -150,7 +155,7 @@ until the component is implemented. Set by hand afterwards:
 - `src/apps/countdown/CountdownApp.test.tsx`: renders each of the six states from config;
   the label clamps at two lines; no timer is scheduled while `isActive` is false.
 - Gates: `./scripts/gates.sh` green; the design ratchet's font-size count does not grow
-  (decision 6); `npm run check:rules` clean on the new files.
+  (decision 6) and its colour count does not grow (no raw hex in the component); `npm run check:rules` clean on the new files.
 - Rendered: the six states at 1080 × 1080 in the browser in both palettes (unslop Phase 2:
   squint, counts, contrast, circle-crop, hostile 40-character label), then on fastclock.
 
