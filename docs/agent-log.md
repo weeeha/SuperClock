@@ -6,6 +6,48 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-01 · branch claude/catch-up-b7e4e2 · missing apps round: order decided, Countdown designed and specced
+
+Nick's call: build the four unbuilt apps smallest first, one spec, plan and build per sub-project: (1) Countdown, (2) background alerts + Timer, (3) Alarm, (4) admin-editable content + Notes, after which Todo and Alarm move onto that content sync.
+
+**Countdown (sub-project 1):** kiosk draft drawn on the board, Designs page section `Countdown` `177:1011` at x=38688 (six frames: Days, Weeks with a 40-character label, Progress ring, Today, Since, Not set up, plus numbered notes). Spec `docs/superpowers/specs/2026-10-01-countdown-app-design.md`, approved. Decisions taken with Nick: count up in muted ink after the date; one date per screen instance. Taken autonomously and recorded in the spec: calendar-date arithmetic, one midnight `setTimeout` gated on `isActive` (so `ticks: false`), the ring as the only accent, 10 000+ days forced to weeks.
+
+**Found while specifying:** `TYPE.lg` (3.4vmin) does not exist anywhere in `src/apps`, so a label at that step would grow the font-size ratchet past 54 and fail. The spec uses only sizes already in the tree (27vmin from FlipClock, 2.6vmin, 2.2vmin). `app-capabilities.test.ts` defines `ticks` as `setInterval` or rAF only; a `setTimeout` does not count. A new app needs three touchpoints the scaffolder does not emit: the AppGrid PNG tile, `admin/lib/app-names.ts`, and `APP_ICONS` in `admin/lib/screen-art.ts`.
+
+**Next:** writing-plans for Countdown, then brainstorm sub-project 2.
+
+---
+
+## 2026-10-01 · branch claude/catch-up-b7e4e2 · audit: planned apps and faces vs built
+
+Read-only. Planned side read from the FigJam board `JAjMCsw8hXx38locrxP5gd` (Designs `10:482`: 18 sections, 86 frames; Admin Panel `115:937`: D3 to D20; Watchfaces `22:647`: 18 plates), built side from `docs/health.md` and `src/apps/`.
+
+- **Apps:** 18 planned, 14 built. Not built: Timer (`51:863`, admin D17), Notes (`109:935`, D18), Alarm (`111:957`, D19), Countdown (admin D20 only, no kiosk design). No branch or commit anywhere holds code for any of the four.
+- **Built ahead of or apart from the board:** Agents ships list/chat/avatar on mock data; the board's frames 4 to 9 (not connected, error, no mic, long names, night) are not in code. Habits' month view became a density ring on 2026-09-07, so the board's "Month rings" frame is stale. Habit detail and Breathing's guided session (both board proposals) are not built. Time tracker's task picker, day summary and away state, and Claude's detail view and daemon tell, are built.
+- **No design pass recorded:** GitHub, Claude usage, Time tracker, Calendar (since its rebuild). Time tracker, Habits, Fireplace and Timer have zero non-happy frames on the board.
+- **Faces:** 13 built. Of 18 plates: 4 built (11, 12, 13, 17), 5 marked adjacent to existing faces (02 Complications Dark, 04 Square, 05 Productivity, 07 Floral, 09 Complications Light), 9 unbuilt (01, 03, 06, 08, 10, 14, 15, 16, 18). The study's open decisions (face count, faces that need learning, family cohesion) are still unadjudicated, so unbuilt is undecided rather than behind.
+- **Face debt:** 7 faces exempt from `--face-*`; the retrofit that empties the list is `66b56ca` on pushed, unmerged `claude/watchfaces-app-design-status-ea9ed9`. Hand-shadow defaults decided for 5 of 13.
+
+---
+
+## 2026-10-01 · branch claude/catch-up-b7e4e2 · deployed main c6afa6f to fastclock and squareclock; smallclock off the network
+
+No code changed. Note for readers: #61, #62 and #63 merged on 2026-09-28 without log entries of their own.
+
+**Deployed:** `c6afa6f` (origin/main, clean tree, no override needed) via `bash scripts/deploy.sh nickv2026@<tailnet-ip>`. fastclock was on `2bdbe66` (the hand-shadows branch build, kiosk-identical to main); squareclock was on `aff84c2` from 2026-09-13, so it had no hand shadows. No `package*.json` change between either old build and main, so no `npm ci` on device.
+
+**Verified:**
+- The script's health poll confirmed `build.commit` `c6afa6f` on both (it resolved the tailnet IPs to 192.168.4.30 and 192.168.4.44 itself).
+- `pkill -TERM chromium` on both; labwc autostart relaunched within 10s. Disk 31% (fast) and 27% (square).
+- `grim` screenshots off both panels at 19:14:47 show Minimalismo at the correct wall-clock time. Minimalismo carries no `handShadow` option, so this does not show the shadows on glass.
+- Arrow-jump check, 16 frames per device at ~150ms, gold tip angle per frame: fast mean 6.02 deg/s (min 4.19, max 7.65), square 5.91 (min 3.67, max 8.72), zero stalled pairs on either. Smooth sweep.
+
+**smallclock:** Nick power-cycled it today and reports a black screen. It is not on the network at all: Tailscale says offline, last seen 31 days ago; `tailscale ping` gets no reply; no mDNS answer. The two unidentified Pis on the LAN were checked by host key and are other projects (`192.168.4.21` is `plantdashboard`, `192.168.4.61` is `dashboard-ink-bed`), not a reflashed smallclock. So it stalls before Wi-Fi comes up, and diagnosis needs LEDs or an HDMI monitor.
+
+**Open:** smallclock diagnosis (in progress with Nick). Hand shadows have still not been seen on a panel: no device is showing one of the five faces that carry the option.
+
+---
+
 ## 2026-09-13 · branch claude/design-untouched-apps-5a79b4 · design passes: Photo Frame, Quote, Breathing
 
 Closes the "Quote, Images and Breathing not yet looked at" line from the 2026-09-07 design-pass entry. Three commits, `7489db3`, `8628432`, `678dde6`, worst-first by function rather than by appearance: Photo Frame was the only one of the three that did not work on real hardware.
