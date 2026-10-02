@@ -71,6 +71,28 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 ---
 
+## 2026-10-01 · branch claude/superlock-apps-redesign-1933c7 · apps v2 visual pass: three directions drawn
+
+Nick's call: a visual pass over all kiosk apps (keep what each shows and how it navigates; take them from grey wireframes to hi-fi), with Mobbin as aggregated inspiration. No code changed.
+
+**Drawn:** new Figma file `SupeClock-Design` (`7riwsUFkbksAeYqcNQD5AQ`, personal account), page `Apps v2 · directions`. Three sections, A `6:2` Instrument (rim carries data, centre one number), B `6:18` Ambient fields (flat full-bleed colour per app), C `6:34` Editorial type + rim (huge light numeral, one sentence, rim only for progress). Each holds Weather, Timer, Habits at 1080 round, day and night (18 frames). A and C night frames are the `--face-*` token flip; B needs its own per-field night palette and new colours outside tokens.css. Snapshot: `docs/design/2026-10-01-apps-v2-directions.png`.
+
+**Mobbin:** reachable only through Nick's logged-in Chrome (no connector). Thumbnails do not render in a background tab until scrolled; zooming the document to 0.45 via JS gives a readable grid per query. Refs used: Brink, Oura, WHOOP, Noom (A); Headspace, Structured, Opal, Apple Weather (B); pushr, Messages timer, How We Feel, stoic. (C).
+
+**Round 2 (Nick: "looks like wireframes, need more intense design"):** new page `Apps v2 · intense` (`9:2`), dark-first, 9 frames: 1 Chronograph `9:3` (240-tick 24h scale, polar temperature curve, Time Timer wedge, 5 rings x 30 days), 2 Dot matrix `9:12` (24px LED grid, 5x7 numerals, perimeter progress, 5x30 habit grid), 3 Poster `9:21` (cropped Inter Black numerals, sky gradient keyed to hour and condition, full-bleed habit bands). Snapshot `docs/design/2026-10-01-apps-v2-intense.png`. Poster Weather uses a gradient, which unslop bans; it is drawn as data (sky colour), so adopting it needs an explicit exception. Round-1 page left untouched.
+
+**Round 3 (Nick: "can we have all 3 as skins", then "all 3 styles, all apps we have"):** page renamed `Apps v2 · skins` (`9:2`). Every built app except Clock (faces are their own system), plus Timer, now drawn in all three skins: 15 columns x 3 rows, 45 frames, dark-first. Frame ids `18:2`..`18:72` (row 1 even ids 18:2-18:24, row 2 18:26-18:48, row 3 18:50-18:72, column order Calendar, Countdown, Claude usage, GitHub, Time tracking, Fitness, Breathing, Agents, Todo, Quote, Photo frame, Fireplace). Sample values only; Quote uses the real Dillard entry from `quotes.ts`; Photo frame uses a flat procedural landscape because `use_figma` cannot place images. Snapshots `docs/design/2026-10-01-apps-v2-skins-{all,left,right}.png`.
+
+**Skins as a product decision (proposed, not built):** `settings.skin` beside `theme`/`accent` in `device-config-schema.ts` (adding a defaulted enum field is a minor schema change, `npm run snapshot:schemas` only). Each app would expose one glance model (primary value, label, sentence, rim series, progress) that three renderers draw; detail and interactive views stay one shared design. Poster's Weather gradient needs an explicit unslop exception.
+
+**Round 4 (Nick: iOS-inspired, colourful, colour must mean something; refs How We Feel, Apple Fitness, Moonly):** fourth skin "Signal colour". Type Fraunces (words) + Nunito ExtraBold (numbers); SF Pro Rounded is installed on Nick's Mac but cannot ship on the Pi. Three variants on Weather, Timer, Habits, Calendar, Claude usage: 4A Metric ink `28:2` (lead; also Countdown), 4B Widget fields `38:2` and 4C Mood field `38:15` (two Opus-high workflow agents, about 360k tokens, from a shared kit `scratchpad/signal-kit.js` and brief). Comparison `docs/design/2026-10-02-signal-abc.png`. Earlier Countdown frames said "Fri 24 Oct"; 24 Oct 2026 is a Saturday, fixed everywhere. A's other 9 apps were cleared and are held until a variant is picked. Mobbin app pages 403 in the built-in browser; they open in Nick's Chrome once the extension reconnects.
+
+**Round 5 (Nick picked 4B Widget fields):** section `38:2` now holds all 15 apps (new frames `44:2`..`44:20`) and a night row (`50:2`..`50:500`, cloned and inverted by script). Category hue map, anatomy and night recipe recorded in the skins spec, open question 8. Snapshots `docs/design/2026-10-02-skin-b-{left,right}.png`. Figma `createVector` adds a 1 px default stroke; set `strokes=[]` on filled vectors.
+
+**Open:** day palettes not drawn for any skin; non-happy states (offline, empty, not configured) not drawn; Nick to confirm skins direction before a spec. B would relax the one-accent rule across apps (`FCE-1` intent) and is rendered flat because unslop bans gradients.
+
+---
+
 ## 2026-10-01 · branch claude/countdown-app · Countdown app built, verified in the browser, deployed to fastclock
 
 Sub-project 1 of the missing-apps round, built from `docs/superpowers/plans/2026-10-01-countdown-app.md` by two Sonnet implementers with the controller reviewing every diff. Branch `claude/countdown-app`, cut from `1cff403`, 8 commits through `8b954aa`. Local only, not merged, not pushed.
