@@ -85,8 +85,7 @@ export default function AlarmAlert({ alert, phase, dismiss }: AlertViewProps) {
       <span className={`relative mt-[1.5vmin] text-[2.2vmin] ${speaker ? 'text-(--face-ink-muted)' : ''}`}>Hold 2 s to stop</span>
       <span aria-hidden="true" className="relative mt-[2vmin] block h-[1vmin] w-[30vmin] overflow-hidden rounded-full bg-(--face-ghost)">
         <span
-          className={`block h-full rounded-full bg-(--color-accent) transition-[width] ease-linear ${holding ? 'duration-[2000ms]' : 'duration-200'}`}
-          style={{ width: holding ? '100%' : '0%' }}
+          className={`block h-full w-full origin-left rounded-full bg-(--color-accent) transition-transform ease-linear ${holding ? 'scale-x-100 duration-[2000ms]' : 'scale-x-0 duration-200'}`}
         />
       </span>
       {!speaker && (

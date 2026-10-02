@@ -47,6 +47,7 @@ describe('AlarmAlert', () => {
     expect(dismiss).not.toHaveBeenCalled();
     expect(useAlerts.getState().scheduled).toEqual([]);
     fireEvent.pointerDown(press());
+    expect(press().querySelector('.origin-left')!.className).toContain('scale-x-100');
     act(() => vi.advanceTimersByTime(2000));
     expect(dismiss).toHaveBeenCalledTimes(1);
     expect(useAlerts.getState().scheduled).toEqual([]);
