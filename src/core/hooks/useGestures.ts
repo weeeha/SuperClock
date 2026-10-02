@@ -4,7 +4,7 @@ import { useNavigation } from '../navigation';
 import { classifyTouchStart, isClaimedTarget } from '../gesture-zones';
 import type { TouchZone } from '../gesture-zones';
 import { resolveDragEnd } from '../gesture-resolve';
-import { isAlertRinging } from '../alerts/alert-store';
+import { isScreenHeld } from '../alerts/alert-store';
 
 const PINCH_IN_THRESHOLD = 0.9;
 
@@ -70,7 +70,7 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
   useGesture(
     {
       onDragStart: ({ xy: [x, y], event }) => {
-        claimedRef.current = isClaimedTarget(event.target) || isAlertRinging();
+        claimedRef.current = isClaimedTarget(event.target) || isScreenHeld();
         zoneRef.current = classifyTouchStart(x, y, window.innerWidth, window.innerHeight);
       },
       onDrag: ({ movement: [, my] }) => {
@@ -83,7 +83,7 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         }
       },
       onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
-        const claimed = claimedRef.current || isAlertRinging();
+        const claimed = claimedRef.current || isScreenHeld();
         claimedRef.current = false;
         if (claimed) {
           zoneRef.current = 'inner';
@@ -117,7 +117,7 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         pinchFired.current = false;
       },
       onPinch: ({ movement: [dScale] }) => {
-        if (pinchFired.current || isAlertRinging()) return;
+        if (pinchFired.current || isScreenHeld()) return;
         // movement is per-gesture (offset is cumulative across gestures and
         // would instantly re-trigger every pinch after the first pinch-in).
         if (dScale < -(1 - PINCH_IN_THRESHOLD)) {

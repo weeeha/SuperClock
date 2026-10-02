@@ -80,4 +80,34 @@ describe('alert store', () => {
     s.getState().schedule(alert());
     expect(s.getState().scheduled).toHaveLength(1);
   });
+
+  it('keeps the optional ring, brightness and lead fields', () => {
+    const mem = memory();
+    const a = createAlertStore(mem);
+    a.getState().schedule(alert({ ringMs: 900_000, bright: true, leadMs: 600_000 }));
+    expect(createAlertStore(mem).getState().scheduled[0]).toMatchObject({ ringMs: 900_000, bright: true, leadMs: 600_000 });
+  });
+
+  it('loads files written before the lead window existed', () => {
+    const mem = memory();
+    mem.data.set(ALERTS_STORAGE_KEY, JSON.stringify({ scheduled: [alert()], ringing: null }));
+    expect(createAlertStore(mem).getState()).toMatchObject({ leading: null, leadHidden: false, scheduled: [{ id: 'a' }] });
+  });
+
+  it('sets and hides the lead, and clears it when that alert fires or is cancelled', () => {
+    const s = createAlertStore(memory());
+    s.getState().schedule(alert({ id: 'a', leadMs: 1000 }));
+    s.getState().schedule(alert({ id: 'b', leadMs: 1000 }));
+    s.getState().setLeading('a');
+    s.getState().hideLead();
+    expect(s.getState()).toMatchObject({ leading: 'a', leadHidden: true });
+    s.getState().setLeading('b');
+    expect(s.getState()).toMatchObject({ leading: 'b', leadHidden: false });
+    s.getState().fire('b', 1000);
+    expect(s.getState().leading).toBeNull();
+    s.getState().dismiss();
+    s.getState().setLeading('a');
+    s.getState().cancel('a');
+    expect(s.getState().leading).toBeNull();
+  });
 });

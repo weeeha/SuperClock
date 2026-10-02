@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { MAX_TIMEOUT_MS, planNext, useAlertScheduler } from './scheduler';
+import { MAX_TIMEOUT_MS, leadCandidate, planNext, useAlertScheduler } from './scheduler';
 import { RING_MS, useAlerts, type ScheduledAlert, type RingingAlert } from './alert-store';
 
 const a = (id: string, firesAt: number): ScheduledAlert => ({ id, appId: 'timer', firesAt, sound: false, payload: {} });
@@ -29,13 +29,32 @@ describe('planNext', () => {
   it('is idle once settled, until dismissed', () => {
     expect(planNext([a('x', 0)], ringingAt(0, true), RING_MS * 2)).toEqual({ kind: 'idle' });
   });
+  it('settles at the ring length the alert carries', () => {
+    const r = { ...ringingAt(0), ringMs: 15 * 60_000 };
+    expect(planNext([], r, 6 * 60_000)).toEqual({ kind: 'wait', ms: 9 * 60_000 });
+    expect(planNext([], r, 15 * 60_000)).toEqual({ kind: 'settle' });
+  });
+  it('wakes for a lead start before the fire time', () => {
+    expect(planNext([{ ...a('x', 10_000), leadMs: 4000 }], null, 1000)).toEqual({ kind: 'wait', ms: 5000 });
+  });
+});
+
+describe('leadCandidate', () => {
+  it('is the earliest alert whose lead window contains now', () => {
+    const x = { ...a('x', 10_000), leadMs: 5000 };
+    const y = { ...a('y', 8000), leadMs: 5000 };
+    expect(leadCandidate([x, y], 2000)).toBeNull();
+    expect(leadCandidate([x, y], 6000)).toEqual(y);
+    expect(leadCandidate([x, a('z', 7000)], 6000)).toEqual(x);
+    expect(leadCandidate([x], 10_000)).toBeNull();
+  });
 });
 
 describe('useAlertScheduler', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(100_000);
-    useAlerts.setState({ scheduled: [], ringing: null });
+    useAlerts.setState({ scheduled: [], ringing: null, leading: null, leadHidden: false });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -75,5 +94,16 @@ describe('useAlertScheduler', () => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
     act(() => document.dispatchEvent(new Event('visibilitychange')));
     expect(useAlerts.getState().ringing?.id).toBe('t');
+  });
+
+  it('marks the lead at its start and clears it when the alert fires', () => {
+    renderHook(() => useAlertScheduler());
+    act(() => useAlerts.getState().schedule({ ...a('t', 100_000 + 10_000), leadMs: 4000 }));
+    expect(useAlerts.getState().leading).toBeNull();
+    act(() => vi.advanceTimersByTime(6000));
+    expect(useAlerts.getState().leading).toBe('t');
+    act(() => vi.advanceTimersByTime(4000));
+    expect(useAlerts.getState().ringing?.id).toBe('t');
+    expect(useAlerts.getState().leading).toBeNull();
   });
 });

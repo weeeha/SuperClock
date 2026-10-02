@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useDeviceConfig } from './device-config';
 import { useNavigation } from './navigation';
 import { loadLocalConfig } from '../shared/local-config';
-import { isAlertRinging } from './alerts/alert-store';
+import { isScreenHeld } from './alerts/alert-store';
 import type { DeviceConfig } from '../shared/types';
 
 // 30-second cooldown after any user gesture before auto-rotation resumes.
@@ -71,7 +71,7 @@ export function usePlaylistAutoRotate(): void {
     }
 
     const tick = () => {
-      if (!shouldAdvance(Date.now(), useNavigation.getState().lastGestureMs, isAlertRinging())) return;
+      if (!shouldAdvance(Date.now(), useNavigation.getState().lastGestureMs, isScreenHeld())) return;
       goto((positionRef.current + 1) % items.length);
     };
 

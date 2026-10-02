@@ -15,14 +15,14 @@
 import { useEffect } from 'react';
 import { useNavigation } from '../navigation';
 import { isPlaylistDriving } from '../playlist';
-import { isAlertRinging } from '../alerts/alert-store';
+import { isScreenHeld } from '../alerts/alert-store';
 
 export const OVERLAY_IDLE_MS = 20_000;
 export const HOME_IDLE_MS = 5 * 60_000;
 
 /** Exported for tests — one idle sweep against the nav store. */
 export function checkIdle(): void {
-  if (isAlertRinging()) return; // the alert owns the screen until dismissed
+  if (isScreenHeld()) return; // an alert or a lead view owns the screen
   const nav = useNavigation.getState();
   if (nav.lastGestureMs === 0) return;
   const idle = Date.now() - nav.lastGestureMs;
