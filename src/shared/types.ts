@@ -2,6 +2,8 @@
 // Wire format for /api/admin/* and /api/device/* lives here.
 // See docs/admin/foundation.md for the conceptual model.
 
+import type { SkinId } from './skins';
+
 export type DeviceId =
   | 'superclock-fast'
   | 'superclock-small'
@@ -104,6 +106,8 @@ export interface DeviceConfig {
     // Radar presence wake/sleep (A121 module). Only meaningful on the device
     // the sensor is attached to; ignored when /api/radar reports unavailable.
     presence?: { enabled?: boolean; absentAfterMin?: number };
+    // Kiosk app skin (src/shared/skins.ts). Unset = today's look.
+    skin?: SkinId;
   };
   updatedAt: string;
 }

@@ -9,6 +9,10 @@
      across day/night: overlay chrome is dark in both palettes. */
   --color-sheet: #171717;
   --font-family-display: 'Inter', system-ui, sans-serif;
+  /* Fields skin type (src/shared/skins.ts): Fraunces for words, Nunito for
+     numbers. Both bundled (OFL) so a Pi never needs a font CDN. */
+  --font-fields-serif: 'Fraunces Variable', Georgia, serif;
+  --font-fields-num: 'Nunito Variable', system-ui, sans-serif;
 }
 
 /* Soft cross-fade for the theme flip. Applied per themed element. */

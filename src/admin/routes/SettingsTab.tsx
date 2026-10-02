@@ -9,6 +9,7 @@ import { useDeviceId, useDeviceStatus, deviceDisplayName } from '../lib/device-s
 import { STATIC_DEVICE_INFO } from '../../shared/capabilities';
 import { DEFAULT_ACCENT } from '../../shared/types';
 import type { DeviceConfig, FeatureFlag } from '../../shared/types';
+import { SKIN_IDS, SKIN_LABELS, type SkinId } from '../../shared/skins';
 
 // Settings tab (wf/7): grouped rows with current values in subtitles.
 // Identity / Display / Night & Sleep — rows edit inline, one save mutation
@@ -141,6 +142,9 @@ export default function SettingsTab() {
   const gateNote = (flag: FeatureFlag, value: ReactNode) =>
     has(flag) ? value : 'not available on this clock';
 
+  // Skins are a kiosk (React) concept; the LVGL clock draws its own face.
+  const skinnable = info.kind === 'kiosk';
+
   const dirty = JSON.stringify(working) !== JSON.stringify(initial);
   const sleepEnabled = Boolean(working.sleepSchedule);
   const nightEnabled = Boolean(working.night);
@@ -208,6 +212,34 @@ export default function SettingsTab() {
             </div>
           }
         />
+
+        <Row
+          title="App skin"
+          subtitle={
+            skinnable
+              ? 'Classic is today’s look. Apps without a Fields design keep Classic.'
+              : 'not available on this clock'
+          }
+        >
+          <div className="flex gap-2" role="group" aria-label="App skin">
+            {([undefined, ...SKIN_IDS] as Array<SkinId | undefined>).map((k) => (
+              <button
+                key={k ?? 'classic'}
+                type="button"
+                aria-pressed={working.skin === k}
+                onClick={() => skinnable && writable && setWorking({ ...working, skin: k })}
+                disabled={!skinnable || !writable}
+                className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50 ${
+                  working.skin === k
+                    ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+                    : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
+                }`}
+              >
+                {k ? SKIN_LABELS[k] : 'Classic'}
+              </button>
+            ))}
+          </div>
+        </Row>
 
         <Row
           title="Brightness"

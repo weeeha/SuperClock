@@ -6,6 +6,8 @@ import { useWeather } from './useWeather';
 import { dialFor } from './dials';
 import Dial from './Dial';
 import NowPage from './NowPage';
+import FieldsWeather from './FieldsWeather';
+import { useSkin } from '../../core/skin';
 
 export default function WeatherApp({ isActive, config }: AppProps) {
   // safeParse, not parse: a malformed fleet config must not white-screen a
@@ -27,7 +29,10 @@ export default function WeatherApp({ isActive, config }: AppProps) {
   // The raw config goes in, not `cfg`: resolveWeatherQuery has to distinguish
   // "operator chose celsius" from "operator chose nothing", and zod's
   // `.default()` erases that difference (see weather-config.ts).
-  const { model, label, offline } = useWeather(config, isActive);
+  const { model, label, offline, updatedAt, unconfigured } = useWeather(config, isActive);
+  // Fields skin: only the Now page has a Fields renderer so far; the dial
+  // pages keep today's look until they get one (skins spec, decision 3).
+  const fields = useSkin() === 'fields';
 
   // A trimmed page list (config pushed mid-session) can strand `page` past
   // the new end — clamp on read rather than syncing it back via an effect
@@ -82,6 +87,15 @@ export default function WeatherApp({ isActive, config }: AppProps) {
     const id = setTimeout(() => setPage(0), cfg.idleReturnSeconds * 1000);
     return () => clearTimeout(id);
   }, [isActive, safePage, cfg.idleReturnSeconds]);
+
+  const fieldsNow = (
+    <FieldsWeather model={model} label={label} offline={offline} updatedAt={updatedAt}
+                   unconfigured={unconfigured} page={safePage} pageCount={pages.length} />
+  );
+
+  if (fields && (!model || pages[safePage] === 'now')) {
+    return <div className="relative h-full w-full overflow-hidden bg-black">{fieldsNow}</div>;
+  }
 
   if (!model) {
     return (

@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { ALL_DEVICE_IDS, type DeviceConfig } from './types';
+import { SKIN_IDS } from './skins';
 
 // Fleet schema version, bumped alongside a migrateFleet step in
 // server/fleet-store.ts whenever stored config must be rewritten. Lives here
@@ -45,6 +46,9 @@ export const deviceSettingsSchema = z
       })
       .strict()
       .optional(),
+    // Kiosk app skin. Optional so configs stored before it existed stay valid
+    // and an admin that predates it does not drop a value it never sent.
+    skin: z.enum(SKIN_IDS).optional(),
   })
   .strict();
 

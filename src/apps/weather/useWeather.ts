@@ -31,6 +31,12 @@ export interface WeatherState {
   model: WeatherModel | null;
   label: string;
   offline: boolean;
+  /** When the model on screen was fetched. Lets a stale screen say how old
+   *  it is ("Offline since 13:40") instead of passing it off as live. */
+  updatedAt: Date | null;
+  /** No coordinates and no place in config or env: nothing to fetch. Distinct
+   *  from offline, which means a fetch was tried and failed. */
+  unconfigured: boolean;
 }
 
 /** Fetches once on mount (and whenever the resolved query changes), then
@@ -43,6 +49,7 @@ export function useWeather(
   const [model, setModel] = useState<WeatherModel | null>(null);
   const [label, setLabel] = useState('');
   const [offline, setOffline] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
   // The pushed device config wins; the VITE_ vars are only a fallback.
   // `config`'s identity is stable between polls (see local-config.ts), so this
@@ -78,6 +85,7 @@ export function useWeather(
         setModel(parseForecast(json, new Date()));
         setLabel(resolvedLabel);
         setOffline(false);
+        setUpdatedAt(new Date());
       } catch (err) {
         if (isCancelled()) return;
         console.warn('Weather fetch failed:', (err as Error).message);
@@ -109,5 +117,5 @@ export function useWeather(
     };
   }, [isActive, load]);
 
-  return { model, label, offline };
+  return { model, label, offline, updatedAt, unconfigured: !query.coords && !query.place };
 }

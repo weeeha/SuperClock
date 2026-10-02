@@ -82,6 +82,10 @@ const HAND_PAIRS: Array<[string, string]> = [
   ['--face-ink-muted', '--face-bg'],
   ['--face-ink', '--face-plate'],
   ['--sheet-ink', '--color-sheet'],
+  // Fields skin, Weather: black ink on the blue disc and on its panel by day,
+  // the hue on black and on the night panel at night.
+  ['--fields-weather-ink', '--fields-weather'],
+  ['--fields-weather-ink', '--fields-weather-panel'],
 ];
 
 /** Every --surface-* role declared in tier 2, crossed with both generic ink

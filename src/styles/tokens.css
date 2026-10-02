@@ -37,6 +37,16 @@
   --dusk-light: #8fa9c4;
   --dusk-dark: #2b3d52;
 
+  /* Fields skin, Weather's category hue (src/shared/skins.ts). The suffix is
+     the hue's brightness as a percentage, scaled toward black: 84 and 66 are
+     the day panel and track, 90, 24 and 14 the night ink, track and panel. */
+  --field-blue: #5b8cff;
+  --field-blue-90: #527ee6;
+  --field-blue-84: #4c76d6;
+  --field-blue-66: #3c5ca8;
+  --field-blue-24: #16223d;
+  --field-blue-14: #0d1424;
+
   /* Pure neutral, the admin's ramp. HSL triplets, see the header. */
   --gray-4: 0 0% 4%;
   --gray-7: 0 0% 7%;
@@ -134,6 +144,14 @@
      contrast pair could check it against. */
   --sheet-ink: var(--gray-100);
   --fill-knob: var(--scrim-knob);
+
+  /* Fields skin, Weather (src/apps/weather/FieldsWeather.tsx). By day the
+     disc is the category hue and every mark is black ink; the panel and the
+     empty bar track are the hue scaled toward black. */
+  --fields-weather: var(--field-blue);
+  --fields-weather-ink: var(--stone-1000);
+  --fields-weather-panel: var(--field-blue-84);
+  --fields-weather-track: var(--field-blue-66);
 }
 
 html.dark {
@@ -170,4 +188,11 @@ html.dark {
      there. */
   --sheet-ink: var(--gray-100);
   --fill-knob: var(--scrim-knob);
+
+  /* Fields skin at night: the disc goes black and the hue becomes the ink.
+     90%, not the 85% first drawn: 85% read 4.3:1 against the night panel. */
+  --fields-weather: var(--stone-1000);
+  --fields-weather-ink: var(--field-blue-90);
+  --fields-weather-panel: var(--field-blue-14);
+  --fields-weather-track: var(--field-blue-24);
 }
