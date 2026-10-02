@@ -16,3 +16,4 @@ import './todo';
 import './countdown';
 import './timer';
 import './ai-face';
+import './alarm';

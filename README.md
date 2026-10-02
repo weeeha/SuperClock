@@ -17,6 +17,7 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 
 - `agents` — chat with your life-OS agents (mock provider today)
 - `ai-face` — an animated assistant face from the AI-Avatars designs (demo or fixed state today)
+- `alarm` — alarms you set on the clock; the panel wakes and brightens before they ring
 - `breathing` — respiration rate from the A121 mmWave radar
 - `calendar` — today's date and upcoming events from an iCal feed
 - `claude-usage` — session and weekly Claude Code rate-limit utilization, with the Clawd sprite

@@ -30,6 +30,7 @@ import { weatherAppSchema, weatherAppMeta } from './schemas/app.weather';
 import { countdownAppSchema, countdownAppMeta } from './schemas/app.countdown';
 import { timerAppSchema, timerAppMeta } from './schemas/app.timer';
 import { aiFaceAppSchema, aiFaceAppMeta } from './schemas/app.ai-face';
+import { alarmAppSchema, alarmAppMeta } from './schemas/app.alarm';
 
 // Faces
 import { analogFaceSchema, analogFaceMeta } from './schemas/face.analog';
@@ -78,6 +79,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'app.countdown': { schema: countdownAppSchema, meta: countdownAppMeta },
   'app.timer': { schema: timerAppSchema, meta: timerAppMeta },
   'app.ai-face': { schema: aiFaceAppSchema, meta: aiFaceAppMeta },
+  'app.alarm': { schema: alarmAppSchema, meta: alarmAppMeta },
 
   // Faces
   'face.analog': { schema: analogFaceSchema, meta: analogFaceMeta },
