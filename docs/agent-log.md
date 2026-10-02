@@ -71,6 +71,20 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 ---
 
+## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Countdown and the Weather dial pages in Fields v2, deployed to fastclock
+
+Nick: "1 2 3" = Countdown in Fields v2 (draw first), set up the calendar feed on fastclock, Weather's other pages in Fields.
+
+**Design** (Figma section `63:2`, row 2): Countdown days `71:2` and ring `71:19`; Weather temperature `71:39`, rain `71:68`, wind `71:97`, UV `71:128`.
+
+**Code** (`e404cd9`): `src/apps/countdown/FieldsCountdown.tsx` (+ tests): pink field (`--fields-countdown*`, deep #c2185b, night = black disc with pink ink, two contrast pairs), label as the title, Nunito Black count, "N days to go|since", long date, rim ring for the progress-ring style, soft ink after the date. On the day the headline is "The day is here", because the title already carries the label (Classic repeats it in its line; Fields would have shown it twice). `amount()` in `countdown-copy.ts` is now exported. `src/apps/weather/fields-metric.ts` (+ tests) turns a dial page into hero/headline/subline/12-hour chart using Classic's `dialFor` text; `FieldsWeatherMetric` in `FieldsWeather.tsx` draws it; WeatherApp routes every non-Now page to it when the skin is fields. Chart scales are fixed per quantity: rain 0-100%, UV 0 to max(11, peak), wind 0 to max(40 km/h, peak). Before that, bars scaled to the day's own peak and a 9% chance drew as a full bar. `hoursFromNow()` lays the current reading over hour 0, so the Now column agrees with the hero (it showed 15° under a 16° hero, and 7 under 6 km/h). This also changes the shipped Now page panel. Gates green, 1152 tests.
+
+**Verified:** dev kiosk at 1080 (dev-alt, five temporary countdown instances in the gitignored local `config/fleet.json`, restored afterwards; `updatedAt` must change or the kiosk keeps its cached config): Countdown days/ring/today/since/not-set-up in day, plus night; Weather temp/conditions/rain/wind/UV in day, conditions at night. Deployed to fastclock (health `e404cd9`), Chromium restarted; on glass (playlist rotation 3600 then back to null, backup `config/fleet.json.bak-before-rotation`) Weather Now shows Now 16° under the 16° hero: `docs/design/2026-10-02-fields-weather-now-on-glass-e404cd9.png`.
+
+**Open:** fastclock has no Countdown instance, so on glass it shows "No date yet" until one is set in the admin. The dial pages need a swipe on the panel to be seen there. Calendar feed: no `CALENDAR_ICS_URL` anywhere; the unit reads `~/SuperClock/.env`, the URL is Nick's secret to paste. Timer waits for `claude/alerts-timer`.
+
+---
+
 ## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Calendar cover in Fields v2, deployed to fastclock
 
 Nick: next apps to Fields v2. Timer is not on this branch (it is being built on `claude/alerts-timer`), so Calendar went first.
