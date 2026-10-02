@@ -61,6 +61,12 @@
   --field-red-night-soft: #e0899a;
   --field-red-night-plate: #38040d;
 
+  /* Fields skin v2, Countdown: deep pink ("your dates"), no panel. */
+  --field-pink-deep: #c2185b;
+  --field-pink-mist: #ffe0ec;
+  --field-pink-night-ink: #ffd6e6;
+  --field-pink-night-soft: #e08aae;
+
   /* Pure neutral, the admin's ramp. HSL triplets, see the header. */
   --gray-4: 0 0% 4%;
   --gray-7: 0 0% 7%;
@@ -176,6 +182,11 @@
   --fields-calendar-ink: var(--stone-0);
   --fields-calendar-ink-soft: var(--field-red-mist);
   --fields-calendar-panel: var(--field-red-plate);
+
+  /* Fields skin, Countdown (src/apps/countdown/FieldsCountdown.tsx). */
+  --fields-countdown: var(--field-pink-deep);
+  --fields-countdown-ink: var(--stone-0);
+  --fields-countdown-ink-soft: var(--field-pink-mist);
 }
 
 html.dark {
@@ -225,4 +236,7 @@ html.dark {
   --fields-calendar-ink: var(--field-red-night-ink);
   --fields-calendar-ink-soft: var(--field-red-night-soft);
   --fields-calendar-panel: var(--field-red-night-plate);
+  --fields-countdown: var(--stone-1000);
+  --fields-countdown-ink: var(--field-pink-night-ink);
+  --fields-countdown-ink-soft: var(--field-pink-night-soft);
 }

@@ -3,6 +3,8 @@ import type { AppProps } from '../../core/types';
 import { countdownAppSchema } from '../../shared/schemas/app.countdown';
 import { countdownState, localToday, msUntilNextLocalMidnight, type RingView } from './countdown-state';
 import { countdownCopy } from './countdown-copy';
+import FieldsCountdown from './FieldsCountdown';
+import { useSkin } from '../../core/skin';
 
 // Ring geometry in the 1000-unit disc: outer edge at radius 460, inside the glass.
 const R = 447;
@@ -65,8 +67,11 @@ export default function CountdownApp({ isActive, config }: AppProps) {
 
   const view = countdownState(today, cfg);
   const copy = countdownCopy(view, cfg);
+  const fields = useSkin() === 'fields';
   const ring = view.kind !== 'not-set-up' && view.ring && !('missingStart' in view.ring) ? view.ring : null;
   const ink = copy.muted ? 'text-(--face-ink-muted)' : 'text-(--face-ink)';
+
+  if (fields) return <FieldsCountdown view={view} config={cfg} />;
 
   if (view.kind === 'not-set-up') {
     return (

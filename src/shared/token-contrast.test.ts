@@ -90,6 +90,8 @@ const HAND_PAIRS: Array<[string, string]> = [
   ['--fields-calendar-ink', '--fields-calendar'],
   ['--fields-calendar-ink', '--fields-calendar-panel'],
   ['--fields-calendar-ink-soft', '--fields-calendar'],
+  ['--fields-countdown-ink', '--fields-countdown'],
+  ['--fields-countdown-ink-soft', '--fields-countdown'],
 ];
 
 /** Every --surface-* role declared in tier 2, crossed with both generic ink

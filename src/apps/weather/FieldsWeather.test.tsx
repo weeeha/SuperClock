@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import FieldsWeather, { type FieldsWeatherProps } from './FieldsWeather';
+import FieldsWeather, { FieldsWeatherMetric, type FieldsWeatherProps } from './FieldsWeather';
 import type { HourSample, WeatherModel } from './weather-utils';
 
 afterEach(cleanup);
@@ -85,5 +85,36 @@ describe('FieldsWeather', () => {
     const dots = [...container.querySelectorAll('circle')].filter((c) => c.getAttribute('r') === '6');
     expect(dots).toHaveLength(6);
     expect(dots.map((d) => d.getAttribute('opacity'))).toEqual(['0.35', '0.35', '1', '0.35', '0.35', '0.35']);
+  });
+});
+
+describe('FieldsWeatherMetric', () => {
+  const metric = { model: MODEL, label: 'Montréal', offline: false, updatedAt: base.updatedAt, pageIndex: 3, pageCount: 6 };
+
+  it('rain: chance now, the change line, and cyan bars only where it is wet', () => {
+    const { container } = render(<FieldsWeatherMetric {...metric} page="precip" />);
+    expect(screen.getByText('Rain')).toBeTruthy();
+    // 10% twice by design: the hero, and the label over the Now bar.
+    const tens = screen.getAllByText('10%');
+    expect(tens.map((t) => t.getAttribute('font-size'))).toEqual(['280', '24']);
+    expect(screen.getByText('Rain from 15:00')).toBeTruthy();
+    const bars = [...container.querySelectorAll('rect[rx="11"]')];
+    expect(bars).toHaveLength(7); // the fixture holds seven hours
+    const wet = bars.filter((b) => (b.getAttribute('style') ?? '').includes('--fields-weather-drop'));
+    expect(wet).toHaveLength(4); // 60, 80, 90, 70
+    // Bars sit on a 0-100 scale: 90% is 108 of the 120 units, not the full height.
+    expect(bars.map((b) => Number(b.getAttribute('height')))).toContain(108);
+  });
+
+  it('temperature draws dots, not bars (degrees have no zero)', () => {
+    const { container } = render(<FieldsWeatherMetric {...metric} page="temp" />);
+    expect(screen.getByText('Temperature')).toBeTruthy();
+    expect(container.querySelectorAll('circle[r="10"]')).toHaveLength(7);
+    expect(container.querySelectorAll('rect[rx="11"]')).toHaveLength(0);
+  });
+
+  it('says how old a stale dial page is', () => {
+    render(<FieldsWeatherMetric {...metric} page="wind" offline />);
+    expect(screen.getByText('Offline since 13:40')).toBeTruthy();
   });
 });

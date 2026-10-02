@@ -14,7 +14,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
-function amount(view: Extract<CountdownView, { kind: 'until' | 'since' }>): string {
+/** "days", "weeks", or "weeks, 3 days": the unit phrase after the number. */
+export function amount(view: Extract<CountdownView, { kind: 'until' | 'since' }>): string {
   if (view.unit === 'days') return plural(view.value, 'day', 'days');
   const weeks = plural(view.value, 'week', 'weeks');
   if (view.remainderDays === 0) return weeks;

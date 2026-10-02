@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MapPin, WifiOff } from 'lucide-react';
+import { CloudSun, Droplet, MapPin, Sun, Thermometer, WifiOff, Wind } from 'lucide-react';
 import {
   FieldsDisc, Headline, HeroGlyph, OutlineChip, Subline, TitleRow, type FieldsRoles,
 } from '../../core/fields';
@@ -7,6 +7,7 @@ import { C, useTextWidth } from '../../core/fields-util';
 import ConditionMark, { type MarkPalette } from './ConditionMark';
 import { codeMark, type WeatherModel } from './weather-utils';
 import { rainPhrase } from './rain-phrase';
+import { fieldsMetric, hoursFromNow, type FieldsChart, type MetricPage } from './fields-metric';
 
 // Weather's Now screen in the Fields skin (src/shared/skins.ts), v2: the
 // watchOS look Nick asked for on 2026-10-02 ("icons, bolder font, Apple Watch
@@ -104,7 +105,7 @@ function ChangeLine({ text }: { text: string }) {
  *  when it matters. Everything on the panel uses the full ink (the soft ink
  *  reads 3.6:1 there). */
 function HourlyPanel({ model }: { model: WeatherModel }) {
-  const hours = model.hours.slice(0, HOURS_SHOWN);
+  const hours = hoursFromNow(model, HOURS_SHOWN);
   // The panel hugs its rows: without a rain-chance row it ends below the temps.
   const withPrecip = hours.some((h) => h.precipProb >= SHOW_PRECIP_FROM);
   return (
@@ -202,6 +203,113 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
     <FieldsDisc roles={ROLES} summary={summary} page={page} pageCount={pageCount}>
       <Header title={title} located={located} />
       {body}
+    </FieldsDisc>
+  );
+}
+
+const METRIC_GLYPH = { temp: Thermometer, conditions: CloudSun, precip: Droplet, wind: Wind, uv: Sun } as const;
+const ACCENT = { drop: MARKS.drop, sun: MARKS.sun } as const;
+
+/** The 12-hour chart on the platter. Bars start at zero; temperature uses
+ *  dots, since degrees have no zero to stand a bar on. */
+function Chart({ chart, hourCodes }: { chart: FieldsChart; hourCodes: { code: number; isDay: boolean }[] }) {
+  const cw = 56;
+  const x = (i: number) => 232 + cw * i;
+  const base = 842;
+  const label = (cx: number, y: number, text: string | null, weight = 800) =>
+    text && (
+      <text key={`${cx}-${y}`} x={cx} y={y} textAnchor="middle" dominantBaseline="central" fontSize="24"
+            fontWeight={weight} className="font-fields-num" style={{ fill: INK }}>
+        {text}
+      </text>
+    );
+  let marks: ReactNode;
+  if (chart.kind === 'marks') {
+    marks = hourCodes.map((h, i) => <Mark key={i} code={h.code} isDay={h.isDay} cx={x(i)} cy={772} size={48} />);
+  } else if (chart.kind === 'dots') {
+    const min = Math.min(...chart.values);
+    const span = Math.max(...chart.values) - min || 1;
+    const y = (v: number) => base - 10 - ((v - min) / span) * 100;
+    const pts = chart.values.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+    marks = (
+      <>
+        <polyline points={pts} fill="none" strokeWidth={4} strokeLinejoin="round" opacity={0.5} style={{ stroke: INK }} />
+        {chart.values.map((v, i) => (
+          <g key={i}>
+            <circle cx={x(i)} cy={y(v)} r={10} style={{ fill: INK }} />
+            {label(x(i), y(v) - 32, chart.valueLabels[i])}
+          </g>
+        ))}
+      </>
+    );
+  } else {
+    const max = chart.max ?? Math.max(...chart.values, 1);
+    marks = chart.values.map((v, i) => {
+      const h = Math.max(14, (v / max) * 120);
+      const hot = chart.accent && chart.accentFrom !== undefined && v >= chart.accentFrom;
+      return (
+        <g key={i}>
+          <rect x={x(i) - 11} y={base - h} width={22} height={h} rx={11}
+                style={{ fill: hot && chart.accent ? ACCENT[chart.accent] : INK }} />
+          {label(x(i), base - h - 22, chart.valueLabels[i])}
+        </g>
+      );
+    });
+  }
+  return (
+    <g>
+      <rect x={180} y={644} width={720} height={270} rx={64} style={{ fill: PANEL }} />
+      {marks}
+      {chart.hourLabels.map((t, i) => label(x(i), 878, t, i === 0 ? 900 : 800))}
+    </g>
+  );
+}
+
+export interface FieldsWeatherMetricProps {
+  page: MetricPage;
+  model: WeatherModel;
+  label: string;
+  offline: boolean;
+  updatedAt: Date | null;
+  pageIndex: number;
+  pageCount: number;
+}
+
+/** A dial page (temperature, conditions, rain, wind, UV) in the Fields skin:
+ *  the same top half as Now, with a 12-hour chart on the platter. */
+export function FieldsWeatherMetric({ page, model, label, offline, updatedAt, pageIndex, pageCount }: FieldsWeatherMetricProps) {
+  const m = fieldsMetric(page, model);
+  const Glyph = METRIC_GLYPH[page];
+  const stale = offline && updatedAt !== null;
+  const hours = hoursFromNow(model, 12);
+  const summary =
+    `${label ? `${label}, ` : ''}${m.title}: ${m.hero}, ${m.headline}. ${m.subline}.` +
+    (stale && updatedAt ? ` Offline since ${hhmm(updatedAt)}.` : '');
+  return (
+    <FieldsDisc roles={ROLES} summary={summary} page={pageIndex} pageCount={pageCount}>
+      <TitleRow
+        roles={ROLES}
+        title={m.title}
+        leadWidth={56}
+        lead={(x0) => (
+          <g style={{ color: INK }}>
+            <Glyph x={x0} y={122} width={40} height={40} strokeWidth={2.6} />
+          </g>
+        )}
+      />
+      <g opacity={stale ? STALE_OPACITY : 1}>
+        <text x={C} y={367} textAnchor="middle" dominantBaseline="central" fontSize="280" fontWeight={900}
+              letterSpacing="-8.4" className="font-fields-num" style={{ fill: INK }}>
+          {m.hero}
+        </text>
+      </g>
+      <Headline roles={ROLES} y={514}>{m.headline}</Headline>
+      {stale && updatedAt
+        ? <OutlineChip roles={ROLES} text={`Offline since ${hhmm(updatedAt)}`} cy={578} />
+        : <Subline roles={ROLES} y={574}>{m.subline}</Subline>}
+      <g opacity={stale ? STALE_OPACITY : 1}>
+        <Chart chart={m.chart} hourCodes={hours} />
+      </g>
     </FieldsDisc>
   );
 }

@@ -6,7 +6,7 @@ import { useWeather } from './useWeather';
 import { dialFor } from './dials';
 import Dial from './Dial';
 import NowPage from './NowPage';
-import FieldsWeather from './FieldsWeather';
+import FieldsWeather, { FieldsWeatherMetric } from './FieldsWeather';
 import { useSkin } from '../../core/skin';
 
 export default function WeatherApp({ isActive, config }: AppProps) {
@@ -30,8 +30,7 @@ export default function WeatherApp({ isActive, config }: AppProps) {
   // "operator chose celsius" from "operator chose nothing", and zod's
   // `.default()` erases that difference (see weather-config.ts).
   const { model, label, offline, updatedAt, unconfigured } = useWeather(config, isActive);
-  // Fields skin: only the Now page has a Fields renderer so far; the dial
-  // pages keep today's look until they get one (skins spec, decision 3).
+  // Fields skin: every page has a Fields renderer (Now, plus the dial pages).
   const fields = useSkin() === 'fields';
 
   // A trimmed page list (config pushed mid-session) can strand `page` past
@@ -95,6 +94,17 @@ export default function WeatherApp({ isActive, config }: AppProps) {
 
   if (fields && (!model || pages[safePage] === 'now')) {
     return <div className="relative h-full w-full overflow-hidden bg-black">{fieldsNow}</div>;
+  }
+  if (fields && model) {
+    const metricPage = pages[safePage];
+    if (metricPage !== 'now') {
+      return (
+        <div className="relative h-full w-full overflow-hidden bg-black">
+          <FieldsWeatherMetric page={metricPage} model={model} label={label} offline={offline}
+                               updatedAt={updatedAt} pageIndex={safePage} pageCount={pages.length} />
+        </div>
+      );
+    }
   }
 
   if (!model) {
