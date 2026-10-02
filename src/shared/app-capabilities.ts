@@ -42,5 +42,6 @@ export const APP_CAPABILITIES: Record<string, readonly AppCapability[]> = {
   // The per-second readout interval, gated on isActive. The alert itself is core.
   timer: ['ticks'],
   'ai-face': ['ticks'],
-  alarm: [],
+  // The per-minute countdown interval (gated on isActive) and the resting ⇅ list swipe slot.
+  alarm: ['ticks', 'multiView'],
 };

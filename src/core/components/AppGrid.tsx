@@ -25,6 +25,7 @@ const appFaces: { id: string; src: string }[] = [
   { id: 'countdown',       src: '/countdown-thumb.svg' },
   { id: 'timer',           src: '/timer-thumb.svg' },
   { id: 'ai-face',         src: '/avatars/assets/abstract/wheatley.png' },
+  { id: 'alarm',           src: '/alarm-thumb.svg' },
 ];
 
 // Arrange into columns matching Figma layout (489:30357)
@@ -32,7 +33,7 @@ const appFaces: { id: string; src: string }[] = [
 const columns = [
   [appFaces[0]],                          // Earth/Calendar (single)
   [appFaces[1], appFaces[2]],             // Quote, Space
-  [appFaces[3], appFaces[4], appFaces[5]], // Calendar, Productivity, Github
+  [appFaces[3], appFaces[4], appFaces[5], appFaces[18]], // Calendar, Productivity, Github, Alarm
   [appFaces[6], appFaces[7], appFaces[8], appFaces[9]], // Watchface, Abstract, Weather, Space
   [appFaces[10], appFaces[11], appFaces[0], appFaces[17]], // Clock, Relax, Gym, Timer
   [appFaces[1], appFaces[2], appFaces[15], appFaces[16]], // Photo, Habits, Todo, Countdown

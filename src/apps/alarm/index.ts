@@ -1,5 +1,7 @@
 import { lazy } from 'react';
 import { registerApp } from '../../core/registry';
+import { registerAlertView, registerLeadView } from '../../core/alerts/views';
+import { startAlarmSync } from './alarm-sync';
 
 registerApp({
   metadata: {
@@ -11,3 +13,9 @@ registerApp({
   },
   component: lazy(() => import('./AlarmApp')),
 });
+
+registerAlertView('alarm', lazy(() => import('./AlarmAlert')));
+registerLeadView('alarm', lazy(() => import('./AlarmLead')));
+
+// Keep one core alert per enabled alarm from boot, whichever app is showing.
+startAlarmSync();
