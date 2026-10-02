@@ -6,6 +6,8 @@ import { deviceConfigPatchSchema } from '../src/shared/device-config-schema';
 import type { DeviceConfig, DeviceState } from '../src/shared/types';
 import { resolveDeviceId } from './resolve-device';
 import { adminTokenMiddleware } from './admin-token';
+import { clampWake, isLoopback, wakeBodySchema } from './wake';
+import { wakePanelUntil } from './display-adapter';
 
 const router: Router = Router();
 
@@ -111,6 +113,23 @@ router.post('/config', adminTokenMiddleware, async (req, res) => {
     deviceId,
   }));
   res.json(updated);
+});
+
+// Keep the panel on while an alert rings or is about to. Loopback-only (the
+// kiosk on this Pi), not behind the admin token, clamped to 30 minutes.
+router.post('/wake', (req, res) => {
+  if (!isLoopback(req.socket.remoteAddress)) {
+    res.status(403).json({ error: 'wake is local only' });
+    return;
+  }
+  const parsed = wakeBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'invalid wake body' });
+    return;
+  }
+  const wakeUntil = clampWake(parsed.data.untilMs, Date.now());
+  wakePanelUntil(wakeUntil);
+  res.json({ wakeUntil });
 });
 
 export default router;

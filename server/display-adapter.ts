@@ -72,6 +72,9 @@ let cachedOutput: string | null = null;
 let appliedPoweredOn: boolean | null = null;
 // The most recent config we were handed — the schedule evaluator reads this.
 let latestConfig: DeviceConfig | null = null;
+// Until when the kiosk asked to keep the panel on (an alert ringing or about
+// to). 0 = no wake. Set through wakePanelUntil.
+let wakeUntil = 0;
 let scheduleTimer: ReturnType<typeof setInterval> | null = null;
 let logged = false;
 
@@ -193,7 +196,8 @@ async function runWlrRandr(args: string[], env: NodeJS.ProcessEnv): Promise<bool
 //     absentAfterMin), so the panel blanks when nobody is around;
 //   - inside the sleep window: normally off, but an approach wakes the panel
 //     until SLEEP_WAKE_LINGER_MS after presence is lost.
-function decidePower(config: DeviceConfig, now: Date): boolean {
+export function decidePower(config: DeviceConfig, now: Date, wakeUntilMs: number = wakeUntil): boolean {
+  if (now.getTime() < wakeUntilMs) return true;
   const { sleepSchedule, presence: presenceCfg } = config.settings;
   const inSleepWindow = isWithinWindow(
     sleepSchedule && { start: sleepSchedule.sleep, end: sleepSchedule.wake },
@@ -254,6 +258,14 @@ async function reconcile(config: DeviceConfig | null): Promise<void> {
 export function applyDisplaySettings(config: DeviceConfig): void {
   latestConfig = config;
   void reconcile(config);
+}
+
+// Called from POST /api/device/wake. Extends (never shortens) the current wake
+// and reconciles at once, rather than waiting up to SCHEDULE_TICK_MS. After it
+// expires the schedule tick returns the panel to its schedule.
+export function wakePanelUntil(untilMs: number): void {
+  wakeUntil = Math.max(wakeUntil, untilMs);
+  void reconcile(latestConfig);
 }
 
 // Called once from server startup. Loads the persisted config, attempts a
