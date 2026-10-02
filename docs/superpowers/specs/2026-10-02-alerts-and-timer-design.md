@@ -169,7 +169,7 @@ readout `text-[17vmin]` (`tabular-nums`), labels `text-[2.6vmin]`, captions `tex
 | # | Screen | Content | Input |
 |---|---|---|---|
 | 0 | **Set time** | "Set timer" caption above; readout `MM:SS`; up to 4 preset chips below ("5 min"; selected chip filled `--face-ink` with `--face-bg` text, others a `--face-ghost` hairline); a `--face-ghost` ring at r 380 with a `--face-ink` arc for the set duration | Drag in the dial band sets the duration; tap a chip; tap the readout to start |
-| 1 | **Running** | Ring at r 380: track `--face-ghost`, remaining arc `--color-accent` draining clockwise from 12, stepped each second with a 1 s linear `stroke-dashoffset` transition; readout; caption "of 5:00" | Tap: pause. Long-press 600 ms: reset |
+| 1 | **Running** | Ring at r 380: track `--face-ghost`, remaining arc `--color-accent` drawn clockwise from 12 and anchored there, its end retreating as time runs out (board frame 1; decided by Nick 2026-10-02), stepped each second with a 1 s linear `stroke-dasharray` transition; readout; caption "of 5:00" | Tap: pause. Long-press 600 ms: reset |
 | 2 | **Done · ringing** (alert view) | "00:00" and "Time's up" (board frame 2). The whole view alternates between the face palette and its inverse once a second (`alert-pulse`, 0.5 s each half). Under `prefers-reduced-motion` it holds the inverse without pulsing | Tap anywhere: dismiss |
 | 3 | **Paused** | Ring and readout in `--face-ink-muted`; caption "Paused" | Tap: resume. Long-press: reset |
 | 4 | **Done · settled** (alert view, after 5 min) | Still, muted: "Done at" / local `HH:MM` of `firedAt` / "Tap to clear" | Tap anywhere: dismiss |

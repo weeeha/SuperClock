@@ -19,8 +19,9 @@ const TONE: Record<Tone, string> = {
   muted: 'stroke-(--face-ink-muted)',
 };
 
-/** fraction of the circle drawn, ending at 12; `draining` starts it later so
- *  the empty part grows clockwise from 12 as time runs out. */
+/** fraction of the circle drawn clockwise from 12 (board frame 1): the arc
+ *  stays anchored at 12 and its end retreats as time runs out. `draining`
+ *  only animates the change, one step a second. */
 function Ring({ fraction, tone, draining }: { fraction: number; tone: Tone; draining: boolean }) {
   const f = Math.min(1, Math.max(0, fraction));
   return (
@@ -32,9 +33,9 @@ function Ring({ fraction, tone, draining }: { fraction: number; tone: Tone; drai
         r={R}
         strokeWidth="26"
         strokeDasharray={`${C * f} ${C}`}
-        strokeDashoffset={draining ? -C * (1 - f) : 0}
+        strokeDashoffset={0}
         transform="rotate(-90 500 500)"
-        className={`fill-none ${TONE[tone]} ${draining ? 'transition-[stroke-dasharray,stroke-dashoffset] duration-1000 ease-linear' : ''}`}
+        className={`fill-none ${TONE[tone]} ${draining ? 'transition-[stroke-dasharray] duration-1000 ease-linear' : ''}`}
       />
     </svg>
   );

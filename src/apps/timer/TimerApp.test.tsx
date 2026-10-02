@@ -66,6 +66,15 @@ describe('TimerApp', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('keeps the running arc anchored at 12, its end retreating as time runs out (board frame 1)', () => {
+    useTimer.setState({ state: { status: 'running', durationMs: 600_000, endsAt: Date.now() + 300_000 } });
+    const { container } = render(<TimerApp isActive config={config} />);
+    const arc = container.querySelectorAll('circle')[1];
+    const circumference = 2 * Math.PI * 380;
+    expect(Number(arc.getAttribute('stroke-dasharray')!.split(' ')[0])).toBeCloseTo(circumference / 2, 3);
+    expect(Number(arc.getAttribute('stroke-dashoffset'))).toBe(0);
+  });
+
   it('carries the dial band that claims its own drags', () => {
     const { container } = render(<TimerApp isActive config={config} />);
     expect(container.querySelector('[data-gesture="claim"]')).toBeTruthy();
