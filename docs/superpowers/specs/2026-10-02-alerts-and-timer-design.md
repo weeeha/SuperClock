@@ -53,17 +53,19 @@ export interface ScheduledAlert {
 }
 export interface RingingAlert extends ScheduledAlert {
   firedAt: number;                    // epoch ms
+  settled: boolean;                   // flipped by the scheduler RING_MS after firedAt
 }
 interface AlertState {
   scheduled: ScheduledAlert[];
   ringing: RingingAlert | null;
   schedule(alert: ScheduledAlert): void; // replaces an alert with the same id
   cancel(id: string): void;              // removes from scheduled; no-op if absent
-  fire(id: string, firedAt: number): void; // moves scheduled → ringing
+  fire(id: string, firedAt: number): void; // moves scheduled → ringing (settled: false)
+  settle(): void;                        // marks the ringing alert settled
   dismiss(): void;                       // clears ringing; counts as a user gesture
 }
 export const RING_MS = 5 * 60_000;
-export function ringPhase(alert: RingingAlert, now: number): 'ringing' | 'settled';
+export function ringPhase(alert: RingingAlert): 'ringing' | 'settled'; // reads `settled`
 ```
 
 - A zustand store persisted to localStorage key `superclock:alerts:v1`, validated with zod on
@@ -75,12 +77,14 @@ export function ringPhase(alert: RingingAlert, now: number): 'ringing' | 'settle
   not reset).
 - `dismiss()` calls `useNavigation.getState().noteUserGesture()`, so playlist rotation resumes
   after its normal 30-second cooldown.
-- `ringPhase` is `'ringing'` while `now − firedAt < RING_MS`, else `'settled'`.
+- `ringPhase` reads the `settled` flag. The scheduler sets it once `RING_MS` has passed since
+  `firedAt` (amended while planning: one clock owns every boundary).
 
 ### Scheduler — `useAlertScheduler()`
 
-Mounted once in `App.tsx`. It keeps exactly one `setTimeout`, aimed at the earliest
-`firesAt` (clamped to 2^31 − 1 ms), re-armed whenever `scheduled` changes, on
+Mounted once in `App.tsx`. It keeps exactly one `setTimeout`, aimed at the next boundary:
+the ringing alert's settle time while one rings, otherwise the earliest `firesAt` (clamped to
+2^31 − 1 ms), re-armed whenever `scheduled` changes, on
 `visibilitychange`, and after every fire. On load, any alert whose `firesAt` is already past
 fires immediately with `firedAt = firesAt`, so a timer that ran out during a Chromium restart
 rings for what is left of its 5 minutes, or shows settled.
@@ -106,8 +110,8 @@ export function registerAlertView(appId: string, view: React.ComponentType<Alert
   gesture-debug badge. With nothing ringing it renders nothing. While an alert rings it
   renders that app's view inside `Suspense`; an alert whose app registered no view renders a
   plain fallback ("Alert", tap to dismiss) rather than nothing, so it can always be cleared.
-- It holds one `setTimeout` to the `ringing` → `settled` boundary so the view re-renders once
-  at the 5-minute mark. No interval.
+- It holds no timer of its own: the scheduler settles the alert and the layer re-renders from
+  the store.
 
 ### Changes to existing code
 
