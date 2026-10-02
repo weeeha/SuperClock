@@ -54,6 +54,15 @@ describe('CountdownApp', () => {
     expect(vi.getTimerCount()).toBe(1);
   });
 
+  it('recomputes the day when it becomes active again', () => {
+    const config = { targetDate: '2027-03-10' };
+    const { rerender } = render(<CountdownApp isActive={false} config={config} />);
+    expect(screen.getByText('214')).toBeTruthy();
+    vi.setSystemTime(new Date(2026, 7, 11, 9, 0, 0)); // three days pass while it is swiped away
+    rerender(<CountdownApp isActive={true} config={config} />);
+    expect(screen.getByText('211')).toBeTruthy();
+  });
+
   it('rolls over at local midnight', () => {
     render(<CountdownApp isActive config={{ targetDate: '2027-03-10' }} />);
     expect(screen.getByText('214')).toBeTruthy();
