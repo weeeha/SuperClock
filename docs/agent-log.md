@@ -81,7 +81,9 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 **Deployed** `c330699` to fastclock with `DEPLOY_ANYWAY=1` (health verified), Chromium restarted, home clock healthy. Messaged session `Catch-up` that its build was replaced. A background watcher on the Pi samples one panel pixel for the v2 blue and captures the screen when Weather is shown.
 
-**Open:** Fields v2 still not seen on glass (needs a swipe to Weather). Two sessions share fastclock with no lock; the last deploy silently wins.
+**On glass (14:0x):** the Pi watcher matched the v2 blue (36,87,214 = #2457D6) and captured the real panel: Montreal 15°, Drizzle, H:18° L:11°, drizzle marks for now and 15:00, a moon at 19:00 (after sunset), panel shortened (no hour at 30%). Matches Figma 63:5. Capture `docs/design/2026-10-02-fields-v2-on-glass.png`. To get Weather on screen without a touch, playlist rotation was set to 3600 s (jumps to items[0], the Weather instance, and never ticks: a same-instance switch would not change the SwipeContainer key), then set back to null; backup `config/fleet.json.bak-before-rotation`.
+
+**Open:** two sessions share fastclock with no lock; the last deploy silently wins (Alarm session acked; the alerts-timer session may be a different one and has not been told).
 
 ---
 
