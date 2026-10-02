@@ -71,6 +71,30 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 ---
 
+## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Fields skin: states drawn, Weather shipped behind settings.skin, deployed to fastclock
+
+Nick approved, in one reply: the black-chip alert and B's non-happy states, Weather in code on fastclock, a polish pass, and page cleanup.
+
+**Figma** (`7riwsUFkbksAeYqcNQD5AQ`, page `9:2`): B polish (Habits panel labels to Nunito Bold 24; Calendar leads with 15:30, "Design review in 1 h 30"); A's 9 empty frames removed; sections labelled chosen / alternative; states section `54:2` (26 frames, 12 apps, generated from one spec list); night row re-cloned for the polished frames and its ink moved to 90%.
+
+**Code** (`6c3edfc`): `src/shared/skins.ts` (`SKIN_IDS = ['fields']`), optional `settings.skin` in `device-config-schema.ts` + `types.ts` (snapshot: 1 minor, 0 breaking), `src/core/skin.ts` (`useSkin`), `src/apps/weather/FieldsWeather.tsx` + `rain-phrase.ts` (+ tests), `useWeather` gains `updatedAt` and `unconfigured`, four `--fields-weather*` roles and six `--field-blue*` ramp steps in `tokens.css` with two contrast pairs, `--font-fields-serif/-num` in `index.css`, `@fontsource-variable/fraunces` and `/nunito` imported in `src/main.tsx` (kiosk only), admin `SettingsTab` "App skin" row (disabled on the LVGL clock).
+
+**Verified:** `./scripts/gates.sh` green, 1117 tests (health.md regenerated). Dev kiosk at a true 1080 × 1080: live Montreal data rendered to the Figma frame, day and night (theme dark), fonts loaded. Deployed to fastclock with `DEPLOY_ANYWAY=1`; health reports `e550c30`; served CSS carries the day and night roles, Fraunces and Nunito woff2 are served by the Pi (HTTP 200), FieldsWeather is in the lazy `WeatherApp` chunk; Chromium restarted; `grim` shows the home clock healthy. fastclock's `config/fleet.json` got `settings.skin: "fields"` by a direct atomic edit (backup `config/fleet.json.bak-before-skin`) plus a server restart, because the admin POST is token-gated.
+
+**Found while working:**
+- The design ratchet counts SVG `fontSize="N"` (quoted) and `fontSize={N}` as different strings; B's five sizes all exist in the quoted form, so the Fields screen adds no size.
+- SVG collapses runs of spaces; the detail line needs `white-space: pre`.
+- Night ink at 85% of the hue fails 4.5:1 on the 14% night panel (4.3:1); 90% passes (4.8:1). Stale values dim to 70%, not 60%, to keep 3:1 at night.
+- The production kiosk has no `window.__nav`, and simulated mouse drags in the preview pane cycle clock faces instead of opening the grid, so on-glass navigation to Weather needs a real touch.
+
+**Open:**
+- fastclock has no Weather location; on glass the Fields Weather shows its "Pick a place in the admin" state until Nick sets one (or adds a Weather screen with a location).
+- Fields Weather has not been seen on the physical panel (needs a swipe to Weather). Safari was not checked for the admin row.
+- Fraunces and Nunito break the Inter-only rule; the exception is recorded in the skins spec only, not as a rules record.
+- Only Weather's Now page is skinned; its dial pages and the other 14 apps keep Classic.
+
+---
+
 ## 2026-10-01 · branch claude/superlock-apps-redesign-1933c7 · apps v2 visual pass: three directions drawn
 
 Nick's call: a visual pass over all kiosk apps (keep what each shows and how it navigates; take them from grey wireframes to hi-fi), with Mobbin as aggregated inspiration. No code changed.

@@ -122,7 +122,9 @@ Scenes: Breathing, Fireplace, Photo frame. Clock is not part of this: faces rema
    - **Hue = kind of app, nothing else.** The whole disc is the category hue; same hue means same kind: Weather blue; Calendar red; Countdown pink (your dates); Timer and Time tracking orange (running time); Habits and Fitness lime (movement); Claude usage and Agents violet (AI); GitHub green (code); Breathing cyan; Todo yellow (lists); Quote paper `#EFEBE0` (nothing to signal); Fireplace orange with black flames; Photo frame uses the photo as its field with a black capsule for chrome.
    - **Ink is always black** (white fails 2.0 to 3.2:1 on every field). Two derived shades only: panel = hue x 0.84, track = hue x 0.66. State is fill versus outline versus 32% black, plus one Fraunces SemiBold Italic word.
    - **Anatomy:** 76 px black icon tile (glyph in the hue) + Fraunces 44 title at y 130; Nunito ExtraBold 280 value at y 214; Fraunces 44 sentence at y 572; Nunito Bold 38 detail at y 634; then either a 660 x 210 panel (r 52, ends y 914) or a rim ring (r 488, 34 px, round caps).
-   - **Night:** the field goes black, black ink becomes the hue at 85% (70% fails 4.5:1 for blue), panels the hue at 14%, tracks at 24%, glyphs flip to black on a hue tile. Photo dims to 45%.
+   - **Night:** the field goes black, black ink becomes the hue at 90% (70% fails 4.5:1 for blue on black; 85% fails against the night panel at 4.3:1), panels the hue at 14%, tracks at 24%, glyphs flip to black on a hue tile. Photo dims to 45%. Night is the kiosk's existing `html.dark`, so a clock with theme Dark shows the night recipe all day.
+   - **States** (section `54:2`, 26 frames): stale = last value dimmed with an outline "Offline since" chip; no data = a lucide glyph in the value slot; alert = the inverse black chip with hue text (approved 2026-10-02); done = plain words. Stale dims to 70% in code (60% drawn): 60% of the night ink falls under 3:1.
+   - **Shipped (2026-10-02, `6c3edfc`, on fastclock):** `settings.skin: 'fields'` (`src/shared/skins.ts`), Weather's Now page only (`src/apps/weather/FieldsWeather.tsx`), four `--fields-weather*` roles in `tokens.css`, Fraunces and Nunito bundled via `@fontsource-variable`, admin Settings "App skin" row. Other Weather pages and other apps keep Classic.
    - **Still open:** the alert. Red is Calendar's category, so "urgent" cannot be red. Proposed: an inverse black chip with hue ink (as Todo's "yesterday" chip), never a hue. Also: lime and orange fields may be too bright on the panels by day; check on glass. Fraunces and Nunito need a recorded exception to the Inter-only rule. Variants A (`28:2`) and C (`38:15`) stay on the page as the alternatives considered.
 9. **Fallback signal.** When an app has no renderer for the active skin, should the admin say so on the skin picker, or is the mismatch silent on glass?
 
@@ -135,4 +137,4 @@ Scenes: Breathing, Fireplace, Photo frame. Clock is not part of this: faces rema
 ## Changelog
 
 - 2026-10-01: first draft, from the three-direction rounds and the 45-frame skins grid.
-- 2026-10-02: fourth skin (Signal colour) explored as variants A, B and C; Nick chose B; all 15 apps drawn day and night.
+- 2026-10-02: fourth skin (Signal colour) explored as variants A, B and C; Nick chose B; all 15 apps drawn day and night, 26 states drawn, Weather Now shipped behind settings.skin.
