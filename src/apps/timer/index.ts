@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import { registerApp } from '../../core/registry';
+import { registerAlertView } from '../../core/alerts/views';
 
 registerApp({
   metadata: {
@@ -11,3 +12,5 @@ registerApp({
   },
   component: lazy(() => import('./TimerApp')),
 });
+
+registerAlertView('timer', lazy(() => import('./TimerAlert')));

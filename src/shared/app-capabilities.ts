@@ -39,5 +39,6 @@ export const APP_CAPABILITIES: Record<string, readonly AppCapability[]> = {
   weather: ['fetches', 'ticks', 'multiView'],
   // One midnight setTimeout, which is not a tick (ticks = setInterval or rAF).
   countdown: [],
-  timer: [],
+  // The per-second readout interval, gated on isActive. The alert itself is core.
+  timer: ['ticks'],
 };

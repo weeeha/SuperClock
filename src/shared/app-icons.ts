@@ -17,6 +17,7 @@ export const APP_ICONS: Record<string, string> = {
   'photo-frame': '/a748a5a0305756791110c2732c1757e377a9b831.png',
   quote: '/39cdd10bd458b184830ee8dd78d5f01d99bda902.png',
   'time-tracking': '/690ef2a4d2142a144f030f7a4f4bc796609d3518.png',
+  timer: '/timer-thumb.svg',
   todo: '/todo-thumb.svg',
   weather: '/fca3f89707c8636082807a2351c8b645ca702a00.png',
   // breathing has no grid tile art yet — consumers fall back to a label.
