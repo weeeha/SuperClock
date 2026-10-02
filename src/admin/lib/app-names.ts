@@ -9,6 +9,7 @@ const APP_NAMES: Record<string, string> = {
   breathing: 'Breathing',
   calendar: 'Calendar',
   'claude-usage': 'Claude Usage',
+  countdown: 'Countdown',
   clock: 'Clock',
   fireplace: 'Fireplace',
   fitness: 'Fitness',
