@@ -44,6 +44,34 @@ First sub-project of the AI Face app, which brings all 50 designs of weeeha/AI-A
 
 ---
 
+## 2026-10-02 · branch claude/alarm · Alarm app built and verified in the dev kiosk (not deployed)
+
+Sub-project 3 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02-alarm-design.md` (amended after the board critique), plan `docs/superpowers/plans/2026-10-02-alarm.md`; board Alarm section `111:957` (frames 1 to 8). Built by five Sonnet implementer dispatches, every diff reviewed by the controller. Branch cut from `451584c` (on `claude/alerts-timer`, PR #64), through `d6d2e08`. Local only, not merged, not pushed, **not deployed**: fastclock runs the "Superlock apps design iteration" session's build and its `config/fleet.json` carries `settings.skin`, which this branch's schema does not know.
+
+**Changed:**
+- Core alerts: `ScheduledAlert` gains optional `ringMs`, `bright`, `leadMs`; the store gains persisted `leading`/`leadHidden` with `setLeading`/`hideLead`; `scheduler.ts` gets `leadCandidate` and a lead-start boundary; `views.ts` gets `registerLeadView`/`getLeadView`; `isScreenHeld()`/`selectScreenHeld` replace `isAlertRinging()` in `useGestures.ts`, `playlist.ts`, `useIdleReturn.ts`, `PresenceShade.tsx`.
+- `AlertLayer.tsx`: brightness lease (renewed every 60 s) while a `bright` alert rings; `wake.ts` `requestPanelWake` once per ring and once per lead; renders the app's lead view while leading.
+- `src/core/brightness-ramp.ts` + `apply-settings.ts`: while leading, `transition: filter <firesAt-now>ms linear` and the filter cleared.
+- Server: `server/wake.ts`, loopback-only `POST /api/device/wake` in `device-routes.ts` (403 off-loopback, 400 bad body, clamp 30 min), `display-adapter.ts` `wakePanelUntil` + `decidePower` wake rule (exported).
+- `src/core/widgets/dial-geometry.ts` (band maths moved out of `src/apps/timer/dial.ts`, which re-exports).
+- New app `src/apps/alarm/`: `alarm-store.ts` (`superclock:app:alarm:v1`), `alarm-schedule.ts`, `alarm-sync.ts` (`startAlarmSync()` from `index.ts`), `AlarmApp.tsx`, `AlarmDial.tsx`, `AlarmAlert.tsx`, `AlarmLead.tsx`; `app.alarm` schema; `alarm: ['ticks', 'multiView']`; `public/alarm-thumb.svg`, APP_ICONS, admin name, AppGrid third column; README / foundation / architecture to 17 apps; regenerated health, declared-vs-read, schema snapshot.
+
+**Verified:** `./scripts/gates.sh` exit 0 on `d6d2e08`, 1233 tests. Dev kiosk at 1080 × 1080, in both palettes: No alarms; set time (a real drag in the band: quarter turn = +15 min, then hours mode +6 h, no app switch); list; resting; all off. Live path with no store pokes: a once-alarm for the next minute opened the lead view immediately (scheduler-set `leading`), the root transition read `filter 69074ms linear`, the layer's wake POST answered 200, and it rang at exactly 14:35:00 with the alarm self-disabled; a real tap snoozed (+9 min, bright, no lead); a 2 s hold stopped it (still ringing at 1 s); Missed showed "Next: tomorrow 07:10". The route answered 200 (clamped) and 400 (bad body) in dev. unslop Phase 2: gates green, greps clean, three type sizes, pills 5.46:1 (day) / 5.24:1 (night).
+
+**Decisions (rulings):** lead state recomputed by `leadCandidate` on every scheduler run instead of a `lead` plan kind (also clears a lead whose alarm moved later); disabling cancels a snooze in the UI action, not the sync (a once-alarm disables itself at fire); `syncAlarmAlerts` leaves an overdue alert alone so a clock that was off still rings or shows Missed; `alarmSettings` tolerates a cached config without `instances` (it runs at boot import); the render-time catch-up in `AlarmApp` failed `react-hooks/purity`, so it is a 0 ms timeout inside the `isActive`-gated effect; the hold bar fills with `scaleX`, not width; no pager dots (frames 1 and 2 draw none).
+
+**Found while working:**
+- The off-state armed switch (`--face-ghost` track, `--face-bg` knob) is 1.42:1 against the day background and 1.57:1 at night, under WCAG 1.4.11's 3:1. Kept as the spec draws it; flagged to Nick.
+- After a snooze of a once-alarm the resting screen reads "All alarms off" while the snooze is pending. The spec has no snoozed state.
+- RoundList's 64 px top fade mask pales the first row of a short list (Alarm, likely Todo too).
+
+**Open:**
+- **Not seen on a round panel, chime not heard, true wake from the sleep window untested.** Needs Nick's go-ahead to deploy to fastclock (tell the other session first), an Alarm screen added in the admin, and a sleep schedule with an alarm inside it.
+- Nick to decide: the off-switch contrast (recommendation: `--face-ink-muted` track when off), a "Snoozed until HH:MM" resting state, pager dots on resting/list.
+- `shouldAdvance`'s third parameter is still named `ringing`; the wake route trusts `req.socket.remoteAddress` (fine until a local proxy sits in front of Express).
+
+---
+
 ## 2026-10-02 · branch claude/alerts-timer · background alert layer + Timer app built, verified, deployed to fastclock
 
 Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02-alerts-and-timer-design.md`, plan `docs/superpowers/plans/2026-10-02-alerts-and-timer.md`; board Timer section `51:863` gained frames 3 (Paused) and 4 (Done · after 5 min) plus a dated update note. Built by three Sonnet implementers, every diff reviewed by the controller. Branch cut from `4a450cb`, through `e40deae`. Local only, not merged, not pushed.
