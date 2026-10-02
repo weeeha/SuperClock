@@ -1,23 +1,30 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Cloud, MapPin, WifiOff } from 'lucide-react';
-import type { WeatherModel } from './weather-utils';
+import { MapPin, WifiOff } from 'lucide-react';
+import ConditionMark, { type MarkPalette } from './ConditionMark';
+import { codeMark, type WeatherModel } from './weather-utils';
 import { rainPhrase } from './rain-phrase';
 
-// Weather's Now screen in the Fields skin (src/shared/skins.ts). Geometry is
-// the 1080 design frame from Figma (SupeClock-Design, "4B · Widget fields",
-// Weather 38:5 and the states section 54:2), drawn 1:1 in a 1080 viewBox.
-// Colour comes only from the four --fields-weather* roles in tokens.css, which
-// flip for night there: this component has no night branch of its own.
+// Weather's Now screen in the Fields skin (src/shared/skins.ts), v2: the
+// watchOS look Nick asked for on 2026-10-02 ("icons, bolder font, Apple Watch
+// apps as the quality reference"). Geometry is the 1080 design frame from
+// Figma (SupeClock-Design, "4B v2 · Watch quality", Weather V1 63:5), drawn
+// 1:1 in a 1080 viewBox. Colour comes only from the --fields-weather* roles in
+// tokens.css, which flip for night there: no night branch here.
 
 const C = 540;
 const FIELD = 'var(--fields-weather)';
 const INK = 'var(--fields-weather-ink)';
+const SOFT = 'var(--fields-weather-ink-soft)';
 const PANEL = 'var(--fields-weather-panel)';
-const TRACK = 'var(--fields-weather-track)';
-/** Now plus the next five hours, in six 103 px columns from x 230. */
+const MARKS: MarkPalette = {
+  cloud: INK,
+  sun: 'var(--fields-weather-sun)',
+  drop: 'var(--fields-weather-drop)',
+};
+/** Now plus the next five hours, in six 120 px columns centred from x 240. */
 const HOURS_SHOWN = 6;
-const COL_X0 = 230;
-const COL_W = 103.33;
+/** Below this the hour column leaves the rain chance out, as watchOS does. */
+const SHOW_PRECIP_FROM = 30;
 /** A stale value stays readable as large text (3:1) in both modes. */
 const STALE_OPACITY = 0.7;
 
@@ -45,97 +52,141 @@ function useTextWidth(text: string): [RefObject<SVGTextElement | null>, number] 
   return [ref, width];
 }
 
-/** Icon tile + title, centred together on the disc (tile 76, gap 20). */
-function Header({ title }: { title: string }) {
+/** A condition mark scaled from its 48-unit box, centred at (cx, cy). */
+function Mark({ code, isDay, cx, cy, size }: { code: number; isDay: boolean; cx: number; cy: number; size: number }) {
+  const id = codeMark(code, isDay);
+  return (
+    <g data-mark={id} transform={`translate(${cx} ${cy}) scale(${size / 48})`}>
+      <ConditionMark id={id} palette={MARKS} />
+    </g>
+  );
+}
+
+/** Location row: a filled arrow and the place, centred together. With no
+ *  place name (coordinates, or not set up) the arrow is left out. */
+function Header({ title, located }: { title: string; located: boolean }) {
   const [ref, width] = useTextWidth(title);
-  const x0 = C - (96 + width) / 2;
+  const arrow = located ? 42 : 0;
+  const x0 = C - (arrow + width) / 2;
   return (
     <g opacity={width > 0 ? 1 : 0}>
-      <rect x={x0} y={130} width={76} height={76} rx={22} style={{ fill: INK }} />
-      <Cloud x={x0 + 16} y={146} width={44} height={44} strokeWidth={2.4} style={{ color: FIELD }} />
-      <text ref={ref} x={x0 + 96} y={168} dominantBaseline="central" fontSize="44"
-            className="font-fields-serif" style={{ fill: INK }}>
+      {located && (
+        <path d={`M ${x0} ${136} L ${x0 + 30} ${124} L ${x0 + 18} ${154} L ${x0 + 15} ${139} Z`}
+              style={{ fill: INK }} />
+      )}
+      <text ref={ref} x={x0 + arrow} y={142} dominantBaseline="central" fontSize="44" fontWeight={800}
+            className="font-fields-num" style={{ fill: INK }}>
         {title}
       </text>
     </g>
   );
 }
 
-/** Fraunces sentence with one word set in SemiBold Italic. */
-function Sentence({ text, emphasis }: { text: string; emphasis: string | null }) {
-  const i = emphasis ? text.indexOf(emphasis) : -1;
-  return (
-    <text x={C} y={599} textAnchor="middle" dominantBaseline="central" fontSize="44"
-          className="font-fields-serif" style={{ fill: INK }}>
-      {i < 0 || !emphasis ? text : (
-        <>
-          {text.slice(0, i)}
-          <tspan fontStyle="italic" fontWeight={600}>{emphasis}</tspan>
-          {text.slice(i + emphasis.length)}
-        </>
-      )}
-    </text>
-  );
-}
-
-/** The detail slot (y 634): a plain line, or a chip in the same place. */
-function Detail({ children }: { children: string }) {
-  return (
-    <text x={C} y={660} textAnchor="middle" dominantBaseline="central" fontSize="38" fontWeight={700}
-          className="font-fields-num" style={{ fill: INK, whiteSpace: 'pre' }}>
-      {children}
-    </text>
-  );
-}
-
-/** Outline chip: the stale tell. Never a new hue (spec, decision 7). */
-function OutlineChip({ text }: { text: string }) {
+/** The hero: the condition mark beside the temperature, centred as a pair. */
+function Hero({ model }: { model: WeatherModel }) {
+  const text = `${model.current.temp}°`;
   const [ref, width] = useTextWidth(text);
-  const w = width + 56;
+  const x0 = C - (190 + 20 + width) / 2;
   return (
     <g opacity={width > 0 ? 1 : 0}>
-      <rect x={C - w / 2} y={628} width={w} height={62} rx={31} fill="none" strokeWidth={3}
-            style={{ stroke: INK }} />
-      <text ref={ref} x={C} y={659} textAnchor="middle" dominantBaseline="central" fontSize="30"
-            fontWeight={700} className="font-fields-num" style={{ fill: INK }}>
+      <Mark code={model.current.code} isDay={model.current.isDay} cx={x0 + 95} cy={330} size={190} />
+      <text ref={ref} x={x0 + 210} y={367} dominantBaseline="central" fontSize="280" fontWeight={900}
+            letterSpacing="-8.4" className="font-fields-num" style={{ fill: INK }}>
         {text}
       </text>
     </g>
   );
 }
 
-/** Rain chance for now and the next five hours. Bars are ink on the track,
- *  the percentage above and the hour below. */
+/** A lucide glyph in the hero slot, for screens with nothing to show. */
+function HeroGlyph({ children }: { children: ReactNode }) {
+  return <g style={{ color: INK }}>{children}</g>;
+}
+
+const Headline = ({ children }: { children: string }) => (
+  <text x={C} y={524} textAnchor="middle" dominantBaseline="central" fontSize="56" fontWeight={900}
+        className="font-fields-num" style={{ fill: INK }}>
+    {children}
+  </text>
+);
+
+const Subline = ({ children }: { children: string }) => (
+  <text x={C} y={579} textAnchor="middle" dominantBaseline="central" fontSize="40" fontWeight={800}
+        className="font-fields-num" style={{ fill: SOFT, whiteSpace: 'pre' }}>
+    {children}
+  </text>
+);
+
+/** The change line ("Rain from 15:00") with a drop, centred as a pair. */
+function ChangeLine({ text }: { text: string }) {
+  const [ref, width] = useTextWidth(text);
+  const x0 = C - (26 + 12 + width) / 2;
+  const cx = x0 + 13;
+  const top = 608;
+  return (
+    <g opacity={width > 0 ? 1 : 0}>
+      <path
+        d={`M ${cx} ${top} C ${cx + 4} ${top + 9} ${cx + 13} ${top + 16} ${cx + 13} ${top + 25} C ${cx + 13} ${top + 33} ${cx + 7} ${top + 38} ${cx} ${top + 38} C ${cx - 7} ${top + 38} ${cx - 13} ${top + 33} ${cx - 13} ${top + 25} C ${cx - 13} ${top + 16} ${cx - 4} ${top + 9} ${cx} ${top} Z`}
+        style={{ fill: MARKS.drop }}
+      />
+      <text ref={ref} x={x0 + 38} y={627} dominantBaseline="central" fontSize="34" fontWeight={800}
+            className="font-fields-num" style={{ fill: INK }}>
+        {text}
+      </text>
+    </g>
+  );
+}
+
+/** Outline chip in the change slot: the stale tell. Never a new hue. */
+function OutlineChip({ text }: { text: string }) {
+  const [ref, width] = useTextWidth(text);
+  const w = width + 56;
+  return (
+    <g opacity={width > 0 ? 1 : 0}>
+      <rect x={C - w / 2} y={598} width={w} height={58} rx={29} fill="none" strokeWidth={3}
+            style={{ stroke: INK }} />
+      <text ref={ref} x={C} y={627} textAnchor="middle" dominantBaseline="central" fontSize="30"
+            fontWeight={800} className="font-fields-num" style={{ fill: INK }}>
+        {text}
+      </text>
+    </g>
+  );
+}
+
+/** Now and the next five hours: hour, mark, temperature, and the rain chance
+ *  when it matters. Everything on the panel uses the full ink (the soft ink
+ *  reads 3.6:1 there). */
 function HourlyPanel({ model }: { model: WeatherModel }) {
   const hours = model.hours.slice(0, HOURS_SHOWN);
+  // The panel hugs its rows: without a rain-chance row it ends below the temps.
+  const withPrecip = hours.some((h) => h.precipProb >= SHOW_PRECIP_FROM);
   return (
     <g>
-      <rect x={210} y={704} width={660} height={210} rx={52} style={{ fill: PANEL }} />
+      <rect x={180} y={672} width={720} height={withPrecip ? 250 : 212} rx={64} style={{ fill: PANEL }} />
       {hours.map((h, i) => {
-        const cx = COL_X0 + COL_W * (i + 0.5);
-        const bar = Math.max(30, (88 * h.precipProb) / 100);
+        const cx = 240 + 120 * i;
         return (
           <g key={h.hour}>
-            <text x={cx} y={739} textAnchor="middle" dominantBaseline="central" fontSize="28"
-                  fontWeight={800} className="font-fields-num" style={{ fill: INK }}>
-              {h.precipProb}%
-            </text>
-            <rect x={cx - 15} y={766} width={30} height={88} rx={15} style={{ fill: TRACK }} />
-            <rect x={cx - 15} y={854 - bar} width={30} height={bar} rx={15} style={{ fill: INK }} />
-            <text x={cx} y={881} textAnchor="middle" dominantBaseline="central" fontSize="28"
-                  fontWeight={i === 0 ? 900 : 700} className="font-fields-num" style={{ fill: INK }}>
+            <text x={cx} y={709} textAnchor="middle" dominantBaseline="central" fontSize="28"
+                  fontWeight={i === 0 ? 900 : 800} className="font-fields-num" style={{ fill: INK }}>
               {i === 0 ? 'Now' : String(h.hour).padStart(2, '0')}
             </text>
+            <Mark code={h.code} isDay={h.isDay} cx={cx} cy={768} size={64} />
+            <text x={cx} y={831} textAnchor="middle" dominantBaseline="central" fontSize="36"
+                  fontWeight={900} className="font-fields-num" style={{ fill: INK }}>
+              {h.temp}°
+            </text>
+            {h.precipProb >= SHOW_PRECIP_FROM && (
+              <text x={cx} y={872} textAnchor="middle" dominantBaseline="central" fontSize="24"
+                    fontWeight={800} className="font-fields-num" style={{ fill: INK }}>
+                {h.precipProb}%
+              </text>
+            )}
           </g>
         );
       })}
     </g>
   );
-}
-
-/** A lucide glyph in the value slot, for screens with nothing to show. */
-function Glyph({ children }: { children: ReactNode }) {
-  return <g style={{ color: INK }}>{children}</g>;
 }
 
 export interface FieldsWeatherProps {
@@ -149,26 +200,27 @@ export interface FieldsWeatherProps {
 }
 
 export default function FieldsWeather({ model, label, offline, updatedAt, unconfigured, page, pageCount }: FieldsWeatherProps) {
-  const title = label || 'Weather';
+  const located = !unconfigured && label !== '';
+  const title = located ? label : 'Weather';
   let body: ReactNode;
   let summary: string;
 
   if (unconfigured) {
-    summary = 'Weather is not set up. Pick a place in the admin.';
+    summary = 'Weather is not set up. Set a location in the admin.';
     body = (
       <>
-        <Glyph><MapPin x={445} y={297} width={190} height={190} strokeWidth={1.6} /></Glyph>
-        <Sentence text="Pick a place in the admin" emphasis="Pick a place" />
-        <Detail>Then the forecast appears here</Detail>
+        <HeroGlyph><MapPin x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
+        <Headline>Pick a place</Headline>
+        <Subline>Set a location in the admin</Subline>
       </>
     );
   } else if (!model && offline) {
     summary = 'No weather yet. The forecast cannot be reached.';
     body = (
       <>
-        <Glyph><WifiOff x={445} y={297} width={190} height={190} strokeWidth={1.6} /></Glyph>
-        <Sentence text="No weather yet" emphasis="No weather" />
-        <Detail>Can’t reach the forecast. Trying again.</Detail>
+        <HeroGlyph><WifiOff x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
+        <Headline>No weather yet</Headline>
+        <Subline>Can’t reach the forecast</Subline>
       </>
     );
   } else if (!model) {
@@ -176,21 +228,22 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
     summary = 'Loading the forecast.';
     body = null;
   } else {
-    const phrase = rainPhrase(model);
-    const stale = offline;
-    summary = `${title}: ${model.current.temp} degrees. ${phrase.sentence}.${stale && updatedAt ? ` Offline since ${hhmm(updatedAt)}.` : ''}`;
+    const { condition, change } = rainPhrase(model);
+    const stale = offline && updatedAt !== null;
+    summary =
+      `${title}: ${model.current.temp} degrees, ${condition}.` +
+      (change ? ` ${change}.` : '') +
+      (stale && updatedAt ? ` Offline since ${hhmm(updatedAt)}.` : '');
     body = (
       <>
         <g opacity={stale ? STALE_OPACITY : 1}>
-          <text x={C + 8} y={405} textAnchor="middle" dominantBaseline="central" fontSize="280"
-                fontWeight={800} letterSpacing="-5.6" className="font-fields-num" style={{ fill: INK }}>
-            {model.current.temp}°
-          </text>
+          <Hero model={model} />
         </g>
-        <Sentence text={phrase.sentence} emphasis={phrase.emphasis} />
+        <Headline>{condition}</Headline>
+        <Subline>{`H:${model.today.high}°   L:${model.today.low}°`}</Subline>
         {stale && updatedAt
           ? <OutlineChip text={`Offline since ${hhmm(updatedAt)}`} />
-          : <Detail>{`H ${model.today.high}°   L ${model.today.low}°`}</Detail>}
+          : change && <ChangeLine text={change} />}
         <g opacity={stale ? STALE_OPACITY : 1}>
           <HourlyPanel model={model} />
         </g>
@@ -201,7 +254,7 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
   return (
     <svg viewBox="0 0 1080 1080" className="h-full w-full" role="img" aria-label={summary}>
       <circle cx={C} cy={C} r={C} style={{ fill: FIELD }} />
-      <Header title={unconfigured ? 'Weather' : title} />
+      <Header title={title} located={located} />
       {body}
       {pageCount > 1 && (
         <g>

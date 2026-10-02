@@ -18,34 +18,34 @@ function model(code: number, probs: number[]): WeatherModel {
 describe('rainPhrase', () => {
   it('names the first wet hour when it is dry now', () => {
     expect(rainPhrase(model(3, [10, 60, 80, 90, 70, 30]))).toEqual({
-      sentence: 'Overcast, rain from 15:00',
-      emphasis: 'rain',
+      condition: 'Overcast',
+      change: 'Rain from 15:00',
     });
   });
 
   it('names the first dry hour when it is raining now', () => {
     expect(rainPhrase(model(61, [80, 90, 70, 60, 40, 10]))).toEqual({
-      sentence: 'Rain, clearing by 18:00',
-      emphasis: 'clearing',
+      condition: 'Rain',
+      change: 'Clearing by 18:00',
     });
   });
 
-  it('says only the condition when nothing changes in the window', () => {
-    expect(rainPhrase(model(0, [0, 0, 5, 10, 0, 0]))).toEqual({ sentence: 'Clear', emphasis: null });
-    expect(rainPhrase(model(61, [80, 90, 95, 85, 70, 60]))).toEqual({ sentence: 'Rain', emphasis: null });
+  it('has no change line when nothing changes in the window', () => {
+    expect(rainPhrase(model(0, [0, 0, 5, 10, 0, 0]))).toEqual({ condition: 'Clear', change: null });
+    expect(rainPhrase(model(61, [80, 90, 95, 85, 70, 60]))).toEqual({ condition: 'Rain', change: null });
   });
 
-  it('writes multi-word conditions in sentence case', () => {
-    expect(rainPhrase(model(2, [0, 0, 0])).sentence).toBe('Partly cloudy');
+  it('keeps the condition label as the model names it', () => {
+    expect(rainPhrase(model(2, [0, 0, 0])).condition).toBe('Partly Cloudy');
   });
 
-  it('treats 50% as wet, the threshold the hourly panel draws', () => {
-    expect(rainPhrase(model(3, [49, 50])).sentence).toBe('Overcast, rain from 15:00');
+  it('treats 50% as wet', () => {
+    expect(rainPhrase(model(3, [49, 50])).change).toBe('Rain from 15:00');
   });
 
   it('pads hours past midnight', () => {
     const m = model(3, [0, 0]);
     m.hours[1] = hour(2, 70);
-    expect(rainPhrase(m).sentence).toBe('Overcast, rain from 02:00');
+    expect(rainPhrase(m).change).toBe('Rain from 02:00');
   });
 });

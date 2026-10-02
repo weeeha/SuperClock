@@ -11,7 +11,7 @@ function hour(h: number, precipProb: number): HourSample {
 }
 
 const MODEL: WeatherModel = (() => {
-  const hours = [10, 60, 80, 90, 70, 30, 20].map((p, i) => hour(14 + i, p));
+  const hours = [10, 60, 80, 90, 70, 30, 20].map((p, i) => ({ ...hour(14 + i, p), code: p >= 50 ? 61 : 3 }));
   return { current: { ...hours[0], windDir: 200 }, today: { high: 16, low: 8, sunriseMin: 400, sunsetMin: 1100 }, hours };
 })();
 
@@ -26,35 +26,58 @@ describe('FieldsWeather', () => {
   it('draws the live screen from the model, nothing invented', () => {
     const { container } = render(<FieldsWeather {...base} />);
     expect(text(container)).toContain('14°');
-    expect(text(container)).toContain('Overcast, rain from 15:00');
-    expect(text(container)).toContain('H 16°   L 8°');
+    expect(screen.getByText('Overcast')).toBeTruthy();
+    expect(screen.getByText('Rain from 15:00')).toBeTruthy();
+    expect(text(container)).toContain('H:16°   L:8°');
     // Six hourly columns: now plus five, labelled from the model's own hours.
     for (const label of ['Now', '15', '16', '17', '18', '19']) expect(screen.getByText(label)).toBeTruthy();
-    expect(text(container)).not.toContain('20%'); // the seventh hour is not drawn
+    // Rain chance only where it matters (30% and up), and only for the six.
+    for (const p of ['60%', '80%', '90%', '70%', '30%']) expect(screen.getByText(p)).toBeTruthy();
+    expect(text(container)).not.toContain('10%');
+    expect(text(container)).not.toContain('20%');
     expect(text(container)).not.toContain('Offline');
   });
 
+  it('draws a multicolour mark for the hero and for every hour', () => {
+    const { container } = render(<FieldsWeather {...base} />);
+    const marks = [...container.querySelectorAll('g[data-mark]')].map((g) => g.getAttribute('data-mark'));
+    // Hero + six hours, each from the model's own condition codes.
+    expect(marks).toEqual(['cloud', 'cloud', 'rain', 'rain', 'rain', 'rain', 'cloud']);
+    // Rain marks carry their own drop colour, not the ink.
+    expect(container.innerHTML).toContain('var(--fields-weather-drop)');
+  });
+
   it('says how old a stale screen is instead of passing it off as live', () => {
-    const { container } = render(<FieldsWeather {...base} offline />);
+    render(<FieldsWeather {...base} offline />);
     expect(screen.getByText('Offline since 13:40')).toBeTruthy();
-    expect(text(container)).not.toContain('H 16°'); // the chip takes the detail slot
+    expect(screen.queryByText('Rain from 15:00')).toBeNull(); // the chip takes the change slot
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('Offline since 13:40');
   });
 
   it('asks for a place when nothing is configured', () => {
-    render(<FieldsWeather {...base} model={null} unconfigured />);
-    expect(screen.getByText('Then the forecast appears here')).toBeTruthy();
+    render(<FieldsWeather {...base} model={null} label="" unconfigured />);
+    expect(screen.getByText('Pick a place')).toBeTruthy();
+    expect(screen.getByText('Set a location in the admin')).toBeTruthy();
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('not set up');
   });
 
   it('says the forecast cannot be reached when there is no cache', () => {
     render(<FieldsWeather {...base} model={null} offline />);
-    expect(screen.getByText('Can’t reach the forecast. Trying again.')).toBeTruthy();
+    expect(screen.getByText('No weather yet')).toBeTruthy();
+    expect(screen.getByText('Can’t reach the forecast')).toBeTruthy();
   });
 
   it('draws only the header while the first fetch is in flight', () => {
     const { container } = render(<FieldsWeather {...base} model={null} />);
     expect(text(container)).toBe('Montréal');
+  });
+
+  it('shortens the panel when no hour reaches the rain-chance threshold', () => {
+    const dry = { ...MODEL, hours: MODEL.hours.map((h) => ({ ...h, precipProb: 5, code: 3 })) };
+    const { container } = render(<FieldsWeather {...base} model={dry} />);
+    const panel = [...container.querySelectorAll('rect')].find((r) => r.getAttribute('y') === '672');
+    expect(panel?.getAttribute('height')).toBe('212');
+    expect(container.textContent).not.toContain('%');
   });
 
   it('marks the current page among the pager dots', () => {

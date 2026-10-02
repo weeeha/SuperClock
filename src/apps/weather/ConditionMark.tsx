@@ -13,7 +13,12 @@
 // House rules for the set: one visual weight, filled forms rather than thin
 // outlines (the panel is ~216 DPI and read from across a room), each mark
 // inside a 48-unit box centred on the origin so the ring can place it with a
-// plain translate. No mark uses more than one colour.
+// plain translate. By default no mark uses more than one colour.
+//
+// The one exception is opt-in: pass a `palette` and each part takes its own
+// colour (cloud, sun, drops), the way watchOS draws multicolour symbols. The
+// Fields skin does this (FieldsWeather.tsx); the ring never does, so its
+// single-colour night dimming is untouched.
 
 export type ConditionMarkId =
   | 'sun'
@@ -26,13 +31,21 @@ export type ConditionMarkId =
   | 'snow-shower'
   | 'storm';
 
+/** Per-part colours for the multicolour variant. Any CSS colour, including
+ *  var(--role). Parts left out fall back to currentColor. */
+export interface MarkPalette {
+  cloud?: string;
+  sun?: string;
+  drop?: string;
+}
+
 const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
 /** Sun: a disc and eight rays. `r` shrinks it for the partly-cloudy pairing. */
-function Sun({ cx = 0, cy = 0, r = 8 }: { cx?: number; cy?: number; r?: number }) {
+function Sun({ cx = 0, cy = 0, r = 8, color = 'currentColor' }: { cx?: number; cy?: number; r?: number; color?: string }) {
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill="currentColor" />
+      <circle cx={cx} cy={cy} r={r} fill={color} />
       {RAY_ANGLES.map((a) => {
         const rad = (a * Math.PI) / 180;
         const x1 = cx + Math.cos(rad) * (r + 4.5);
@@ -46,7 +59,7 @@ function Sun({ cx = 0, cy = 0, r = 8 }: { cx?: number; cy?: number; r?: number }
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke="currentColor"
+            stroke={color}
             strokeWidth={3.4}
             strokeLinecap="round"
           />
@@ -58,9 +71,9 @@ function Sun({ cx = 0, cy = 0, r = 8 }: { cx?: number; cy?: number; r?: number }
 
 // Overlapping discs plus a base, all one fill, read as a single cloud without
 // a hand-authored path that would need re-tuning at every size.
-function Cloud({ cx = 0, cy = 0, s = 1 }: { cx?: number; cy?: number; s?: number }) {
+function Cloud({ cx = 0, cy = 0, s = 1, color = 'currentColor' }: { cx?: number; cy?: number; s?: number; color?: string }) {
   return (
-    <g transform={`translate(${cx} ${cy}) scale(${s})`} fill="currentColor">
+    <g transform={`translate(${cx} ${cy}) scale(${s})`} fill={color}>
       <circle cx={-10} cy={2} r={8} />
       <circle cx={1} cy={-5} r={11} />
       <circle cx={12} cy={3} r={7} />
@@ -69,9 +82,9 @@ function Cloud({ cx = 0, cy = 0, s = 1 }: { cx?: number; cy?: number; s?: number
   );
 }
 
-function Drops({ y, dx = 0 }: { y: number; dx?: number }) {
+function Drops({ y, dx = 0, color = 'currentColor' }: { y: number; dx?: number; color?: string }) {
   return (
-    <g stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
+    <g stroke={color} strokeWidth={3.4} strokeLinecap="round">
       {[-9, 0, 9].map((x) => (
         <line key={x} x1={x + dx} y1={y} x2={x + dx - 3} y2={y + 8} />
       ))}
@@ -79,9 +92,9 @@ function Drops({ y, dx = 0 }: { y: number; dx?: number }) {
   );
 }
 
-function Flakes({ y }: { y: number }) {
+function Flakes({ y, color = 'currentColor' }: { y: number; color?: string }) {
   return (
-    <g fill="currentColor">
+    <g fill={color}>
       {[-9, 0, 9].map((x) => (
         <circle key={x} cx={x} cy={y + 4} r={2.6} />
       ))}
@@ -95,10 +108,13 @@ function Flakes({ y }: { y: number }) {
  * Colour comes from `currentColor`, so the caller sets it once on a parent and
  * every mark follows — including the ring's night dimming.
  */
-export default function ConditionMark({ id }: { id: ConditionMarkId }) {
+export default function ConditionMark({ id, palette }: { id: ConditionMarkId; palette?: MarkPalette }) {
+  const cloud = palette?.cloud ?? 'currentColor';
+  const sun = palette?.sun ?? 'currentColor';
+  const drop = palette?.drop ?? 'currentColor';
   switch (id) {
     case 'sun':
-      return <Sun />;
+      return <Sun color={sun} />;
 
     // One closed path, not a disc masked by a second disc: the ring draws a
     // mark per night hour, and a mask would need an id that is unique per
@@ -112,24 +128,24 @@ export default function ConditionMark({ id }: { id: ConditionMarkId }) {
     // sets the body: 7 holds its weight beside the filled sun and cloud marks
     // and survives the ring dimming night hours to 55%.
     case 'moon':
-      return <path d="M 5 -12.5 A 13 13 0 1 0 5 12.5 A 7 13 0 0 1 5 -12.5 Z" fill="currentColor" />;
+      return <path d="M 5 -12.5 A 13 13 0 1 0 5 12.5 A 7 13 0 0 1 5 -12.5 Z" fill={cloud} />;
 
     case 'partly':
       return (
         <g>
-          <Sun cx={-6} cy={-9} r={6} />
-          <Cloud cx={3} cy={5} s={0.86} />
+          <Sun cx={-6} cy={-9} r={6} color={sun} />
+          <Cloud cx={3} cy={5} s={0.86} color={cloud} />
         </g>
       );
 
     case 'cloud':
-      return <Cloud />;
+      return <Cloud color={cloud} />;
 
     case 'fog':
       return (
         <g>
-          <Cloud cy={-5} s={0.86} />
-          <g stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
+          <Cloud cy={-5} s={0.86} color={cloud} />
+          <g stroke={cloud} strokeWidth={3.4} strokeLinecap="round">
             <line x1={-13} y1={11} x2={13} y2={11} />
             <line x1={-9} y1={18} x2={16} y2={18} />
           </g>
@@ -139,8 +155,8 @@ export default function ConditionMark({ id }: { id: ConditionMarkId }) {
     case 'rain':
       return (
         <g>
-          <Cloud cy={-6} s={0.86} />
-          <Drops y={9} />
+          <Cloud cy={-6} s={0.86} color={cloud} />
+          <Drops y={9} color={drop} />
         </g>
       );
 
@@ -148,7 +164,7 @@ export default function ConditionMark({ id }: { id: ConditionMarkId }) {
     // legible when the ring dims to 55% at night.
     case 'snow':
       return (
-        <g stroke="currentColor" strokeWidth={3.4} strokeLinecap="round">
+        <g stroke={cloud} strokeWidth={3.4} strokeLinecap="round">
           {[0, 60, 120].map((a) => {
             const rad = (a * Math.PI) / 180;
             return (
@@ -167,16 +183,16 @@ export default function ConditionMark({ id }: { id: ConditionMarkId }) {
     case 'snow-shower':
       return (
         <g>
-          <Cloud cy={-6} s={0.86} />
-          <Flakes y={9} />
+          <Cloud cy={-6} s={0.86} color={cloud} />
+          <Flakes y={9} color={cloud} />
         </g>
       );
 
     case 'storm':
       return (
         <g>
-          <Cloud cy={-7} s={0.86} />
-          <path d="M 2 4 L -7 4 L -1 20 L 3 12 L 10 12 L 3 -1 Z" fill="currentColor" />
+          <Cloud cy={-7} s={0.86} color={cloud} />
+          <path d="M 2 4 L -7 4 L -1 20 L 3 12 L 10 12 L 3 -1 Z" fill={sun} />
         </g>
       );
   }

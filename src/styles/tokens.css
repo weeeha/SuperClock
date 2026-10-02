@@ -37,15 +37,20 @@
   --dusk-light: #8fa9c4;
   --dusk-dark: #2b3d52;
 
-  /* Fields skin, Weather's category hue (src/shared/skins.ts). The suffix is
-     the hue's brightness as a percentage, scaled toward black: 84 and 66 are
-     the day panel and track, 90, 24 and 14 the night ink, track and panel. */
-  --field-blue: #5b8cff;
-  --field-blue-90: #527ee6;
-  --field-blue-84: #4c76d6;
-  --field-blue-66: #3c5ca8;
-  --field-blue-24: #16223d;
-  --field-blue-14: #0d1424;
+  /* Fields skin v2, Weather (src/shared/skins.ts): the watchOS look, a deep
+     category blue with white ink. -plate is white at 14% over -deep, flattened
+     so a role holds one colour. Sun and drop are the multicolour weather
+     marks' own colours. -night-* are their night values. */
+  --field-blue-deep: #2457d6;
+  --field-blue-plate: #436edc;
+  --field-blue-mist: #d6e3ff;
+  --field-blue-night-ink: #c9d7ff;
+  --field-blue-night-soft: #8da6e8;
+  --field-blue-night-plate: #0a183c;
+  --sun-yellow: #ffd60a;
+  --sun-yellow-night: #e0bc08;
+  --drop-cyan: #7fdbff;
+  --drop-cyan-night: #5fb8da;
 
   /* Pure neutral, the admin's ramp. HSL triplets, see the header. */
   --gray-4: 0 0% 4%;
@@ -146,12 +151,15 @@
   --fill-knob: var(--scrim-knob);
 
   /* Fields skin, Weather (src/apps/weather/FieldsWeather.tsx). By day the
-     disc is the category hue and every mark is black ink; the panel and the
-     empty bar track are the hue scaled toward black. */
-  --fields-weather: var(--field-blue);
-  --fields-weather-ink: var(--stone-1000);
-  --fields-weather-panel: var(--field-blue-84);
-  --fields-weather-track: var(--field-blue-66);
+     disc is the deep category blue, ink is white, secondary text is a blue
+     mist that only ever sits on the disc (on the panel it reads 3.6:1, so
+     panel text uses the full ink). */
+  --fields-weather: var(--field-blue-deep);
+  --fields-weather-ink: var(--stone-0);
+  --fields-weather-ink-soft: var(--field-blue-mist);
+  --fields-weather-panel: var(--field-blue-plate);
+  --fields-weather-sun: var(--sun-yellow);
+  --fields-weather-drop: var(--drop-cyan);
 }
 
 html.dark {
@@ -189,10 +197,12 @@ html.dark {
   --sheet-ink: var(--gray-100);
   --fill-knob: var(--scrim-knob);
 
-  /* Fields skin at night: the disc goes black and the hue becomes the ink.
-     90%, not the 85% first drawn: 85% read 4.3:1 against the night panel. */
+  /* Fields skin at night: the disc goes black, the ink takes a blue-tinted
+     white and the panel a deep blue, so the room still reads Weather's hue. */
   --fields-weather: var(--stone-1000);
-  --fields-weather-ink: var(--field-blue-90);
-  --fields-weather-panel: var(--field-blue-14);
-  --fields-weather-track: var(--field-blue-24);
+  --fields-weather-ink: var(--field-blue-night-ink);
+  --fields-weather-ink-soft: var(--field-blue-night-soft);
+  --fields-weather-panel: var(--field-blue-night-plate);
+  --fields-weather-sun: var(--sun-yellow-night);
+  --fields-weather-drop: var(--drop-cyan-night);
 }
