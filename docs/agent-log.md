@@ -6,6 +6,33 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-02 · branch claude/alerts-timer · background alert layer + Timer app built, verified, deployed to fastclock
+
+Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02-alerts-and-timer-design.md`, plan `docs/superpowers/plans/2026-10-02-alerts-and-timer.md`; board Timer section `51:863` gained frames 3 (Paused) and 4 (Done · after 5 min) plus a dated update note. Built by three Sonnet implementers, every diff reviewed by the controller. Branch cut from `4a450cb`, through `e40deae`. Local only, not merged, not pushed.
+
+**Changed:**
+- New core subsystem `src/core/alerts/`: `alert-store.ts` (persisted zustand store, `superclock:alerts:v1`, zod-guarded), `scheduler.ts` (one timeout for fire and the 5-minute settle), `chime.ts` (Web Audio, only with the `audio` feature and `alert.sound`), `views.ts` (`registerAlertView`), `AlertLayer.tsx` (`fixed inset-0 z-[9500]`, fallback view). Mounted in `src/App.tsx`.
+- Shell stands down while ringing: `useGestures.ts` (and skips drags that start inside `[data-gesture="claim"]`, via `isClaimedTarget` in `gesture-zones.ts`), `playlist.ts` (`shouldAdvance`), `useIdleReturn.ts`, `PresenceShade.tsx`.
+- New app `src/apps/timer/` (store `superclock:app:timer:v1`, dial maths, screens, `TimerDial`, `TimerAlert`), `app.timer` schema, `timer: ['ticks']`, `public/timer-thumb.svg`, AppGrid fifth column, `.alert-pulse` keyframes in `src/index.css`.
+- `time-tracking` renamed "Focus" (kiosk name + admin copy); id and config untouched.
+- README / foundation / architecture to 16 apps; regenerated health, declared-vs-read, schema snapshot.
+
+**Verified:** `./scripts/gates.sh` green, 1165 tests. In the dev kiosk at 1080 × 1080, measured: ring r 410 px inside the claim band 324 to 470 px (which ends exactly at the arc ring); three type sizes only; running ring `#ff6b35` draining clockwise (dash offset 80/2388 after 2.5 s of 60 s); paused cancels the alert and resume reschedules it. A real 1-minute timer fired in the background while the clock was showing, with `firedAt = firesAt`; the layer sat above an open grid; a swipe while ringing did not switch apps; settle showed "Done at 12:37"; dismiss cleared both stores and counted as a gesture. Gestures with synthetic pointers (capture stubbed for inspection only): a drag starting in the band changed the duration (1:00 → 16:00 for a quarter turn) and never switched apps; a swipe from the true centre switched apps. fastclock runs `e40deae` (health stamp), Chromium restarted, panel correct, sweep 5.98 deg/s with zero stalled frames.
+
+**Decisions (rulings):** the settle boundary is a `settled` flag owned by the scheduler (spec amended); `docs/health.md` regenerated inside each task's commit because its tree scan counts files; `AlertLayer` renders the registered view with `createElement` because `react-hooks/static-components` rejects a component read from a call result.
+
+**Found while working:**
+- Synthetic `PointerEvent`s throw in `setPointerCapture` (no active pointer id), in both `use-gesture` and the dial. Stub capture in the page to drive gestures from tests; real touches are unaffected.
+- The hidden preview pane leaves the entering app at `translateX(-1080px)`; compute gesture coordinates from `innerWidth/innerHeight`, never from the app root's box.
+- idle-return closes an untouched grid after 20 s, so "alert over the grid" has to be checked by opening the grid while the alert rings.
+
+**Open:**
+- **Not seen on the round panel, and the chime not heard.** Both need a Timer screen added in the admin (fastclock's config is token-gated) and a real touch. Once a timer rings on fastclock, `grep -l RUNNING /proc/asound/card*/pcm*p/sub*/status` confirms the audio stream.
+- The outer preset chips clear the claim band by 6 px at 1080; fine on paper, worth a real-finger check.
+- Deferred to sub-project 3 (Alarm): waking a panel the server switched off, night-brightness override, snooze, repeating alerts.
+
+---
+
 ## 2026-10-01 · branch claude/countdown-app · Countdown app built, verified in the browser, deployed to fastclock
 
 Sub-project 1 of the missing-apps round, built from `docs/superpowers/plans/2026-10-01-countdown-app.md` by two Sonnet implementers with the controller reviewing every diff. Branch `claude/countdown-app`, cut from `1cff403`, 8 commits through `8b954aa`. Local only, not merged, not pushed.
