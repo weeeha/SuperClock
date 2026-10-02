@@ -71,6 +71,20 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 ---
 
+## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Fields v2 (watchOS look) shipped to fastclock; a parallel deploy had masked v1
+
+**What Nick saw was not Fields.** Session `Catch-up` deployed `claude/alerts-timer` (`e40deae`) to fastclock at 12:38, 18 minutes after this branch's 12:20 deploy, so the panel showed the Classic Weather screen. The stored config survived (the other build's server reads fleet.json as JSON; its strict schema only matters on write). Nick's verdict on it ("too basic: icons, bolder font, Apple Watch apps as the quality reference") still applied to Fields v1, which was light-weight and nearly icon-free.
+
+**Design** (Figma section `63:2`, "4B v2 · Watch quality"): V1 Watch (deep category hue, white ink) for Weather day/night, Timer, Calendar; V2 Vivid (old field, black ink) for Weather. Nick took V1 by approving the deploy path. Snapshot `docs/design/2026-10-02-fields-v2-watch.png`.
+
+**Code** (`c330699`): FieldsWeather rewritten to the V1 frame (location row with arrow, condition mark beside a Nunito Black 280 temperature, condition + H/L, change line with a drop, hourly panel with a mark per hour and rain chance from 30%, panel shortens when no hour reaches it). `ConditionMark` gains an opt-in `palette` (cloud/sun/drop); the ring dial is unchanged. `rainPhrase` now returns `{condition, change}`. Tokens: `--fields-weather`, `-ink`, `-ink-soft`, `-panel`, `-sun`, `-drop` over ten new ramp steps; the v1 steps are gone. Soft ink reads 3.6:1 on the panel, so panel text uses full ink; cyan rain percentages became ink for the same reason. Fraunces removed (token-liveness caught its last reader leaving). Gates green, 1119 tests. Dev kiosk at 1080: live Montreal data, day and night, checked by screenshot.
+
+**Deployed** `c330699` to fastclock with `DEPLOY_ANYWAY=1` (health verified), Chromium restarted, home clock healthy. Messaged session `Catch-up` that its build was replaced. A background watcher on the Pi samples one panel pixel for the v2 blue and captures the screen when Weather is shown.
+
+**Open:** Fields v2 still not seen on glass (needs a swipe to Weather). Two sessions share fastclock with no lock; the last deploy silently wins.
+
+---
+
 ## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Fields skin: states drawn, Weather shipped behind settings.skin, deployed to fastclock
 
 Nick approved, in one reply: the black-chip alert and B's non-happy states, Weather in code on fastclock, a polish pass, and page cleanup.
