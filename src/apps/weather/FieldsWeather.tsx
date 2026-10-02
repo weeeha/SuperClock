@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { MapPin, WifiOff } from 'lucide-react';
+import {
+  FieldsDisc, Headline, HeroGlyph, OutlineChip, Subline, TitleRow, type FieldsRoles,
+} from '../../core/fields';
+import { C, useTextWidth } from '../../core/fields-util';
 import ConditionMark, { type MarkPalette } from './ConditionMark';
 import { codeMark, type WeatherModel } from './weather-utils';
 import { rainPhrase } from './rain-phrase';
@@ -11,11 +15,14 @@ import { rainPhrase } from './rain-phrase';
 // 1:1 in a 1080 viewBox. Colour comes only from the --fields-weather* roles in
 // tokens.css, which flip for night there: no night branch here.
 
-const C = 540;
-const FIELD = 'var(--fields-weather)';
-const INK = 'var(--fields-weather-ink)';
-const SOFT = 'var(--fields-weather-ink-soft)';
-const PANEL = 'var(--fields-weather-panel)';
+const ROLES: FieldsRoles = {
+  field: 'var(--fields-weather)',
+  ink: 'var(--fields-weather-ink)',
+  soft: 'var(--fields-weather-ink-soft)',
+  panel: 'var(--fields-weather-panel)',
+};
+const INK = ROLES.ink;
+const PANEL = ROLES.panel;
 const MARKS: MarkPalette = {
   cloud: INK,
   sun: 'var(--fields-weather-sun)',
@@ -31,27 +38,6 @@ const STALE_OPACITY = 0.7;
 const hhmm = (d: Date) =>
   `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
-/** Width of an SVG text node once the bundled fonts have loaded. The first
- *  paint may use a fallback face, so the measure waits for document.fonts. */
-function useTextWidth(text: string): [RefObject<SVGTextElement | null>, number] {
-  const ref = useRef<SVGTextElement>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    let live = true;
-    const measure = () => {
-      const el = ref.current;
-      if (live && el && typeof el.getComputedTextLength === 'function') setWidth(el.getComputedTextLength());
-    };
-    const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
-    if (fonts?.ready) fonts.ready.then(measure);
-    else queueMicrotask(measure);
-    return () => {
-      live = false;
-    };
-  }, [text]);
-  return [ref, width];
-}
-
 /** A condition mark scaled from its 48-unit box, centred at (cx, cy). */
 function Mark({ code, isDay, cx, cy, size }: { code: number; isDay: boolean; cx: number; cy: number; size: number }) {
   const id = codeMark(code, isDay);
@@ -62,23 +48,19 @@ function Mark({ code, isDay, cx, cy, size }: { code: number; isDay: boolean; cx:
   );
 }
 
-/** Location row: a filled arrow and the place, centred together. With no
- *  place name (coordinates, or not set up) the arrow is left out. */
+/** Location row: a filled arrow and the place. With no place name
+ *  (coordinates, or not set up) the arrow is left out. */
 function Header({ title, located }: { title: string; located: boolean }) {
-  const [ref, width] = useTextWidth(title);
-  const arrow = located ? 42 : 0;
-  const x0 = C - (arrow + width) / 2;
   return (
-    <g opacity={width > 0 ? 1 : 0}>
-      {located && (
+    <TitleRow
+      roles={ROLES}
+      title={title}
+      leadWidth={located ? 42 : 0}
+      lead={located ? (x0) => (
         <path d={`M ${x0} ${136} L ${x0 + 30} ${124} L ${x0 + 18} ${154} L ${x0 + 15} ${139} Z`}
               style={{ fill: INK }} />
-      )}
-      <text ref={ref} x={x0 + arrow} y={142} dominantBaseline="central" fontSize="44" fontWeight={800}
-            className="font-fields-num" style={{ fill: INK }}>
-        {title}
-      </text>
-    </g>
+      ) : undefined}
+    />
   );
 }
 
@@ -98,25 +80,6 @@ function Hero({ model }: { model: WeatherModel }) {
   );
 }
 
-/** A lucide glyph in the hero slot, for screens with nothing to show. */
-function HeroGlyph({ children }: { children: ReactNode }) {
-  return <g style={{ color: INK }}>{children}</g>;
-}
-
-const Headline = ({ children }: { children: string }) => (
-  <text x={C} y={524} textAnchor="middle" dominantBaseline="central" fontSize="56" fontWeight={900}
-        className="font-fields-num" style={{ fill: INK }}>
-    {children}
-  </text>
-);
-
-const Subline = ({ children }: { children: string }) => (
-  <text x={C} y={579} textAnchor="middle" dominantBaseline="central" fontSize="40" fontWeight={800}
-        className="font-fields-num" style={{ fill: SOFT, whiteSpace: 'pre' }}>
-    {children}
-  </text>
-);
-
 /** The change line ("Rain from 15:00") with a drop, centred as a pair. */
 function ChangeLine({ text }: { text: string }) {
   const [ref, width] = useTextWidth(text);
@@ -131,22 +94,6 @@ function ChangeLine({ text }: { text: string }) {
       />
       <text ref={ref} x={x0 + 38} y={627} dominantBaseline="central" fontSize="34" fontWeight={800}
             className="font-fields-num" style={{ fill: INK }}>
-        {text}
-      </text>
-    </g>
-  );
-}
-
-/** Outline chip in the change slot: the stale tell. Never a new hue. */
-function OutlineChip({ text }: { text: string }) {
-  const [ref, width] = useTextWidth(text);
-  const w = width + 56;
-  return (
-    <g opacity={width > 0 ? 1 : 0}>
-      <rect x={C - w / 2} y={598} width={w} height={58} rx={29} fill="none" strokeWidth={3}
-            style={{ stroke: INK }} />
-      <text ref={ref} x={C} y={627} textAnchor="middle" dominantBaseline="central" fontSize="30"
-            fontWeight={800} className="font-fields-num" style={{ fill: INK }}>
         {text}
       </text>
     </g>
@@ -209,18 +156,18 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
     summary = 'Weather is not set up. Set a location in the admin.';
     body = (
       <>
-        <HeroGlyph><MapPin x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
-        <Headline>Pick a place</Headline>
-        <Subline>Set a location in the admin</Subline>
+        <HeroGlyph roles={ROLES}><MapPin x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
+        <Headline roles={ROLES}>Pick a place</Headline>
+        <Subline roles={ROLES}>Set a location in the admin</Subline>
       </>
     );
   } else if (!model && offline) {
     summary = 'No weather yet. The forecast cannot be reached.';
     body = (
       <>
-        <HeroGlyph><WifiOff x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
-        <Headline>No weather yet</Headline>
-        <Subline>Can’t reach the forecast</Subline>
+        <HeroGlyph roles={ROLES}><WifiOff x={445} y={235} width={190} height={190} strokeWidth={2} /></HeroGlyph>
+        <Headline roles={ROLES}>No weather yet</Headline>
+        <Subline roles={ROLES}>Can’t reach the forecast</Subline>
       </>
     );
   } else if (!model) {
@@ -239,10 +186,10 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
         <g opacity={stale ? STALE_OPACITY : 1}>
           <Hero model={model} />
         </g>
-        <Headline>{condition}</Headline>
-        <Subline>{`H:${model.today.high}°   L:${model.today.low}°`}</Subline>
+        <Headline roles={ROLES}>{condition}</Headline>
+        <Subline roles={ROLES}>{`H:${model.today.high}°   L:${model.today.low}°`}</Subline>
         {stale && updatedAt
-          ? <OutlineChip text={`Offline since ${hhmm(updatedAt)}`} />
+          ? <OutlineChip roles={ROLES} text={`Offline since ${hhmm(updatedAt)}`} />
           : change && <ChangeLine text={change} />}
         <g opacity={stale ? STALE_OPACITY : 1}>
           <HourlyPanel model={model} />
@@ -252,18 +199,9 @@ export default function FieldsWeather({ model, label, offline, updatedAt, unconf
   }
 
   return (
-    <svg viewBox="0 0 1080 1080" className="h-full w-full" role="img" aria-label={summary}>
-      <circle cx={C} cy={C} r={C} style={{ fill: FIELD }} />
+    <FieldsDisc roles={ROLES} summary={summary} page={page} pageCount={pageCount}>
       <Header title={title} located={located} />
       {body}
-      {pageCount > 1 && (
-        <g>
-          {Array.from({ length: pageCount }, (_, i) => (
-            <circle key={i} cx={C + (i - (pageCount - 1) / 2) * 22} cy={968} r={6}
-                    opacity={i === page ? 1 : 0.35} style={{ fill: INK }} />
-          ))}
-        </g>
-      )}
-    </svg>
+    </FieldsDisc>
   );
 }

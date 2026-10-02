@@ -11,6 +11,8 @@ import MonthView from './MonthView';
 import YearView from './YearView';
 import DayView from './DayView';
 import DetailsView from './DetailsView';
+import FieldsCalendar from './FieldsCalendar';
+import { useSkin } from '../../core/skin';
 
 type LadderView = 'cover' | 'week' | 'month' | 'year';
 const LADDER: readonly LadderView[] = ['cover', 'week', 'month', 'year'];
@@ -82,7 +84,10 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     return [from.toISOString(), to.toISOString()];
   }, [view, focusDate, now, cfg.weekStart]);
 
-  const { events, offline, notConfigured } = useCalendarEvents(fromIso, toIso, isActive);
+  const { events, offline, notConfigured, loading } = useCalendarEvents(fromIso, toIso, isActive);
+  // Fields skin: only the resting cover has a Fields design so far; the zoom
+  // ladder and drills keep today's look (skins spec, decision 3).
+  const fields = useSkin() === 'fields';
   const todayEvents = useMemo(() => eventsForDay(events, now), [events, now]);
 
   // Vertical swipe: climbs/descends the zoom ladder; while drilled, swipe down
@@ -204,6 +209,15 @@ export default function CalendarApp({ isActive, config }: AppProps) {
           setFocusDate((d) => addMonths(d, delta * 12));
         }}
       />
+    );
+  }
+
+  if (fields && view === 'cover' && !drill) {
+    return (
+      <div className="relative h-full w-full bg-black overflow-hidden">
+        <FieldsCalendar now={now} events={events} timeFormat={cfg.timeFormat} offline={offline}
+                        notConfigured={notConfigured} loading={loading} page={0} pageCount={LADDER.length} />
+      </div>
     );
   }
 

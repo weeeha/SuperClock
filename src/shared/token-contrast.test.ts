@@ -87,6 +87,9 @@ const HAND_PAIRS: Array<[string, string]> = [
   ['--fields-weather-ink', '--fields-weather'],
   ['--fields-weather-ink', '--fields-weather-panel'],
   ['--fields-weather-ink-soft', '--fields-weather'],
+  ['--fields-calendar-ink', '--fields-calendar'],
+  ['--fields-calendar-ink', '--fields-calendar-panel'],
+  ['--fields-calendar-ink-soft', '--fields-calendar'],
 ];
 
 /** Every --surface-* role declared in tier 2, crossed with both generic ink

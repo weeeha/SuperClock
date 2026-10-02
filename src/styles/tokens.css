@@ -52,6 +52,15 @@
   --drop-cyan: #7fdbff;
   --drop-cyan-night: #5fb8da;
 
+  /* Fields skin v2, Calendar: the deep category red, same recipe as the blue
+     above (-plate is white at 14% over -deep). */
+  --field-red-deep: #c8102e;
+  --field-red-plate: #d0324b;
+  --field-red-mist: #ffe3e8;
+  --field-red-night-ink: #ffd5dc;
+  --field-red-night-soft: #e0899a;
+  --field-red-night-plate: #38040d;
+
   /* Pure neutral, the admin's ramp. HSL triplets, see the header. */
   --gray-4: 0 0% 4%;
   --gray-7: 0 0% 7%;
@@ -160,6 +169,13 @@
   --fields-weather-panel: var(--field-blue-plate);
   --fields-weather-sun: var(--sun-yellow);
   --fields-weather-drop: var(--drop-cyan);
+
+  /* Fields skin, Calendar (src/apps/calendar/FieldsCalendar.tsx): the deep
+     category red, white ink, a rose mist for secondary text on the disc. */
+  --fields-calendar: var(--field-red-deep);
+  --fields-calendar-ink: var(--stone-0);
+  --fields-calendar-ink-soft: var(--field-red-mist);
+  --fields-calendar-panel: var(--field-red-plate);
 }
 
 html.dark {
@@ -205,4 +221,8 @@ html.dark {
   --fields-weather-panel: var(--field-blue-night-plate);
   --fields-weather-sun: var(--sun-yellow-night);
   --fields-weather-drop: var(--drop-cyan-night);
+  --fields-calendar: var(--stone-1000);
+  --fields-calendar-ink: var(--field-red-night-ink);
+  --fields-calendar-ink-soft: var(--field-red-night-soft);
+  --fields-calendar-panel: var(--field-red-night-plate);
 }
