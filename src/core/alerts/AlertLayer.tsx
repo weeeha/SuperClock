@@ -1,8 +1,15 @@
 import { Suspense, createElement, useEffect } from 'react';
-import { useAlerts, ringPhase } from './alert-store';
-import { getAlertView, type AlertViewProps } from './views';
+import { RING_MS, useAlerts, ringPhase } from './alert-store';
+import { getAlertView, getLeadView, type AlertViewProps } from './views';
 import { createChime, deviceHasAudio } from './chime';
+import { requestPanelWake } from './wake';
+import { acquireBrightnessLease, releaseBrightnessLease } from '../brightness-lease';
 import { useDeviceConfig } from '../device-config';
+
+/** The brightness lease lasts 90 s; renew well inside it. */
+const LEASE_RENEW_MS = 60_000;
+/** Keep the panel on a minute past the settle time. */
+const WAKE_GRACE_MS = 60_000;
 
 // An alert whose app registered no view still has to be clearable.
 function FallbackAlert({ dismiss }: AlertViewProps) {
@@ -23,8 +30,16 @@ function FallbackAlert({ dismiss }: AlertViewProps) {
 export default function AlertLayer() {
   const ringing = useAlerts((s) => s.ringing);
   const dismiss = useAlerts((s) => s.dismiss);
+  const hideLead = useAlerts((s) => s.hideLead);
+  const leadAlert = useAlerts((s) => (s.leading ? s.scheduled.find((a) => a.id === s.leading) ?? null : null));
+  const leadHidden = useAlerts((s) => s.leadHidden);
   const deviceId = useDeviceConfig()?.deviceId;
-  const shouldChime = Boolean(ringing && !ringing.settled && ringing.sound && deviceHasAudio(deviceId));
+
+  const ringingNow = ringing !== null && !ringing.settled;
+  const shouldChime = ringingNow && ringing.sound && deviceHasAudio(deviceId);
+  const holdBright = ringingNow && ringing.bright === true;
+  const ringWakeUntil = ringingNow ? ringing.firedAt + (ringing.ringMs ?? RING_MS) + WAKE_GRACE_MS : null;
+  const leadWakeUntil = leadAlert ? leadAlert.firesAt + (leadAlert.ringMs ?? RING_MS) + WAKE_GRACE_MS : null;
 
   useEffect(() => {
     if (!shouldChime) return;
@@ -33,18 +48,48 @@ export default function AlertLayer() {
     return () => chime.stop();
   }, [shouldChime]);
 
-  if (!ringing) return null;
-  // createElement, not <View/>: the registry hands back a module-level
-  // component with a stable identity per appId, which react-hooks'
-  // static-components rule cannot see through a call result.
-  const view = createElement(getAlertView(ringing.appId) ?? FallbackAlert, {
-    alert: ringing,
-    phase: ringPhase(ringing),
-    dismiss,
-  });
-  return (
-    <div role="alertdialog" aria-label="Alert" className="fixed inset-0 z-[9500]">
-      <Suspense fallback={null}>{view}</Suspense>
-    </div>
-  );
+  // Full brightness while a bright alert rings, over night dimming.
+  useEffect(() => {
+    if (!holdBright) return;
+    acquireBrightnessLease();
+    const id = setInterval(() => acquireBrightnessLease(), LEASE_RENEW_MS);
+    return () => {
+      clearInterval(id);
+      releaseBrightnessLease();
+    };
+  }, [holdBright]);
+
+  // Wake a panel the server switched off: once per ring, once per lead.
+  useEffect(() => {
+    if (ringWakeUntil !== null) requestPanelWake(ringWakeUntil);
+  }, [ringWakeUntil]);
+  useEffect(() => {
+    if (leadWakeUntil !== null) requestPanelWake(leadWakeUntil);
+  }, [leadWakeUntil]);
+
+  if (ringing) {
+    // createElement, not <View/>: the registry hands back a module-level
+    // component with a stable identity per appId, which react-hooks'
+    // static-components rule cannot see through a call result.
+    const view = createElement(getAlertView(ringing.appId) ?? FallbackAlert, {
+      alert: ringing,
+      phase: ringPhase(ringing),
+      dismiss,
+    });
+    return (
+      <div role="alertdialog" aria-label="Alert" className="fixed inset-0 z-[9500]">
+        <Suspense fallback={null}>{view}</Suspense>
+      </div>
+    );
+  }
+
+  const Lead = leadAlert && !leadHidden ? getLeadView(leadAlert.appId) : undefined;
+  if (leadAlert && Lead) {
+    return (
+      <div role="dialog" aria-label="Alarm coming up" className="fixed inset-0 z-[9500]">
+        <Suspense fallback={null}>{createElement(Lead, { alert: leadAlert, hide: hideLead })}</Suspense>
+      </div>
+    );
+  }
+  return null;
 }
