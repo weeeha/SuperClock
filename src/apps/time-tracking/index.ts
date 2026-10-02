@@ -4,7 +4,7 @@ import { registerApp } from '../../core/registry';
 registerApp({
   metadata: {
     id: 'time-tracking',
-    name: 'Timer',
+    name: 'Focus',
     icon: '\u{23F1}',
     description: 'Pomodoro focus timer',
     category: 'productivity',

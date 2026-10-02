@@ -17,7 +17,8 @@ const APP_NAMES: Record<string, string> = {
   habits: 'Habits',
   'photo-frame': 'Photos',
   quote: 'Quote',
-  'time-tracking': 'Timer',
+  'time-tracking': 'Focus',
+  timer: 'Timer',
   todo: 'Todo',
   weather: 'Weather',
 };

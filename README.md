@@ -26,6 +26,7 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 - `photo-frame` — photo slideshow
 - `quote` — quote of the day
 - `time-tracking` — pomodoro focus timer
+- `timer` — a timer you set with a dial or a preset; it rings over any app when it runs out
 - `todo` — one flat list: tap to complete, swipe up for done
 - `weather` — current conditions and forecast
 
