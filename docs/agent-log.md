@@ -6,6 +6,28 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-01 · branch claude/countdown-app · Countdown app built, verified in the browser, deployed to fastclock
+
+Sub-project 1 of the missing-apps round, built from `docs/superpowers/plans/2026-10-01-countdown-app.md` by two Sonnet implementers with the controller reviewing every diff. Branch `claude/countdown-app`, cut from `1cff403`, 8 commits through `8b954aa`. Local only, not merged, not pushed.
+
+**Changed:** `src/apps/countdown/` (new: `index.ts`, `CountdownApp.tsx`, `countdown-state.ts`, `countdown-copy.ts`, three test files), `src/shared/schemas/app.countdown.ts` (new), registry touchpoints (`src/apps/index.ts`, `capabilities.ts`, `app-capabilities.ts` row `countdown: []`, `schema-registry.ts`, `schemas.snapshot.json`), admin `format: 'date'` (`src/shared/types.ts`, `src/admin/lib/schema-form.tsx` plus its first test file), `public/countdown-thumb.svg`, `src/shared/app-icons.ts`, `src/admin/lib/app-names.ts`, `src/core/components/AppGrid.tsx` (sixth column), `README.md`, `directive/foundation.md`, `docs/architecture.md` (14 → 15 apps, demanded by `docs-drift.test.ts`), regenerated `docs/health.md` and `docs/analysis/declared-vs-read.md`.
+
+**Verified:** `./scripts/gates.sh` green, 1105 tests. All six states rendered in the dev kiosk at a true 1080 × 1080 viewport and measured, not eyeballed: number 183.6 px (17vmin), label 28.08 px, caption 23.76 px; every text box and the ring's outer edge (497 px) inside the 540 px disc; the 39-character label wraps to exactly two lines; the ring's accent dash is 1061 of 2809, which is 130 of 344 days. Night flip confirmed with transitions disabled: muted ink 7.73:1 in day, 8.19:1 at night. fastclock runs `8b954aa` (health stamp), Chromium restarted, panel shows Minimalismo correctly, second-hand sweep 5.92 deg/s with zero stalled frames.
+
+**Decisions (rulings, recorded in the plan workspace ledger):** react-hooks `set-state-in-effect` rejected the plan's setState in the effect, so the catch-up on activation is the "adjust state during render" pattern, now covered by a test proven red without it. Docs-drift edits folded into the scaffold commit. Icon and name maps kept alphabetical.
+
+**Found while working:**
+- `switchToInstance` takes `(instanceId, appId)`; calling it with only the id sets `activeAppId` to undefined and blanks the kiosk.
+- In the hidden preview pane, swipe transitions freeze mid-flight: exiting apps stay mounted and the entering one keeps `translateX(-1080px)`. Measure relative to the app's own root, or reload per state.
+- `scripts/new-app.mjs` does not touch the three docs `docs-drift.test.ts` pins; the next new-app plan needs that step.
+
+**Open:**
+- **Countdown has not been seen on the real panel.** fastclock's `POST /api/device/config` is token-gated (401), so adding a Countdown screen needs Nick's admin login: Fast → Apps → add Countdown, set a target date.
+- Deferred minors: the admin input-type ternary could be a lookup map; `countdown` sits last in `APP_CAPABILITIES`.
+- The font-size ratchet does not count `style={{ fontSize }}` (spun off as its own task, running in a separate session).
+
+---
+
 ## 2026-10-01 · branch claude/catch-up-b7e4e2 · missing apps round: order decided, Countdown designed and specced
 
 Nick's call: build the four unbuilt apps smallest first, one spec, plan and build per sub-project: (1) Countdown, (2) background alerts + Timer, (3) Alarm, (4) admin-editable content + Notes, after which Todo and Alarm move onto that content sync.
