@@ -6,9 +6,9 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 ## Summary
 
-- Apps: 15 registered; 14 with a schema; config read by 15 (safeParse 14, parse 0, cast 0, raw 1); never read by 0.
+- Apps: 16 registered; 15 with a schema; config read by 16 (safeParse 15, parse 0, cast 0, raw 1); never read by 0.
 - Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
-- Schema fields: 75 declared (47 app, 28 face); 6 unread (6 app, 0 face).
+- Schema fields: 77 declared (49 app, 28 face); 6 unread (6 app, 0 face).
 
 ## Apps
 
@@ -27,6 +27,7 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 | photo-frame | app.photo-frame | safeParse | 4 | source, sourcePath |
 | quote | app.quote | safeParse | 4 | sourceUrl |
 | time-tracking | app.time-tracking | safeParse | 4 | weekStart |
+| timer | app.timer | safeParse | 2 | none |
 | todo | app.todo | safeParse | 2 | none |
 | weather | app.weather | safeParse | 4 | none |
 
