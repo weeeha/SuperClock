@@ -159,4 +159,8 @@ describe('snooze and helpers', () => {
     const bad = { instances: [{ id: 'y', appId: 'alarm', config: { snoozeMinutes: 99 } }] } as unknown as DeviceConfig;
     expect(alarmSettings(bad)).toEqual(defaults);
   });
+
+  it('falls back to defaults for a cached config with no instances', () => {
+    expect(alarmSettings({} as unknown as DeviceConfig)).toEqual(defaults);
+  });
 });

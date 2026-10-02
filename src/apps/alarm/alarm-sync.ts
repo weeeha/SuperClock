@@ -19,7 +19,7 @@ type Unsub = () => void;
 
 /** Alarm settings are device-wide: the first Alarm screen's config, else defaults. */
 export function alarmSettings(config: DeviceConfig | null | undefined): AlarmAppConfig {
-  const instance = config?.instances.find((i) => i.appId === 'alarm');
+  const instance = config?.instances?.find((i) => i.appId === 'alarm');
   const parsed = alarmAppSchema.safeParse(instance?.config ?? {});
   return parsed.success ? parsed.data : alarmAppSchema.parse({});
 }
