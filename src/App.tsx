@@ -9,6 +9,8 @@ import SwipeContainer from './core/components/SwipeContainer';
 import AppGrid from './core/components/AppGrid';
 import QuickSettings from './core/components/QuickSettings';
 import PresenceShade from './core/components/PresenceShade';
+import AlertLayer from './core/alerts/AlertLayer';
+import { useAlertScheduler } from './core/alerts/scheduler';
 import { startConfigSync, stopConfigSync } from './shared/local-config';
 import { useDeviceConfig } from './core/device-config';
 
@@ -38,6 +40,7 @@ export default function App() {
   useIdleReturn();
   usePlaylistAutoRotate();
   useApplySettings();
+  useAlertScheduler();
 
   return (
     <div ref={containerRef} className="h-screen w-screen overflow-hidden bg-black">
@@ -47,6 +50,7 @@ export default function App() {
       </AnimatePresence>
       <QuickSettings />
       <PresenceShade />
+      <AlertLayer />
       {import.meta.env.DEV && (
         <div
           id="gesture-debug"
