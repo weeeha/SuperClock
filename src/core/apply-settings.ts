@@ -3,6 +3,8 @@ import { useDeviceConfig } from './device-config';
 import { isWithinWindow } from '../shared/time-window';
 import { useLocalOverrides, effectiveBrightness, effectiveNight } from './local-overrides';
 import { useBrightnessLease } from './brightness-lease';
+import { useAlerts } from './alerts/alert-store';
+import { rampTransition } from './brightness-ramp';
 
 // Re-evaluate the night window this often. Boundary lag budget: ≤5s config
 // poll + ≤30s tick — same cadence as the server's display-adapter evaluator.
@@ -69,6 +71,11 @@ export function useApplySettings(): void {
   // and the syncBases effect below tidies the now-spent override.
   const isNight = effectiveNight(scheduledNight, nightOverride);
   const brightnessLeased = useBrightnessLease();
+  // Gentle wake: while an alert's lead window is open, the dimming fades out by
+  // its fire time (spec 2026-10-02-alarm-design.md, core change 6).
+  const leadFiresAt = useAlerts((s) =>
+    s.leading ? (s.scheduled.find((a) => a.id === s.leading)?.firesAt ?? null) : null,
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -116,18 +123,23 @@ export function useApplySettings(): void {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.transition = 'filter 1s ease';
-    // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
-    // filter that still costs a stacking context.
-    if (typeof applied === 'number' && applied < 100) {
-      const clamped = Math.max(0, applied);
-      root.style.filter = `brightness(${clamped / 100})`;
-    } else {
+    if (leadFiresAt !== null) {
+      root.style.transition = rampTransition(leadFiresAt, Date.now());
       root.style.filter = '';
+    } else {
+      root.style.transition = 'filter 1s ease';
+      // ≥100 (or unset) renders unfiltered — brightness(1) would be an identity
+      // filter that still costs a stacking context.
+      if (typeof applied === 'number' && applied < 100) {
+        const clamped = Math.max(0, applied);
+        root.style.filter = `brightness(${clamped / 100})`;
+      } else {
+        root.style.filter = '';
+      }
     }
     return () => {
       root.style.filter = '';
       root.style.transition = '';
     };
-  }, [applied]);
+  }, [applied, leadFiresAt]);
 }
