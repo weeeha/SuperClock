@@ -109,7 +109,7 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-7 | blocker | rendered | The admin passes at 375px |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 197 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
+Tree scan over 200 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
 
 Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/todo/index.ts` ×1.
 

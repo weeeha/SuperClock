@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { useNavigation } from '../navigation';
-import { classifyTouchStart } from '../gesture-zones';
+import { classifyTouchStart, isClaimedTarget } from '../gesture-zones';
 import type { TouchZone } from '../gesture-zones';
 import { resolveDragEnd } from '../gesture-resolve';
+import { isAlertRinging } from '../alerts/alert-store';
 
 const PINCH_IN_THRESHOLD = 0.9;
 
@@ -60,15 +61,20 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
   // Zone is decided at drag START (spec: origin owns the gesture) and
   // consumed at drag end. Ref, not state — gestures must not re-render.
   const zoneRef = useRef<TouchZone>('inner');
+  // A drag that starts on a claiming element, or while an alert rings, belongs
+  // to that element or to the alert: decided at start, honoured until the end.
+  const claimedRef = useRef(false);
   // Sheet height the peek progress is measured against (half the disc).
   const sheetHeight = () => window.innerHeight / 2;
 
   useGesture(
     {
-      onDragStart: ({ xy: [x, y] }) => {
+      onDragStart: ({ xy: [x, y], event }) => {
+        claimedRef.current = isClaimedTarget(event.target) || isAlertRinging();
         zoneRef.current = classifyTouchStart(x, y, window.innerWidth, window.innerHeight);
       },
       onDrag: ({ movement: [, my] }) => {
+        if (claimedRef.current) return;
         const { mode, settingsOpen, setPeek } = useNavigation.getState();
         if (mode !== 'app' || settingsOpen) return;
         // Peek-follow: bottom arc drags the settings sheet up with the finger.
@@ -77,6 +83,12 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         }
       },
       onDragEnd: ({ movement: [mx, my], velocity: [vx, vy] }) => {
+        const claimed = claimedRef.current || isAlertRinging();
+        claimedRef.current = false;
+        if (claimed) {
+          zoneRef.current = 'inner';
+          return;
+        }
         const nav = useNavigation.getState();
         const zone = zoneRef.current;
         zoneRef.current = 'inner';
@@ -105,7 +117,7 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
         pinchFired.current = false;
       },
       onPinch: ({ movement: [dScale] }) => {
-        if (pinchFired.current) return;
+        if (pinchFired.current || isAlertRinging()) return;
         // movement is per-gesture (offset is cumulative across gestures and
         // would instantly re-trigger every pinch after the first pinch-in).
         if (dScale < -(1 - PINCH_IN_THRESHOLD)) {
