@@ -1,7 +1,7 @@
 # Alarm — design
 
 **Date:** 2026-10-02
-**Status:** Approved in sections (Nick, this session). Sub-project 3 of 4 in the missing-apps round
+**Status:** Approved in sections (Nick, this session). Amended the same day after a board critique: Nick kept his own frames for gentle wake (frame 4), the resting view (frame 1) and ringing (frames 5 and 6). Sub-project 3 of 4 in the missing-apps round
 (Countdown → alerts + Timer → **Alarm** → admin-editable content + Notes). Builds on the core
 alert layer from sub-project 2 (`docs/superpowers/specs/2026-10-02-alerts-and-timer-design.md`).
 **Source:** board section **Alarm** `111:957` on the Designs page of the
@@ -12,14 +12,14 @@ session), admin wireframe D19 (`122:1019`).
 ## What it is
 
 A bedside-style alarm clock on the kiosk. Alarms repeat on chosen weekdays or fire once. Before an
-alarm, the panel wakes and the night dimming fades out (gentle wake). At the alarm time the core
-alert layer takes over the screen at full brightness: tap to snooze, hold to stop. Fastclock
-chimes; the other clocks flash and say they have no speaker. Alarms are set on the glass in this
+alarm, the panel wakes, a sunrise view takes the screen and the night dimming fades out (gentle
+wake). At the alarm time the core alert layer takes over the screen at full brightness: tap to
+snooze, hold to stop. Fastclock chimes; the other clocks flash and say they have no speaker. Alarms are set on the glass in this
 sub-project; editing them from the admin arrives with sub-project 4's content sync.
 
-The core layer gains five small, generic additions that Alarm needs and Timer benefits from: a
+The core layer gains six small, generic additions that Alarm needs and Timer benefits from: a
 per-alert ring length, an opt-in brightness hold, waking a panel the server switched off, a lead
-window before an alert, and a brightness ramp during that window.
+window before an alert, a lead view shown during that window, and a brightness ramp.
 
 ## Decisions
 
@@ -29,9 +29,11 @@ window before an alert, and a brightness ramp during that window.
 | 2 | Waking a switched-off panel | **A loopback-only wake request** from the kiosk to its own server (Nick, approach A) | Generic, tiny, and covers Timer too; the server never learns what an alarm is |
 | 3 | Where alarms are edited | **On the glass only**, for now | Admin CRUD needs sub-project 4's content sync, per the approved order |
 | 4 | Repeat model | `days: number[]` (0 Sunday … 6 Saturday); empty = **once**, which turns itself off after firing | Board note 2 |
-| 5 | Ringing input | **Tap: snooze. Hold 2 s: stop**, with a progress arc while held | Board note 5: snooze easy, stop deliberate |
+| 5 | Ringing input | **Tap: snooze. Hold 2 s: stop**, with Nick's horizontal hold bar filling while held | Board note 5: snooze easy, stop deliberate |
 | 6 | Night brightness | **Full brightness while an alarm rings** (brightness lease); a timer at night stays dimmed | An alarm is a wake-up; a timer is not |
-| 7 | Gentle wake | **A CSS transition** clears the night filter over the lead time | No JavaScript ticks; the browser animates the whole ramp |
+| 7 | Gentle wake | **Nick's sunrise view (board frame 4)** over the lead time, while a CSS transition clears the night filter (Nick, after the critique) | His design; the ramp itself still needs no JavaScript ticks |
+| 7a | Resting view | **Nick's frame 1**: an "armed" switch for the next alarm and its day pills; list rows show pills too, display only; days are edited on the set-time screen (Nick) | Pills in list rows would be under the 24 px touch minimum |
+| 7b | Ringing | **Nick's frames 5 and 6**: on a clock with a speaker, the time inside two still accent rings plus the chime; on a silent clock, the full-screen `.alert-pulse` flash plus the chip. Stop is a horizontal hold bar | His frames; the flash is only for clocks that cannot make a sound |
 | 8 | Sound | **One sound**, the existing chime, only with the `audio` flag | Volume and sound choice (D19's "chime ▾") are out of scope |
 | 9 | Ring dial | **Inside the claim band**, 5-minute steps, tap the readout to switch to hours | Same arc-zone rule as Timer (board note 3) |
 
@@ -76,7 +78,20 @@ scheduled alert inside its lead window) and a `setLeading(id | null)` action. `p
 `setLeading(alert.id)`. Firing or cancelling that alert clears `leading`. `leading` is persisted
 with the rest of the store.
 
-### 5. Brightness ramp
+### 5. Lead view
+
+`src/core/alerts/views.ts` gains `registerLeadView(appId, view)` / `getLeadView(appId)`, with
+`LeadViewProps { alert: ScheduledAlert; hide: () => void }`. The store gains `leadHidden: boolean`
+(reset whenever `leading` changes) and `hideLead()`. While `leading` is set, its app registered a
+lead view, and `leadHidden` is false, `AlertLayer` renders that view at `z-[9500]`. A tap calls
+`hide()`: the view goes away until the alarm fires, while the panel wake and the ramp carry on.
+
+A showing lead view holds the screen the way a ringing alert does. `isAlertRinging()` is replaced
+by `isScreenHeld()` (ringing, or a lead view showing) at its four call sites (`useGestures.ts`,
+`playlist.ts`, `useIdleReturn.ts`, `PresenceShade.tsx`), and the presence shade and the scheduler
+keep their existing behaviour otherwise.
+
+### 6. Brightness ramp
 
 While `leading` is set, `AlertLayer` calls `requestPanelWake(firesAt + ringMs + 60_000)` once, and
 `apply-settings` ramps: instead of its usual `filter 1s ease`, it sets
@@ -122,14 +137,20 @@ Face palette, Quote's `theme-fade`, the three ratchet sizes (`text-[17vmin]`, `t
 
 | # | Screen | Content | Input |
 |---|---|---|---|
-| 1 | **Resting** | Next alarm `HH:MM`; "in 8h 32m" (updates each minute while active); its days ("Weekdays", "Every day", "Mon, Wed", "Once") | Swipe ⇅ to the list |
-| 7 | **No alarms** | "No alarms" and an "Add alarm" button | Tap to add |
+| 1 | **Resting** (board frame 1) | Caption "Next alarm"; `HH:MM`; "in 8h 32m" (updates each minute while active); seven day pills S M T W T F S, filled for the alarm's days, display only; the "armed" switch with its label ("Armed" / "Off") | Switch toggles that alarm; swipe ⇅ to the list |
+| 7 | **No alarms** (frame 7) | A `--face-ghost` icon circle with lucide `AlarmClock` in `--face-ink-muted`, "No alarms", and an "Add alarm" button | Tap to add |
 | 1b | **All off** | "All alarms off" and "Turn one on in the list" | Swipe ⇅ to the list |
-| 2 | **List** | `RoundList` rows "07:10 · Weekdays" with a toggle each; last row "Add alarm" | Tap a row to edit; toggle |
+| 2 | **List** (frame 2) | `RoundList` rows: `HH:MM`, the day pills (display only), and the switch; last row "Add alarm" | Tap a row to edit; switch toggles |
 | 3 | **Set time** | `HH:MM` readout; the ring dial (claim band, 5-minute steps, readout tap switches to hours); seven day pills S M T W T F S; "Done" and, for an existing alarm, "Delete" | Drag, tap; back gesture saves |
-| 5 | **Ringing** (alert view) | The alarm's `HH:MM` with the shared `.alert-pulse`; caption "Tap to snooze · hold to stop" | Tap: snooze. Hold 2 s: stop (accent arc fills round the edge while held) |
-| 6 | **Silent clocks** | Ringing view plus the chip "No speaker on this clock" when `deviceHasAudio` is false | as 5 |
-| 8 | **Missed** (settled) | Still, muted "Missed" / `HH:MM` / "Tap to clear" | Tap: dismiss |
+| 5 | **Ringing, speaker** (alert view, frame 5) | `HH:MM` inside two still `--color-accent` rings (r 470 stroke 18, r 430 stroke 4, in the 1000-unit disc); "Tap to snooze 9 min"; "Hold 2 s to stop" above a horizontal hold bar (track `--face-ghost`, fill `--color-accent`) | Tap: snooze. Hold 2 s: the bar fills and stop fires; release early and it empties |
+| 6 | **Ringing, silent** (frame 6) | The same content on the full-screen `.alert-pulse` flash, no rings, plus the chip "No speaker, flash only" | as 5 |
+| 4 | **Gentle wake** (lead view, frame 4) | Concentric flat discs in `--color-accent` at three opacities (0.15, 0.3, 0.5) round a solid core: a sunrise without gradients; the current time at `17vmin`; "Alarm at 07:10". The time steps once a minute (a chained `setTimeout` to each minute boundary) | Tap: hide until the alarm |
+| 8 | **Missed** (settled, frame 8) | "Missed" in `--face-ink`; the missed `HH:MM` muted; "Next: tomorrow 07:10" (or "Next: Tue 07:10", or "No other alarms") in `--face-ink`; "Tap to clear" muted | Tap: dismiss |
+
+**The armed switch** reuses the quick-settings toggle's shape (`h-11 w-20` track, `h-9 w-9` knob,
+named `transition-colors` / `transition-transform`), recoloured for the face palette: track
+`--face-ghost` off, `--color-accent` on; knob `--face-bg`. It is a `button` with `role="switch"`
+and `aria-checked`.
 
 The ⇅ swipe uses `setVerticalSwipeCallback` and the set-time back gesture `setBackCallback`, both
 with HabitsApp's guarded cleanup (capture the callback, clear only if it is still ours), per
@@ -161,7 +182,9 @@ counts files); `npm run analyze -- --write` at the end.
 - Core: settle at `firedAt + ringMs`; old stored alerts without the new fields still load; the
   lease is acquired for `bright` alerts only and released on settle and on dismiss; one wake
   request per ring with the right `untilMs` (fetch mocked); `planNext` returns `lead` at
-  `firesAt − leadMs` and only once; `leading` clears on fire and cancel; `rampTransition` values.
+  `firesAt − leadMs` and only once; `leading` clears on fire and cancel; `rampTransition` values;
+  the lead view renders while leading, hides on tap (and stays hidden until the next lead), and
+  `isScreenHeld()` is true only while it shows or an alert rings.
 - Server: the wake route answers 403 to a non-loopback address, 400 to a bad body, and clamps to
   30 minutes; `decidePower` returns true inside a wake, and falls back to the schedule after it.
 - Alarm logic: `nextOccurrence` for once (today, tomorrow), weekdays, a single day, disabled; a
@@ -169,9 +192,11 @@ counts files); `npm run analyze -- --write` at the end.
   `HH:MM` local; `syncAlarmAlerts` schedules, cancels and is idempotent; firing schedules the next
   occurrence and turns a once-alarm off; snooze schedules `alarm:<id>:snooze`; store persistence
   and corrupt storage.
-- Alarm screens: resting, no alarms, all off; list toggle; set-time dial in hours and minutes,
-  day pills, Done, Delete; ringing tap snoozes; a 2 s hold stops (fake timers) and a shorter one
-  does not; missed; the silent chip from the device flag.
+- Alarm screens: resting (pills, armed switch toggles the next alarm), no alarms, all off; list
+  rows and switch; set-time dial in hours and minutes, day pills, Done, Delete; ringing with rings
+  on a speaker clock and the pulse plus chip on a silent one; tap snoozes; a 2 s hold fills the bar
+  and stops (fake timers) and a shorter one empties it; missed with each next-alarm wording; the
+  lead view's time and caption.
 - Rendered: every screen at 1080 × 1080 in both palettes; in the dev kiosk, an alarm two minutes
   ahead with gentle wake at 1 minute fires over another app, the night filter's transition shows
   the ramp, and the dev server answers the wake request.
