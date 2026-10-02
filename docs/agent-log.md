@@ -71,6 +71,20 @@ Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02
 
 ---
 
+## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Calendar cover in Fields v2, deployed to fastclock
+
+Nick: next apps to Fields v2. Timer is not on this branch (it is being built on `claude/alerts-timer`), so Calendar went first.
+
+**Code** (`f52b8dd`): `src/apps/calendar/FieldsCalendar.tsx` (+ tests) and `calendar-glance.ts` (+ tests: now / next / done-with-tomorrow, two rows max, all-day never leads, any feed order). CalendarApp renders it for the resting cover only when `settings.skin` is fields; week/month/year and drills stay Classic. Rows carry an ink bar, not an icon: CalendarEvent has no calendar colour or icon, and inferring one from the title would be invented. Shared Fields primitives moved to `src/core/fields.tsx` (components) and `src/core/fields-util.ts` (C, clip, useTextWidth; react-refresh wants component-only files). Tokens: `--fields-calendar*` (deep red #c8102e, rose mist, plate, night values), three contrast pairs. Gates green, 1135 tests.
+
+**Verified:** dev kiosk at 1080 with a sample .ics served from the scratchpad through two temporary launch configs (removed afterwards): Friday 2 October, Up next 16:00 Design review, in 1h 23m · until 17:00, Gym 18:00 and Dinner 19:30 on the platter; day and night. Deployed to fastclock (health `f52b8dd`), Chromium restarted.
+
+**Found:** fastclock has no `CALENDAR_ICS_URL`, so on glass the Fields cover shows its "No calendar yet / Add a calendar feed on the server" state. The design's states frame said "Link a calendar in the admin", which is wrong for this system; the code says server. With the preview pane hidden, scripted setTimeout waits never resolve; drive navigation synchronously and use the tool's own wait.
+
+**Open:** Calendar not seen on glass. Timer waits for `claude/alerts-timer`.
+
+---
+
 ## 2026-10-02 · branch claude/superlock-apps-redesign-1933c7 · Fields v2 (watchOS look) shipped to fastclock; a parallel deploy had masked v1
 
 **What Nick saw was not Fields.** Session `Catch-up` deployed `claude/alerts-timer` (`e40deae`) to fastclock at 12:38, 18 minutes after this branch's 12:20 deploy, so the panel showed the Classic Weather screen. The stored config survived (the other build's server reads fleet.json as JSON; its strict schema only matters on write). Nick's verdict on it ("too basic: icons, bolder font, Apple Watch apps as the quality reference") still applied to Fields v1, which was light-weight and nearly icon-free.
