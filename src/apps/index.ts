@@ -13,3 +13,4 @@ import './claude-usage';
 import './breathing';
 import './agents';
 import './todo';
+import './countdown';

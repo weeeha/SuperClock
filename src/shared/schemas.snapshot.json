@@ -85,6 +85,33 @@
       },
       "type": "object"
     },
+    "app.countdown": {
+      "properties": {
+        "label": {
+          "default": "",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "startDate": {
+          "default": "",
+          "type": "string"
+        },
+        "style": {
+          "default": "days",
+          "enum": [
+            "days",
+            "weeks",
+            "progress-ring"
+          ],
+          "type": "string"
+        },
+        "targetDate": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "app.fireplace": {
       "properties": {
         "hue": {
