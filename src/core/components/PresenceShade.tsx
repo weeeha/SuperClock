@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRadar } from '../radar';
 import { useDeviceConfig } from '../device-config';
 import { DEFAULT_ABSENT_AFTER_MIN } from '../../shared/radar';
+import { useAlerts } from '../alerts/alert-store';
 
 // Re-check the absence duration this often; presence *transitions* arrive
 // over SSE and re-render immediately, this tick only ages the timeout.
@@ -15,6 +16,7 @@ const ABSENCE_TICK_MS = 10_000;
 export default function PresenceShade() {
   const radar = useRadar();
   const config = useDeviceConfig();
+  const alertRinging = useAlerts((s) => s.ringing !== null);
 
   const enabled =
     radar?.available === true && config?.settings.presence?.enabled !== false;
@@ -40,6 +42,9 @@ export default function PresenceShade() {
     const lastSeenMs = radar.lastPresentAt ? Date.parse(radar.lastPresentAt) : mountMs;
     shaded = nowMs - lastSeenMs >= Math.max(1, absentAfterMin) * 60_000;
   }
+
+  // An alert must be seen; the shade steps aside until it is dismissed.
+  if (alertRinging) return null;
 
   return (
     <div

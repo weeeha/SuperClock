@@ -18,6 +18,7 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 - `calendar` — today's date and upcoming events from an iCal feed
 - `claude-usage` — session and weekly Claude Code rate-limit utilization, with the Clawd sprite
 - `clock` — watch faces (13 today), swipe to cycle
+- `countdown` — days to a date
 - `fireplace` — ambient fireplace animation
 - `fitness` — 7-minute workout circuits with a guided timer
 - `github` — GitHub contribution heatmap as a radial watch face
@@ -25,6 +26,7 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 - `photo-frame` — photo slideshow
 - `quote` — quote of the day
 - `time-tracking` — pomodoro focus timer
+- `timer` — a timer you set with a dial or a preset; it rings over any app when it runs out
 - `todo` — one flat list: tap to complete, swipe up for done
 - `weather` — current conditions and forecast
 

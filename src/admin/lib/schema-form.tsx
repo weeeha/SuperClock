@@ -1,5 +1,5 @@
 // Generic zod schema → form renderer.
-// Supports: string (with format: 'color' | 'url' | 'time'), number (with
+// Supports: string (with format: 'color' | 'url' | 'time' | 'date'), number (with
 // min/max/step), enum (select), boolean (switch), array-of-string (list
 // editor), array-of-enum (ordered multi-select). Dispatch logic lives in
 // schema-introspect.ts (unit-tested), array widgets in array-fields.tsx.
@@ -121,7 +121,15 @@ export function SchemaForm({ schema, meta, value, onChange }: Props) {
             >
               <input
                 disabled={disabled}
-                type={fmeta.format === 'url' ? 'url' : fmeta.format === 'time' ? 'time' : 'text'}
+                type={
+                  fmeta.format === 'url'
+                    ? 'url'
+                    : fmeta.format === 'time'
+                      ? 'time'
+                      : fmeta.format === 'date'
+                        ? 'date'
+                        : 'text'
+                }
                 value={(current as string) ?? ''}
                 placeholder={fmeta.placeholder}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => set(key, e.target.value)}

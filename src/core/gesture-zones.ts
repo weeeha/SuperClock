@@ -40,3 +40,14 @@ export function classifyTouchStart(
   if (deg < 225) return 'bottom-arc';
   return 'left-arc';
 }
+
+/** True when a drag starts inside an element that claims the gesture for
+ *  itself (Timer's dial band, later Alarm's ring dial). The global swipe
+ *  grammar stands down for that whole gesture. */
+export function isClaimedTarget(target: EventTarget | null): boolean {
+  return (
+    typeof Element !== 'undefined' &&
+    target instanceof Element &&
+    target.closest('[data-gesture="claim"]') !== null
+  );
+}

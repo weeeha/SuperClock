@@ -89,3 +89,24 @@ html, body, #root {
   animation-fill-mode: forwards;
   animation-duration: 500ms;
 }
+
+/* The ringing alert: the face palette and its inverse, half a second each.
+   One flash per second sits under the 3-per-second photosensitivity limit, it
+   loops only while an alert is really ringing, and the core scheduler settles
+   it after five minutes. Reduced motion holds the inverse instead. */
+@keyframes alert-pulse {
+  0% { background-color: var(--face-bg); color: var(--face-ink); }
+  50% { background-color: var(--face-ink); color: var(--face-bg); }
+}
+
+.alert-pulse {
+  animation: alert-pulse 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-pulse {
+    animation: none;
+    background-color: var(--face-ink);
+    color: var(--face-bg);
+  }
+}

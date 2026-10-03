@@ -37,4 +37,8 @@ export const APP_CAPABILITIES: Record<string, readonly AppCapability[]> = {
   'time-tracking': ['fetches', 'ticks', 'multiView', 'radar'],
   todo: ['multiView'],
   weather: ['fetches', 'ticks', 'multiView'],
+  // One midnight setTimeout, which is not a tick (ticks = setInterval or rAF).
+  countdown: [],
+  // The per-second readout interval, gated on isActive. The alert itself is core.
+  timer: ['ticks'],
 };

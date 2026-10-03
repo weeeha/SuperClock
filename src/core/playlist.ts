@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useDeviceConfig } from './device-config';
 import { useNavigation } from './navigation';
 import { loadLocalConfig } from '../shared/local-config';
+import { isAlertRinging } from './alerts/alert-store';
 import type { DeviceConfig } from '../shared/types';
 
 // 30-second cooldown after any user gesture before auto-rotation resumes.
@@ -24,6 +25,12 @@ function getRotationState(config: DeviceConfig | null) {
 export function isPlaylistDriving(): boolean {
   const { items, rotationSeconds } = getRotationState(loadLocalConfig());
   return Boolean(rotationSeconds) && items.length > 0;
+}
+
+/** Advance only once the post-gesture cooldown has passed, and never while an
+ *  alert holds the screen. */
+export function shouldAdvance(now: number, lastGestureMs: number, ringing: boolean): boolean {
+  return !ringing && now - lastGestureMs >= GESTURE_PAUSE_MS;
 }
 
 // Drives auto-rotation through DeviceConfig.playlist.items.
@@ -64,8 +71,7 @@ export function usePlaylistAutoRotate(): void {
     }
 
     const tick = () => {
-      const since = Date.now() - useNavigation.getState().lastGestureMs;
-      if (since < GESTURE_PAUSE_MS) return;
+      if (!shouldAdvance(Date.now(), useNavigation.getState().lastGestureMs, isAlertRinging())) return;
       goto((positionRef.current + 1) % items.length);
     };
 

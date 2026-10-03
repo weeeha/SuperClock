@@ -144,7 +144,7 @@ export interface FieldMeta {
   label?: string;
   description?: string;
   placeholder?: string;
-  format?: 'color' | 'url' | 'time';
+  format?: 'color' | 'url' | 'time' | 'date';
   min?: number;
   max?: number;
   step?: number;

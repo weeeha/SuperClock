@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useNavigation } from '../navigation';
 import { checkIdle, OVERLAY_IDLE_MS, HOME_IDLE_MS } from './useIdleReturn';
 import { isPlaylistDriving } from '../playlist';
+import { useAlerts } from '../alerts/alert-store';
 import '../../apps';
 
 vi.mock('../playlist', () => ({
@@ -17,6 +18,7 @@ beforeEach(() => {
     lastGestureMs: Date.now(),
   });
   useNavigation.getState().initApps();
+  useAlerts.setState({ scheduled: [], ringing: null });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -103,5 +105,15 @@ describe('checkIdle', () => {
     vi.advanceTimersByTime(HOME_IDLE_MS + 1000);
     checkIdle();
     expect(useNavigation.getState().activeAppId).toBe(home);
+  });
+
+  it('does nothing while an alert rings', () => {
+    useNavigation.getState().showGrid();
+    useAlerts.setState({
+      ringing: { id: 'r', appId: 'timer', firesAt: 0, firedAt: 0, sound: false, settled: false, payload: {} },
+    });
+    vi.advanceTimersByTime(HOME_IDLE_MS + 1000);
+    checkIdle();
+    expect(useNavigation.getState().mode).toBe('grid');
   });
 });

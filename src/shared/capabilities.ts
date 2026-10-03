@@ -36,6 +36,8 @@ const ALL_KIOSK_APP_IDS = [
   'claude-usage',
   'breathing',
   'todo',
+  'countdown',
+  'timer',
 ];
 
 // AppDescriptors built from the registries — no React imports, safe for
