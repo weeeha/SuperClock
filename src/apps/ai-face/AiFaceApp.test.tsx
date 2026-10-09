@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, act } from '@testing-library/react';
 
 const night = vi.hoisted(() => ({ value: false }));
 vi.mock('../../core/apply-settings', () => ({ useIsNight: () => night.value }));
@@ -11,7 +11,7 @@ vi.mock('./AvatarFrame', () => ({
 
 import AiFaceApp from './AiFaceApp';
 
-afterEach(() => { cleanup(); night.value = false; });
+afterEach(() => { cleanup(); night.value = false; vi.useRealTimers(); });
 
 describe('AiFaceApp', () => {
   it('defaults to Wheatley in demo with the Demo tell', () => {
@@ -52,5 +52,29 @@ describe('AiFaceApp', () => {
       expect(el.className).toContain('--sheet-ink');
       expect(el.className).not.toContain('--face-ink');
     }
+  });
+
+  it('refreshes the time label at once on activation, not at the next minute', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 9, 10, 0, 0));
+    const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const cfg = { source: 'fixed', showTime: true } as const;
+    const { rerender } = render(<AiFaceApp isActive={false} config={cfg} />);
+    const before = screen.getByTestId('ai-face-time').textContent;
+    expect(before).toBe(fmt(new Date(2026, 9, 9, 10, 0, 0)));
+
+    vi.setSystemTime(new Date(2026, 9, 9, 10, 7, 30)); // grid overlay was open for 7 minutes
+    rerender(<AiFaceApp isActive config={cfg} />);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(screen.getByTestId('ai-face-time').textContent).toBe(fmt(new Date(2026, 9, 9, 10, 7, 30)));
+  });
+
+  it('keeps the night-applied state identity across renders', () => {
+    night.value = true;
+    const cfg = { source: 'fixed', activity: 'thinking', expression: 'curious' } as const;
+    const { rerender } = render(<AiFaceApp isActive config={cfg} />);
+    const first = frame.props!.state;
+    rerender(<AiFaceApp isActive config={{ ...cfg }} />);
+    expect(frame.props!.state).toBe(first);
   });
 });

@@ -19,8 +19,13 @@ export default function AiFaceApp({ isActive, config }: AppProps) {
   );
   // Subscribing starts the demo interval, so only an active face subscribes.
   const raw = useSyncExternalStore(isActive ? store.subscribe : noopSubscribe, store.getSnapshot);
-  const state = applyNight(raw, useIsNight(), cfg.sleepAtNight);
+  const isNight = useIsNight();
+  // Memoised so the state keeps its identity across renders; applyNight builds
+  // a fresh object at night and the frame's apply effect keys on identity.
+  const state = useMemo(() => applyNight(raw, isNight, cfg.sleepAtNight), [raw, isNight, cfg.sleepAtNight]);
 
+  // The vendored artwork paints its own pure black stage and the injected page CSS
+  // cannot read parent tokens, so the wrapper matches it.
   return (
     <div className="relative h-full w-full bg-black">
       <AvatarFrame design={design} state={state} active={isActive} />
@@ -38,12 +43,14 @@ function TimeLabel({ active }: { active: boolean }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     if (!active) return;
+    // First tick at once, so a reactivated label never shows a stale minute;
+    // after that, on each minute boundary.
     let id: ReturnType<typeof setTimeout>;
     const tick = () => {
       setNow(new Date());
       id = setTimeout(tick, 60_000 - (Date.now() % 60_000) + 25);
     };
-    id = setTimeout(tick, 60_000 - (Date.now() % 60_000) + 25);
+    id = setTimeout(tick, 0);
     return () => clearTimeout(id);
   }, [active]);
   return (

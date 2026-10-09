@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, act, fireEvent } from '@testing-library/react';
-import AvatarFrame, { ATTACH_TIMEOUT_MS, UNMOUNT_AFTER_MS } from './AvatarFrame';
+import AvatarFrame, { ATTACH_TIMEOUT_MS, RETRY_AFTER_MS, SLEEP_SETTLE_MS, UNMOUNT_AFTER_MS } from './AvatarFrame';
 import { findDesign } from '../../shared/ai-face-designs';
 import type { AvatarController, FamilyAdapter } from './adapters/types';
 
@@ -153,5 +153,127 @@ describe('AvatarFrame', () => {
     loadIframe();
     act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
     expect(screen.getByText('Face unavailable')).toBeTruthy();
+  });
+
+  it('tears the page down when it becomes unavailable: no iframe, controller destroyed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { adapter, controller } = fakeAdapter();
+    controller.apply = vi.fn(() => { throw new Error('boom'); });
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(screen.getByText('Face unavailable')).toBeTruthy();
+    expect(document.querySelector('iframe')).toBeNull();
+    expect(controller.destroy).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('removes the iframe when the attach times out', () => {
+    const { adapter } = fakeAdapter(false);
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('shows the tell after the attach timeout even when load never fires', () => {
+    const { adapter } = fakeAdapter();
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
+    expect(screen.getByText('Face unavailable')).toBeTruthy();
+    expect(adapter.attach).not.toHaveBeenCalled();
+  });
+
+  describe('retry', () => {
+    function slowAdapter() {
+      const made = fakeAdapter();
+      let frame = 0;
+      made.controller.sample = vi.fn(() => ({ frame: (frame += 5), idle: false }));
+      return made;
+    }
+    function reachPaused(adapter: FamilyAdapter) {
+      const view = render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+      const first = loadIframe();
+      act(() => { vi.advanceTimersByTime(100); });
+      act(() => { vi.advanceTimersByTime(40_000); });
+      expect(screen.getByText('Paused to keep the clock cool')).toBeTruthy();
+      return { ...view, first };
+    }
+
+    it('mounts a fresh face after the cool-down while active, with a fresh guard', () => {
+      const { adapter } = slowAdapter();
+      const { first } = reachPaused(adapter);
+      act(() => { vi.advanceTimersByTime(RETRY_AFTER_MS - 1000); });
+      expect(document.querySelector('iframe')).toBe(first);
+      act(() => { vi.advanceTimersByTime(2000); });
+      const next = document.querySelector('iframe');
+      expect(next).not.toBeNull();
+      expect(next).not.toBe(first);
+      expect(screen.queryByText('Paused to keep the clock cool')).toBeNull();
+    });
+
+    it('retries an unavailable face with a new attach', () => {
+      const { adapter } = fakeAdapter(false);
+      render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+      loadIframe();
+      act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
+      expect(document.querySelector('iframe')).toBeNull();
+      act(() => { vi.advanceTimersByTime(RETRY_AFTER_MS + 1000); });
+      expect(document.querySelector('iframe')).not.toBeNull();
+      expect(screen.queryByText('Face unavailable')).toBeNull();
+      loadIframe();
+      act(() => { vi.advanceTimersByTime(100); });
+      expect(adapter.attach).toHaveBeenCalled();
+    });
+
+    it('does not retry while inactive', () => {
+      const { adapter } = slowAdapter();
+      const { rerender } = reachPaused(adapter);
+      rerender(<AvatarFrame design={design} state={state} active={false} adapter={adapter} />);
+      act(() => { vi.advanceTimersByTime(RETRY_AFTER_MS + UNMOUNT_AFTER_MS); });
+      expect(document.querySelector('iframe')).toBeNull();
+      // A later return is a fresh mount, not a stale paused face.
+      rerender(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+      expect(document.querySelector('iframe')).not.toBeNull();
+      expect(screen.queryByText('Paused to keep the clock cool')).toBeNull();
+    });
+  });
+
+  it('unpauses before it applies the state on reactivation', () => {
+    const { adapter, controller } = fakeAdapter();
+    const next = { activity: 'answering', expression: 'happy' } as const;
+    const { rerender } = render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(100); });
+    rerender(<AvatarFrame design={design} state={state} active={false} adapter={adapter} />);
+    vi.mocked(controller.apply).mockClear();
+    vi.mocked(controller.setPaused).mockClear();
+
+    rerender(<AvatarFrame design={design} state={next} active adapter={adapter} />);
+    const unpaused = vi.mocked(controller.setPaused).mock.calls.findIndex(([p]) => p === false);
+    expect(unpaused).toBeGreaterThanOrEqual(0);
+    const pauseOrder = vi.mocked(controller.setPaused).mock.invocationCallOrder[unpaused];
+    const applyOrder = vi.mocked(controller.apply).mock.invocationCallOrder[0];
+    expect(controller.apply).toHaveBeenCalledWith(next);
+    expect(pauseOrder).toBeLessThan(applyOrder);
+  });
+
+  it('pauses a sleeping page once its pose has settled, and unpauses on another activity', () => {
+    const { adapter, controller } = fakeAdapter();
+    const sleeping = { activity: 'sleeping', expression: 'neutral' } as const;
+    const { rerender } = render(<AvatarFrame design={design} state={sleeping} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(controller.setPaused).toHaveBeenLastCalledWith(false);
+
+    act(() => { vi.advanceTimersByTime(SLEEP_SETTLE_MS - 500); });
+    expect(controller.setPaused).toHaveBeenLastCalledWith(false);
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(controller.setPaused).toHaveBeenLastCalledWith(true);
+
+    rerender(<AvatarFrame design={design} state={{ activity: 'thinking', expression: 'neutral' }} active adapter={adapter} />);
+    expect(controller.setPaused).toHaveBeenLastCalledWith(false);
+    act(() => { vi.advanceTimersByTime(SLEEP_SETTLE_MS * 3); });
+    expect(controller.setPaused).toHaveBeenLastCalledWith(false);
   });
 });

@@ -24,6 +24,13 @@ describe('frame guard', () => {
     expect(g.level).toBe('full');
   });
 
+  it('keeps warm-up samples out of the verdict: slow only while settling stays at full', () => {
+    // 10 fps through the 10 s settle (decode, shader compile), 60 fps after.
+    let r = run(initialGuard(0), 10, 10, 0);
+    r = run(r.g, 60, 10, r.at, r.frame);
+    expect(r.g.level).toBe('full');
+  });
+
   it('steps to half after a slow window, then to paused after another', () => {
     let r = run(initialGuard(0), 10, 17, 0);
     expect(r.g.level).toBe('half');

@@ -28,6 +28,9 @@ const median = (xs: number[]) => {
 export function stepGuard(g: GuardState, s: AvatarSample, at: number): GuardState {
   if (g.level === 'paused') return g;
   if (s.idle) return { ...g, fps: [], lastFrame: null, lastAt: null };
+  // The settle period is warm-up (decode, shader compile): record the baseline
+  // only, so none of its samples reach the verdict window.
+  if (at < g.settleUntil) return { ...g, fps: [], lastFrame: s.frame, lastAt: at };
   if (g.lastFrame === null || g.lastAt === null || s.frame < g.lastFrame || at <= g.lastAt) {
     return { ...g, lastFrame: s.frame, lastAt: at };
   }
@@ -37,7 +40,7 @@ export function stepGuard(g: GuardState, s: AvatarSample, at: number): GuardStat
   if (s.frame === g.lastFrame) return { ...g, fps: [], lastFrame: s.frame, lastAt: at };
   const fps = [...g.fps, (s.frame - g.lastFrame) / ((at - g.lastAt) / 1000)].slice(-GUARD.window);
   const next = { ...g, fps, lastFrame: s.frame, lastAt: at };
-  if (at < g.settleUntil || fps.length < GUARD.window || median(fps) >= GUARD.minFps) return next;
+  if (fps.length < GUARD.window || median(fps) >= GUARD.minFps) return next;
   return {
     ...next,
     level: g.level === 'full' ? 'half' : 'paused',
