@@ -114,4 +114,14 @@ describe('AvatarFrame', () => {
     expect(screen.getByText('Paused to keep the clock cool')).toBeTruthy();
     expect(controller.setPaused).toHaveBeenLastCalledWith(true);
   });
+
+  it('paints its tells with the mode-stable ink on the always-black surface', () => {
+    const { adapter } = fakeAdapter(false);
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
+    const tell = screen.getByText('Face unavailable');
+    expect(tell.className).toContain('--sheet-ink');
+    expect(tell.className).not.toContain('--face-ink');
+  });
 });

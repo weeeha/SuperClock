@@ -42,4 +42,15 @@ describe('AiFaceApp', () => {
     expect(frame.props!.active).toBe(false);
     expect(screen.getByTestId('ai-face-time')).toBeTruthy();
   });
+
+  // The surface is bg-black in both modes, so its text must read a role that
+  // does not flip with the mode (--sheet-ink), never --face-ink, which is
+  // black in day mode.
+  it('paints the time label and the Demo tell with the mode-stable ink', () => {
+    render(<AiFaceApp isActive config={{ showTime: true }} />);
+    for (const el of [screen.getByTestId('ai-face-time'), screen.getByText('Demo')]) {
+      expect(el.className).toContain('--sheet-ink');
+      expect(el.className).not.toContain('--face-ink');
+    }
+  });
 });

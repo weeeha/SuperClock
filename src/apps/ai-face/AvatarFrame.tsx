@@ -126,6 +126,6 @@ function Page({ design, state, active, adapter }: Required<Props>) {
 
 function Tell({ children }: { children: string }) {
   return (
-    <p className="absolute inset-x-0 bottom-[22%] text-center text-[2.4vmin] text-(--face-ink-muted)">{children}</p>
+    <p className="absolute inset-x-0 bottom-[22%] text-center text-[2.4vmin] opacity-60 text-[hsl(var(--sheet-ink))]">{children}</p>
   );
 }

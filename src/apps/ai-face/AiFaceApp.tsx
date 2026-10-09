@@ -26,7 +26,7 @@ export default function AiFaceApp({ isActive, config }: AppProps) {
       <AvatarFrame design={design} state={state} active={isActive} />
       {cfg.showTime && <TimeLabel active={isActive} />}
       {cfg.source === 'demo' && (
-        <span className="absolute inset-x-0 top-[12%] text-center text-[2vmin] text-(--face-ink-muted)">Demo</span>
+        <span className="absolute inset-x-0 top-[12%] text-center text-[2vmin] opacity-60 text-[hsl(var(--sheet-ink))]">Demo</span>
       )}
     </div>
   );
@@ -49,7 +49,7 @@ function TimeLabel({ active }: { active: boolean }) {
   return (
     <span
       data-testid="ai-face-time"
-      className="absolute inset-x-0 bottom-[10%] text-center text-[3vmin] tabular-nums text-(--face-ink)"
+      className="absolute inset-x-0 bottom-[10%] text-center text-[3vmin] tabular-nums text-[hsl(var(--sheet-ink))]"
     >
       {fmt(now)}
     </span>
