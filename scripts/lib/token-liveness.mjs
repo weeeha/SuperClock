@@ -200,24 +200,15 @@ export const UNCONSUMED_LEDGER = [
   // says so). The sheet's text and its toggle knob read new, deliberately
   // mode-invariant roles instead (--sheet-ink, --fill-knob, both declared
   // in src/styles/tokens.css tier 2), wired in the same change that added
-  // them, so neither ever entered this ledger.
-  {
-    token: '--ink',
-    reason: 'admin text-on-surface colour, inverts between modes by design; wrong for the always-dark quick-settings sheet, which reads the new mode-invariant --fill-knob for its toggle knob instead (see the Group 1 comment above). Awaits a genuinely mode-dependent consumer, e.g. the admin in sub-project 2',
-  },
-  {
-    token: '--ink-muted',
-    reason: 'admin muted text-on-surface colour, inverts between modes by design; wrong for the always-dark quick-settings sheet, which reads the new mode-invariant --sheet-ink for its labels and wifi value instead (see the Group 1 comment above). Awaits a genuinely mode-dependent consumer, e.g. the admin in sub-project 2',
-  },
+  // them, so neither ever entered this ledger. --ink and --ink-muted left
+  // the ledger 2026-10-09 with --surface-ground: the kiosk's crash tell
+  // (src/core/components/AppErrorBoundary.tsx) is the mode-dependent
+  // consumer they were waiting for.
   // Group 2: the admin's shadcn vocabulary, deferred whole to sub-project 2
   // on 2026-09-06 (spec Scope section) because an @theme inline block would
   // otherwise ship dead utility variables ahead of any consumer. Each entry
   // is deleted when a component writes hsl(var(--role-name)) directly, or
   // when the gate gains a tier-aware alias-plus-utility predicate.
-  {
-    token: '--surface-ground',
-    reason: 'admin app background; the --color-background alias sub-project 2 plans only adds a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--surface-ground)) directly or the gate gains a tier-aware alias-plus-utility predicate',
-  },
   {
     token: '--surface-card',
     reason: 'admin card background; aliasing --color-card onto this role is a declaration line stripDeclarations removes along with the reference inside it, so retiring this entry needs a component that writes hsl(var(--surface-card)) directly or a consumedRamps-style predicate that credits the alias',

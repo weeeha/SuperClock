@@ -316,11 +316,8 @@ describe('UNCONSUMED_LEDGER — shrink-only, every entry carries a reason', () =
         // Group 1: the always-dark quick-settings sheet's mode-inverting
         // generic ink roles, wrong for that surface (see the entries'
         // own reasons in token-liveness.mjs).
-        '--ink',
-        '--ink-muted',
         // Group 2: the admin's shadcn vocabulary, deferred whole to
         // sub-project 2.
-        '--surface-ground',
         '--surface-card',
         '--surface-sheet',
         '--surface-popover',

@@ -6,6 +6,26 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-09 · branch claude/youthful-galileo-f4d23d · error boundaries around the kiosk app slot
+
+Trigger: on 2026-10-09 an effect cleanup in the ai-face app (branch `claude/super-clock-ai-face-748b95`) threw, React unmounted the whole root, and the kiosk sat on an empty body. There was no error boundary anywhere in `src/`.
+
+**Changed:**
+- New `src/core/components/AppErrorBoundary.tsx` with two boundaries. `AppErrorBoundary` wraps the app inside SwipeContainer's keyed `motion.div` (inside Suspense, so a failed lazy chunk lands there too) and catches render, lifecycle and effect errors from a live app, including a cleanup that throws when its effect re-runs. It logs `[app-crash] <appId>` plus the component stack and renders `AppErrorTell`: the app's name in `--ink` and "Something went wrong" in `--ink-muted` on `--surface-ground`, at 3vmin / 2.2vmin (both sizes already in the tree), `role="alert"`, static, not interactive. It resets for free: the slot is keyed on the instance, so navigating away and back mounts a fresh boundary.
+- `ShellGuard` wraps `AnimatePresence`. It exists because React sends a commit-phase error to the nearest boundary that is still **mounted**, and a cleanup that throws while an app is swiped away runs inside the subtree being deleted, so the slot boundary is skipped (the console stack shows `commitPassiveUnmountEffectsInsideOfDeletedTree`). That is the 2026-10-09 shape. The guard logs `[app-crash] escaped its slot`, remounts its children under a new key, and calls `onRecover` (SwipeContainer passes one that releases a stranded `mode: 'transitioning'`, because a remount drops the exiting child whose `onExitComplete` would have done it). More than 3 escapes within 10 s stops the remounting and shows the tell named "SuperClock", so a shell that throws on every render cannot loop.
+- `src/core/components/SwipeContainer.tsx` wires both. `scripts/lib/token-liveness.mjs` + `.test.ts`: `--ink`, `--ink-muted` and `--surface-ground` leave `UNCONSUMED_LEDGER` (the tell is the mode-dependent reader those entries were waiting for). `docs/health.md` regenerated (file count).
+
+**Verified:** `./scripts/gates.sh` green, 1169 tests. New `src/core/components/AppErrorBoundary.test.tsx` (jsdom, real SwipeContainer and nav store, fake apps): throw in render (tell, log with id, swipe away, return resets), cleanup throws on unmount during a swipe (shell survives, next app renders, mode back to `app`), cleanup throws on effect re-run (tell). Proven red: without `ShellGuard` the unmount test fails with an unhandled error even though the slot boundary is present; without the slot boundary the other two fail. In the dev kiosk (port 5181, 1080 × 1080) with a temporary flag in QuoteApp, since reverted: day tell `rgb(10,10,10)` / `rgb(41,41,41)` on white, night `rgb(245,245,245)` / `rgb(153,153,153)` on `rgb(10,10,10)`; a synthetic swipe starting on the tell moved to Photo Frame; returning to Quote rendered the quote; a cleanup throw while leaving Quote left Fireplace mounted and the nav store in `app`. The unslop audit found nothing to fix.
+
+**Not covered (by design of React):** errors in event handlers, timers, promise callbacks. Those never reach a boundary; a global `window.onerror` / `unhandledrejection` logger would be the separate step if wanted.
+
+**Open:**
+- Not seen on the round panel and not deployed.
+- The day tell is a white ground, like the day faces; apps that hard-code `bg-black` will cut to white when they crash in daytime. That is the palette working as declared, but worth a look on glass.
+- The ai-face branch still has its throwing cleanup; this change contains it, it does not fix it.
+
+---
+
 ## 2026-10-02 · branch claude/alerts-timer · background alert layer + Timer app built, verified, deployed to fastclock
 
 Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02-alerts-and-timer-design.md`, plan `docs/superpowers/plans/2026-10-02-alerts-and-timer.md`; board Timer section `51:863` gained frames 3 (Paused) and 4 (Done · after 5 min) plus a dated update note. Built by three Sonnet implementers, every diff reviewed by the controller. Branch cut from `4a450cb`, through `e40deae`. Local only, not merged, not pushed.
