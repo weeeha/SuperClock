@@ -2,6 +2,7 @@ import type { AvatarSample } from './adapters/types';
 
 // Spec 3.6 (decision 8.1 = A): every design is offered everywhere; one that
 // cannot keep up steps down to half resolution, then pauses with a tell.
+// Only moving, non-idle samples are judged; a stalled counter is not evidence.
 // Pure, so the thresholds are tested without a renderer.
 export type GuardLevel = 'full' | 'half' | 'paused';
 
@@ -30,6 +31,10 @@ export function stepGuard(g: GuardState, s: AvatarSample, at: number): GuardStat
   if (g.lastFrame === null || g.lastAt === null || s.frame < g.lastFrame || at <= g.lastAt) {
     return { ...g, lastFrame: s.frame, lastAt: at };
   }
+  // Zero new frames is a stall (hidden or occluded renderer, throttled timers),
+  // not slowness: a face that is too slow for the Pi still draws frames. Treat
+  // it like an idle sample: restart the window, keep this sample as baseline.
+  if (s.frame === g.lastFrame) return { ...g, fps: [], lastFrame: s.frame, lastAt: at };
   const fps = [...g.fps, (s.frame - g.lastFrame) / ((at - g.lastAt) / 1000)].slice(-GUARD.window);
   const next = { ...g, fps, lastFrame: s.frame, lastAt: at };
   if (at < g.settleUntil || fps.length < GUARD.window || median(fps) >= GUARD.minFps) return next;

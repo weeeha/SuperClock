@@ -54,4 +54,30 @@ describe('frame guard', () => {
     expect(r.g.level).toBe('full');
     expect(r.g.fps.every((f) => f >= 0)).toBe(true);
   });
+
+  it('reads a counter that never advances as a stall, not slowness', () => {
+    let g = initialGuard(0);
+    let at = GUARD.settleMs;
+    for (let i = 0; i < 60; i++) {
+      g = stepGuard(g, { frame: 42, idle: false }, at);
+      at += 1000;
+    }
+    expect(g.level).toBe('full');
+    expect(g.fps).toEqual([]);
+  });
+
+  it('only steps down on 5 consecutive moving samples under the floor; a stall restarts the window', () => {
+    // Stalled through the settle, then rounds of 4 slow deltas followed by a stall:
+    // the window never reaches 5.
+    let r = run(initialGuard(0), 0, 11, 0, 100);
+    for (let round = 0; round < 3; round++) {
+      r = run(r.g, 10, 5, r.at, r.frame); // first sample repeats the stalled value, then 4 slow deltas
+      expect(r.g.level).toBe('full');
+      r = run(r.g, 0, 1, r.at, r.frame - 10); // repeat the last frame value: a stall
+      expect(r.g.level).toBe('full');
+    }
+    // Six moving samples in a row give 5 slow deltas (the first repeats the stalled value).
+    r = run(r.g, 10, 7, r.at, r.frame);
+    expect(r.g.level).toBe('half');
+  });
 });
