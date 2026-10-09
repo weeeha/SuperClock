@@ -6,6 +6,7 @@
 // Unknown ids humanize instead of vanishing.
 const APP_NAMES: Record<string, string> = {
   agents: 'Agents',
+  'ai-face': 'AI Face',
   breathing: 'Breathing',
   calendar: 'Calendar',
   'claude-usage': 'Claude Usage',

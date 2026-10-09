@@ -6,15 +6,16 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 
 ## Summary
 
-- Apps: 16 registered; 15 with a schema; config read by 16 (safeParse 15, parse 0, cast 0, raw 1); never read by 0.
+- Apps: 17 registered; 16 with a schema; config read by 17 (safeParse 16, parse 0, cast 0, raw 1); never read by 0.
 - Faces: 13 registered; 12 with a schema; faceConfig read by 12 (safeParse 12, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
-- Schema fields: 77 declared (49 app, 28 face); 6 unread (6 app, 0 face).
+- Schema fields: 83 declared (55 app, 28 face); 11 unread (11 app, 0 face).
 
 ## Apps
 
 | App | Schema | Parse | Declared | Unread |
 |---|---|---|---|---|
 | agents | app.agents | safeParse | 2 | none |
+| ai-face | app.ai-face | safeParse | 6 | source, activity, expression, showTime, sleepAtNight |
 | breathing | app.breathing | safeParse | 1 | none |
 | calendar | app.calendar | safeParse | 4 | none |
 | claude-usage | app.claude-usage | safeParse | 3 | none |

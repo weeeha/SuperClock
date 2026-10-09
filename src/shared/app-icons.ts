@@ -6,6 +6,7 @@
 // real files by registry-contract.test.ts.
 export const APP_ICONS: Record<string, string> = {
   agents: '/agents-thumb.svg',
+  'ai-face': '/avatars/assets/abstract/wheatley.png',
   calendar: '/66e1444195d1e33bc606b22d835d1fd622557dcb.png',
   'claude-usage': '/claude-usage-thumb.svg',
   clock: '/0c1961af226ba211646b2b33306bc15147b1b2b6.png',

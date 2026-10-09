@@ -24,6 +24,7 @@ const appFaces: { id: string; src: string }[] = [
   { id: 'todo',            src: '/todo-thumb.svg' },
   { id: 'countdown',       src: '/countdown-thumb.svg' },
   { id: 'timer',           src: '/timer-thumb.svg' },
+  { id: 'ai-face',         src: '/avatars/assets/abstract/wheatley.png' },
 ];
 
 // Arrange into columns matching Figma layout (489:30357)
