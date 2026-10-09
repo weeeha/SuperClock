@@ -124,4 +124,34 @@ describe('AvatarFrame', () => {
     expect(tell.className).toContain('--sheet-ink');
     expect(tell.className).not.toContain('--face-ink');
   });
+
+  it('does not throw on unmount when the controller destroy throws', () => {
+    const { adapter, controller } = fakeAdapter();
+    controller.destroy = vi.fn(() => { throw new Error('Framebuffer incomplete'); });
+    const { unmount } = render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(() => unmount()).not.toThrow();
+    expect(controller.destroy).toHaveBeenCalled();
+  });
+
+  it('shows the unavailable tell when the page throws on apply', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { adapter, controller } = fakeAdapter();
+    controller.apply = vi.fn(() => { throw new Error('boom'); });
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(screen.getByText('Face unavailable')).toBeTruthy();
+    warn.mockRestore();
+  });
+
+  it('shows the unavailable tell when attach throws on every call', () => {
+    const { adapter } = fakeAdapter();
+    adapter.attach = vi.fn(() => { throw new Error('page not ready'); });
+    render(<AvatarFrame design={design} state={state} active adapter={adapter} />);
+    loadIframe();
+    act(() => { vi.advanceTimersByTime(ATTACH_TIMEOUT_MS + 100); });
+    expect(screen.getByText('Face unavailable')).toBeTruthy();
+  });
 });

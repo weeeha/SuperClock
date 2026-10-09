@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AvatarDesign } from '../../shared/ai-face-designs';
 import { adapterFor } from './adapters';
+import { safeController } from './adapters/safe';
 import type { AvatarController, FamilyAdapter } from './adapters/types';
 import { initialGuard, stepGuard, type GuardLevel, type GuardState } from './frame-guard';
 import type { AvatarState } from './sources/types';
@@ -57,10 +58,16 @@ function Page({ design, state, active, adapter }: Required<Props>) {
     (doc.head ?? root.appendChild(doc.createElement('head'))).append(style);
     const started = Date.now();
     pollRef.current = setInterval(() => {
-      const c = adapter.attach(win, design);
+      let c: AvatarController | null = null;
+      try {
+        c = adapter.attach(win, design);
+      } catch {
+        // A page that throws while loading is not ready yet; the timeout below
+        // turns a page that never recovers into the unavailable tell.
+      }
       if (c) {
         if (pollRef.current) clearInterval(pollRef.current);
-        controllerRef.current = c;
+        controllerRef.current = safeController(c, design.id, () => setStatus('unavailable'));
         setStatus('ready');
       } else if (Date.now() - started >= ATTACH_TIMEOUT_MS) {
         if (pollRef.current) clearInterval(pollRef.current);
