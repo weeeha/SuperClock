@@ -420,6 +420,10 @@
           {
             "path": "src/apps/calendar/useCalendarEvents.ts",
             "reason": "gated through its `enabled` parameter (`if (!enabled) return`), which CalendarApp feeds from isActive; the word isActive appears only in its doc comment, which the runner strips"
+          },
+          {
+            "path": "src/apps/ai-face/sources/demo.ts",
+            "reason": "the demo source owns its interval only between subscribe() and the returned unsubscribe; AiFaceApp subscribes through useSyncExternalStore only while the app is active, so the gate lives at the subscription, not inside the source"
           }
         ],
         "falsePositives": "A file that mentions `active` for another reason passes without gating: this is a floor, not proof. A file that receives the gate through a parameter named otherwise (useCalendarEvents' `enabled`) reads as ungated and is exempted by name with the reason."

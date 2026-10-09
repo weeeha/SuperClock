@@ -113,7 +113,7 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-7 | blocker | rendered | The admin passes at 375px |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 215 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
+Tree scan over 222 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
 
 Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/todo/index.ts` ×1.
 
@@ -121,10 +121,11 @@ Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1`
 
 Delegated to other gates: `FCE-2` → src/shared/lvgl-parity.test.ts, `FCE-3` → scripts/check-tokens.mjs, `KIO-3` → eslint.config.js, `SYS-1` → scripts/check-tokens.mjs.
 
-Sanctioned exemptions (8):
+Sanctioned exemptions (9):
 
 - `COL-4` src/admin/App.tsx: sticky admin header blurring scrolled content beneath it: real content, sanctioned 2026-09-05
 - `COL-4` src/core/components/QuickSettings.tsx: the quick-settings sheet blurs the live app beneath it: real content, sanctioned 2026-09-05
+- `KIO-1` src/apps/ai-face/sources/demo.ts: the demo source owns its interval only between subscribe() and the returned unsubscribe; AiFaceApp subscribes through useSyncExternalStore only while the app is active, so the gate lives at the subscription, not inside the source
 - `KIO-1` src/apps/calendar/useCalendarEvents.ts: gated through its `enabled` parameter (`if (!enabled) return`), which CalendarApp feeds from isActive; the word isActive appears only in its doc comment, which the runner strips
 - `LAY-4` src/admin/components/ui/: vendored shadcn primitives keep their literals on purpose; retuning them is a primitive change, not a cleanup
 - `MOT-1` src/apps/breathing/: ambient carve-out (unslop Phase 0): the animation IS the app
