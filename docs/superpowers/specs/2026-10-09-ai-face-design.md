@@ -1,6 +1,6 @@
 # AI Face app: all 50 AI-Avatars designs on SuperClock
 
-Date: 2026-10-09 · Branch: `claude/super-clock-ai-face-748b95` · Status: draft, awaiting Nick's review
+Date: 2026-10-09 · Branch: `claude/super-clock-ai-face-748b95` · Status: approved by Nick 2026-10-09 (decision 8.1 = A)
 
 **TL;DR.** A new kiosk app, `ai-face`, shows any of the 50 character designs from [weeeha/AI-Avatars](https://github.com/weeeha/AI-Avatars) (merged PR 8) full-screen on the round display, driven by one shared state vocabulary (12 activities × 7 expressions + reactions). The original renderers are vendored from a pinned AI-Avatars commit and driven through a small per-family adapter, so nothing is redrawn and AI-Avatars stays the source of truth. v1 is driven by a demo or fixed state; a later `main-agent` source makes it Lifey's face. Fragment and Third Eye speak through fastclock's Fusion HAT speaker. Four sub-projects, one plan and build each.
 
@@ -140,7 +140,7 @@ Switching `source` to `main-agent` changes no other file in the app. Agent offli
 
 ## 8. Open decisions for Nick
 
-1. **WebGL designs on Small and Square (Pi 4).** Options:
+1. **WebGL designs on Small and Square (Pi 4).** Decided 2026-10-09: **A**. Options considered:
    - **A. Allow with the runtime frame guard (recommended, the current default).** Every design is offered everywhere; a struggling design steps down to half resolution, then pauses with a tell. Nothing is blocked on measurements.
    - B. Allow only designs that pass SP3's measured qualification per device; the admin hides the rest. Safest, but nothing WebGL shows on Pi 4 until SP3 runs.
    - C. Always render WebGL at half resolution on Pi 4. Simple, softer image even when it would have coped.
