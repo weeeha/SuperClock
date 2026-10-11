@@ -2,6 +2,8 @@
 
 A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperClock bundles a set of mini-apps (clock, weather, calendar, fitness, GitHub stats, habits, fireplace, photo frame, quotes, time tracking, Claude usage) into a single full-screen interface designed for a 1080×1080 circular LCD, plus a fleet admin panel served at `/admin` on the admin host.
 
+![SuperClock complications watch face, captured from a local dev run](docs/screenshots/clock-face-complications.webp)
+
 ## Hardware
 
 - **SBC:** Raspberry Pi 4/5 (per device — see `superclock-*/device.json`)
@@ -30,6 +32,18 @@ A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperCloc
 - `timer` — a timer you set with a dial or a preset; it rings over any app when it runs out
 - `todo` — one flat list: tap to complete, swipe up for done
 - `weather` — current conditions and forecast
+
+## Screenshots
+
+Captured from a local dev run (`npm run dev`) in a 1440x900 browser window, with demo data in the complications.
+
+![Flip clock face](docs/screenshots/clock-face-flip.webp)
+
+Flip face, one of the 13 clock faces.
+
+![Daylight clock face](docs/screenshots/clock-face-daylight.webp)
+
+Daylight face, one of the 13 clock faces.
 
 ## Tech stack
 
@@ -79,6 +93,7 @@ All config lives in `.env` (see `.env.example`). Variables prefixed `VITE_` are 
 | `VITE_WEATHER_TZ` | Weather app | IANA tz, defaults to `auto`. |
 | `VITE_WEATHER_UNIT` | Weather app | `fahrenheit` to switch units; anything else = celsius. Used only when the instance's `unit` was never set. |
 | `CALENDAR_ICS_URL` | Calendar app | Any iCal URL (Google Calendar secret address, iCloud, Outlook). Read server-side; the browser only sees the parsed event list. |
+| `ADMIN_HOST` | Admin panel | `true` on the one Pi that hosts the fleet admin; serves `/api/admin/*` and `/admin/*`. Other Pis return 404 for admin routes. Defaults to `false`. |
 
 ### Photos
 
