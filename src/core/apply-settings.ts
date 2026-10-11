@@ -17,6 +17,28 @@ function subscribeToNightTick(onTick: () => void): () => void {
 
 const getServerSnapshot = (): boolean => false;
 
+/** True inside the configured night window (schedule only, no local override). */
+export function useScheduledNight(): boolean {
+  const config = useDeviceConfig();
+  const nightStart = config?.settings.night?.start;
+  const nightEnd = config?.settings.night?.end;
+  return useSyncExternalStore(
+    subscribeToNightTick,
+    () =>
+      nightStart !== undefined &&
+      nightEnd !== undefined &&
+      isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
+    getServerSnapshot,
+  );
+}
+
+/** The night the kiosk is actually showing: schedule, then a local override. */
+export function useIsNight(): boolean {
+  const scheduled = useScheduledNight();
+  const override = useLocalOverrides((s) => s.night);
+  return effectiveNight(scheduled, override);
+}
+
 // Reflects DeviceConfig.settings on the live kiosk DOM.
 //   accent → overrides --color-accent on <html>
 //   theme  → 'light'/'dark' force the html class; 'system' ("Auto" in the
@@ -34,8 +56,6 @@ export function useApplySettings(): void {
   const accent = config?.settings.accent;
   const theme = config?.settings.theme;
   const dayBrightness = config?.settings.brightness;
-  const nightStart = config?.settings.night?.start;
-  const nightEnd = config?.settings.night?.end;
   const nightBrightness = config?.settings.night?.brightness;
 
   // Subscribe to the override slices so the hook re-runs when the quick-settings
@@ -43,14 +63,7 @@ export function useApplySettings(): void {
   const brightnessOverride = useLocalOverrides((s) => s.brightness);
   const nightOverride = useLocalOverrides((s) => s.night);
 
-  const scheduledNight = useSyncExternalStore(
-    subscribeToNightTick,
-    () =>
-      nightStart !== undefined &&
-      nightEnd !== undefined &&
-      isWithinWindow({ start: nightStart, end: nightEnd }, new Date()),
-    getServerSnapshot,
-  );
+  const scheduledNight = useScheduledNight();
   // A local night override wins until the schedule next flips. The resolver is
   // pure — on a boundary flip it returns the schedule immediately (DOM correct),
   // and the syncBases effect below tidies the now-spent override.

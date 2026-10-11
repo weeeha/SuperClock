@@ -17,6 +17,89 @@
       },
       "type": "object"
     },
+    "app.ai-face": {
+      "properties": {
+        "activity": {
+          "default": "idle",
+          "enum": [
+            "idle",
+            "starting",
+            "listening",
+            "thinking",
+            "researching",
+            "working",
+            "answering",
+            "waiting",
+            "needs-input",
+            "complete",
+            "error",
+            "sleeping"
+          ],
+          "type": "string"
+        },
+        "design": {
+          "default": "core-eyes/wheatley",
+          "enum": [
+            "core-eyes/wheatley",
+            "core-eyes/space",
+            "core-eyes/rick",
+            "core-eyes/fact",
+            "core-eyes/morality",
+            "core-eyes/curiosity",
+            "core-eyes/intelligence",
+            "core-eyes/anger",
+            "core-eyes/paranoia",
+            "core-eyes/optimism",
+            "core-eyes/nihilism",
+            "core-eyes/priority",
+            "core-eyes/orbit",
+            "core-eyes/signal",
+            "core-eyes/gear",
+            "core-eyes/aperture",
+            "luminous-faces/constellation",
+            "luminous-faces/halo",
+            "luminous-faces/prism",
+            "luminous-faces/knot",
+            "luminous-faces/portal",
+            "luminous-faces/sun",
+            "luminous-faces/pulse",
+            "assistant-iris/assistant-iris",
+            "fractal-presence/fractal-presence"
+          ],
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "enum": [
+            "neutral",
+            "happy",
+            "curious",
+            "surprised",
+            "confused",
+            "concerned",
+            "playful"
+          ],
+          "type": "string"
+        },
+        "showTime": {
+          "default": false,
+          "type": "boolean"
+        },
+        "sleepAtNight": {
+          "default": true,
+          "type": "boolean"
+        },
+        "source": {
+          "default": "demo",
+          "enum": [
+            "demo",
+            "fixed"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "app.breathing": {
       "properties": {
         "showDistance": {

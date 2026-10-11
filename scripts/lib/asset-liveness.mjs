@@ -16,6 +16,8 @@ export const COMPUTED_ASSET_DIRS = {
   'agents/': 'src/apps/agents/provider.ts builds `/agents/${id}.png` from the agent id',
   'fitness/':
     'src/apps/fitness/ExerciseArt.tsx and audio.ts build `/fitness/${id}.png` and `/fitness/voice/${id}.m4a` from the exercise id',
+  'avatars/':
+    'vendored by scripts/sync-avatars.ts; src/shared/ai-face-designs.ts (AVATAR_PAGE) and src/shared/app-icons.ts build the page and thumbnail paths from the design id',
 };
 
 // Files that ship for a reason other than being named by code.

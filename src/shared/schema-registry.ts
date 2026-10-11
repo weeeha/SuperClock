@@ -29,6 +29,7 @@ import { todoAppSchema, todoAppMeta } from './schemas/app.todo';
 import { weatherAppSchema, weatherAppMeta } from './schemas/app.weather';
 import { countdownAppSchema, countdownAppMeta } from './schemas/app.countdown';
 import { timerAppSchema, timerAppMeta } from './schemas/app.timer';
+import { aiFaceAppSchema, aiFaceAppMeta } from './schemas/app.ai-face';
 
 // Faces
 import { analogFaceSchema, analogFaceMeta } from './schemas/face.analog';
@@ -76,6 +77,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'app.weather': { schema: weatherAppSchema, meta: weatherAppMeta },
   'app.countdown': { schema: countdownAppSchema, meta: countdownAppMeta },
   'app.timer': { schema: timerAppSchema, meta: timerAppMeta },
+  'app.ai-face': { schema: aiFaceAppSchema, meta: aiFaceAppMeta },
 
   // Faces
   'face.analog': { schema: analogFaceSchema, meta: analogFaceMeta },

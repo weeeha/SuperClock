@@ -6,6 +6,44 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-09 · branch claude/super-clock-ai-face-748b95 · AI Face app SP1: foundation + 25 abstract-engine designs, verified in the dev kiosk
+
+First sub-project of the AI Face app, which brings all 50 designs of weeeha/AI-Avatars (merged PR 8) onto SuperClock and will later be the main agent's face. Spec `docs/superpowers/specs/2026-10-09-ai-face-design.md` (approved; WebGL on Pi 4 = decision A, allowed behind a frame guard), plan `docs/superpowers/plans/2026-10-09-ai-face-sp1.md`. Built by three Sonnet implementers, every diff reviewed by the controller, one Sonnet whole-branch review plus one fix wave. Commits `0696056` through `da0d1e5` on top of the spec and plan. Local only, not merged, not pushed, not deployed.
+
+**Changed:**
+- `scripts/sync-avatars.ts` + `scripts/lib/avatar-sync.ts` (`npm run sync:avatars -- <checkout>`): copies an allowlist derived from the design registry out of a clean AI-Avatars checkout into `public/avatars/` (41 files + `VERSION` = `42630d7`, 664 K), fails on unknown or missing upstream files. `avatars/` registered in `scripts/lib/asset-liveness.mjs`.
+- `src/shared/ai-face-designs.ts`: canonical 12 activities × 7 expressions, 25 designs (`<family>/<character>` ids), family page URLs. `src/shared/schemas/app.ai-face.ts`: design, source (demo/fixed), activity, expression, showTime, sleepAtNight. No `voice` yet (SP2).
+- `src/apps/ai-face/`: sources (demo, fixed, night, external-store bridge), adapters (contract, abstract engine, `safeController`), `frame-guard.ts`, `AvatarFrame.tsx` (same-origin iframe with `pointer-events: none`, injected kiosk CSS, attach poll, 5 s "Face unavailable", 60 s unmount grace, 30 min retry after a pause or fault, page paused 3 s into `sleeping`), `AiFaceApp.tsx` (time label and "Demo" tell in `--sheet-ink` on the fixed black surface).
+- `src/core/apply-settings.ts`: `useScheduledNight()` / `useIsNight()` extracted, no behavior change. Registry touchpoints, README / foundation / architecture (17 apps), KIO-1 exemption for `sources/demo.ts` in `rules/superclock.json`, regenerated health / declared-vs-read / schema snapshot.
+
+**Verified:** `./scripts/gates.sh` green, 1247 tests. Dev kiosk at a true 1080 × 1080, config driven through the local `POST /api/device/config` (writes only this worktree's fleet file):
+- All 25 designs load and report the requested character.
+- One design per family (Wheatley, Constellation, Assistant iris, Fractal presence) took all 12 activities and all 7 expressions, read back from the page API.
+- The demo cycles idle → listening → thinking → researching with expressions drifting.
+- Opening the grid over the face pauses the page at once and keeps the iframe.
+- The screen centre hits the shell, not the iframe.
+- Measured from centre: the time label's farthest glyph sits at 431 px and "Demo" at 408 px, both inside the 470 px arc ring.
+- Sleeping pauses the page after 3 s and resumes when the activity changes.
+- The hidden pane ran 28 s with no false cool-down.
+
+**Decisions (rulings):** controller review in place of per-task reviewer agents, and a Sonnet final reviewer (Nick's limits rule); `bg-black` on the face is a justified exception to "pure black only via night tokens" (the vendored stage is pure black and the iframe CSS cannot read parent tokens); a zero-frame sample is a stall, not slowness; a paused or dead face retries with a fresh mount after 30 min (the guard still never steps back up within a mount).
+
+**Found while working:**
+- **The kiosk has no React error boundary.** Before `safeController`, Assistant iris threw "Framebuffer incomplete" from `destroy()` during unmount and blanked the whole kiosk. A separate task was spawned for a per-app boundary.
+- **Swiping away unmounts the face entirely**, because the shell renders only the active app. The 60 s grace therefore applies only under the grid overlay, which idle-return closes after 20 s.
+- **The hidden preview pane throttles the iframe's rAF** while `document.hidden` can read false. The vendored page's frame counter reads 0 there, so measure frame rate on glass, not in the pane.
+- **Escaped emoji in `metadata.icon` pass `ICO-2`.** A pre-existing `ICO-2` blocker sits on `src/apps/todo/index.ts`.
+
+**Open:**
+- **Not seen on the round panel.** It needs an AI Face screen added through the admin on fastclock (token-gated).
+- **SP3 numbers:** Pi 4 frame-guard figures and night temperature with `sleeping`.
+- **Half resolution only helps the two WebGL designs.** core-eyes and luminous-faces draw into fixed 720 × 720 canvases, so for them the ladder is effectively full → paused.
+- **The admin design picker shows raw ids** until SP3 thumbnails.
+- **Deferred minors:** `about:blank` load handling on non-Chromium browsers, and a temp-dir swap in the sync script.
+- **SP2 (the remaining 25 designs in six families)** and **SP4 (main-agent source)** not started.
+
+---
+
 ## 2026-10-02 · branch claude/alerts-timer · background alert layer + Timer app built, verified, deployed to fastclock
 
 Sub-project 2 of the missing-apps round. Spec `docs/superpowers/specs/2026-10-02-alerts-and-timer-design.md`, plan `docs/superpowers/plans/2026-10-02-alerts-and-timer.md`; board Timer section `51:863` gained frames 3 (Paused) and 4 (Done · after 5 min) plus a dated update note. Built by three Sonnet implementers, every diff reviewed by the controller. Branch cut from `4a450cb`, through `e40deae`. Local only, not merged, not pushed.
