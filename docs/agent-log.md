@@ -537,7 +537,7 @@ Approved by Nick as the first of three moves (1 gates, then 3 usage contracts as
 - squareclock: reachable (LAN 192.168.4.44). `/api/health` has no build stamp, so it runs a build older than the stamp work; commit unknown.
 - smallclock: tailnet says offline 5 days. slowclock: offline 88 days.
 - Every `superclock-*/device.json` IP is stale (fast says .28, square says .22); small and slow are TBD stubs. `CLOCK_SPECS.txt` disagrees with them. Neither file is read by code.
-- Local dev port 5180 was held by another project's Vite server (pegbo-proto-starter, PID 79318, up 3 days). `npm run dev` here cannot bind until that is stopped or the launch config uses another port.
+- Local dev port 5180 was held by another project's Vite server (a client prototype repo, PID 79318, up 3 days). `npm run dev` here cannot bind until that is stopped or the launch config uses another port.
 
 **Repo state:** `main` equals `origin/main` at `77f742a`. Open PRs at the time: #52 (Admin IA v2 P1, 45 files, mergeable, blocked only on an on-glass check) and #53 (RoundList + Todo component tests, mergeable). CI green on main 13 days earlier. Both are branches to merge locally if wanted; see the no-PR rule above.
 
@@ -812,7 +812,7 @@ These twelve entries were written to a second log file, `AGENT-LOG.md`, by sessi
   admin-only). `rules/superclock.json`: NAV-1 severity blocker, provenance note.
   `rulecheck-tree.test.ts`: BASELINE = {}. `AGENTS.md` Known-gaps bullet rewritten.
   `.claude/launch.json`: new `dev-alt` config on 5181 so a worktree can preview while another
-  session holds 5180 (5180 was held by a vite for pegbo-proto-starter, left running).
+  session holds 5180 (5180 was held by a vite for a client prototype repo, left running).
 - **Verified:** tree gate red with exactly the five rows after emptying the baseline, green after
   the fixes; gates.sh green (lint, check:tokens, 37 files / 472 tests, build). Dev preview on
   5181: Weather → Habits → Weather → Todo via `window.__nav` + `finishTransition()`, the

@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-06
 **Status:** Design approved (Nick, this session). Sub-project 1 of four.
-**Source:** design-system step 2 of the 2026-09-05 brainstorm. Steps 1 (token liveness gate, rule catalog) and 3 (face and widget contracts) are merged. Nick's steer, verbatim: dark mode for everything, and eventually density because the devices have various screen sizes. Nick ruled out installing or copying the `pegbo-ui` package: SuperClock's own system, brought to the same architectural level.
+**Source:** design-system step 2 of the 2026-09-05 brainstorm. Steps 1 (token liveness gate, rule catalog) and 3 (face and widget contracts) are merged. Nick's steer, verbatim: dark mode for everything, and eventually density because the devices have various screen sizes. Nick ruled out installing or copying a private client component package: SuperClock's own system, brought to the same architectural level.
 **Handoff:** `docs/agent-log.md` carries the session record; the implementation plan follows this spec.
 
 ## TL;DR
@@ -34,7 +34,7 @@ One semantic layer in a file both entries import, with the kiosk and admin alias
 | Option | Tradeoff | Why not |
 |---|---|---|
 | Two systems sharing only raw ramps | Keeps "never mixed" literally true | Every light and dark pair gets decided twice and the two drift; a density axis would need two homes |
-| Install `pegbo-ui` for the admin | 109 reviewed parts, theme and finish axes, no build cost | Nick ruled it out: no dependency on a private package, and no copying. SuperClock's own system at the same level |
+| Install the private client component package for the admin | 109 reviewed parts, theme and finish axes, no build cost | Nick ruled it out: no dependency on a private package, and no copying. SuperClock's own system at the same level |
 
 ## The three tiers
 
