@@ -6,6 +6,20 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · merge train: Fields v2 and Alarm replayed onto origin/main, gates green
+
+Nick's pick 1 of the status review: reset local main (14 stale commits, the pre-squash AI Face history already on origin as PR 66) to origin/main, then land the two finished branches that never merged. PR 64 was a squash whose tree equals the `claude/alerts-timer` tip exactly, so both branches were replayed by their unique ranges instead of merged with duplicated history: `7b48023..claude/superlock-apps-redesign-1933c7` (11 commits, Fields v2 for Weather, Calendar, Countdown, plus `settings.skin`) and `claude/alerts-timer..claude/alarm` (14 commits; `aeee706`, a regenerate-only commit, became empty and was skipped). Local only, not pushed, not deployed.
+
+**Conflicts, all resolved by keeping both sides:** the registry lists (`src/apps/index.ts`, `capabilities.ts`, `app-capabilities.ts`, `schema-registry.ts`, `app-icons.ts`, `app-names.ts`, `AppGrid.tsx`, README) where main had added `ai-face` and the branch `alarm`; `docs/agent-log.md` union-merged newest-first (order came out chronological). Generated files (`docs/health.md`, `docs/analysis/declared-vs-read.md`, `schemas.snapshot.json`) took HEAD during the replay and were regenerated once at the end: one minor schema change, `app.alarm` added. `directive/foundation.md` and `docs/architecture.md` bumped to "18 apps registered" (docs-drift test).
+
+**Verified:** `./scripts/gates.sh` all 4 green on the final tree, 1361 tests in 120 files. `npm ci` was needed: Fields adds `@fontsource-variable/nunito`, so the next device deploy must run `npm ci` on the Pi too.
+
+**Not done:** nothing seen on glass yet. fastclock still runs `e404cd9` (the Fields branch build); squareclock runs `064d487`. The original branches were left in place, untouched.
+
+**Open:** the Alarm branch's own open items stand (off-switch contrast, snoozed resting state, pager dots, panel wake untested). Next from the status review: per-app review of what is missing or broken, then secrets (GitHub token, calendar feed, Claude usage OAuth) and putting every app on fastclock through the admin.
+
+---
+
 ## 2026-10-09 · branch claude/super-clock-ai-face-748b95 · AI Face app SP1: foundation + 25 abstract-engine designs, verified in the dev kiosk
 
 First sub-project of the AI Face app, which brings all 50 designs of weeeha/AI-Avatars (merged PR 8) onto SuperClock and will later be the main agent's face. Spec `docs/superpowers/specs/2026-10-09-ai-face-design.md` (approved; WebGL on Pi 4 = decision A, allowed behind a frame guard), plan `docs/superpowers/plans/2026-10-09-ai-face-sp1.md`. Built by three Sonnet implementers, every diff reviewed by the controller, one Sonnet whole-branch review plus one fix wave. Commits `0696056` through `da0d1e5` on top of the spec and plan. Local only, not merged, not pushed, not deployed.

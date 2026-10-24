@@ -100,6 +100,27 @@
       },
       "type": "object"
     },
+    "app.alarm": {
+      "properties": {
+        "gentleWakeMinutes": {
+          "default": 10,
+          "maximum": 30,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "snoozeMinutes": {
+          "default": 9,
+          "maximum": 30,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sound": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "app.breathing": {
       "properties": {
         "showDistance": {
