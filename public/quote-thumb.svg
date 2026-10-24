@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <text x="100" y="138" text-anchor="middle" font-family="Georgia, serif" font-size="120" font-weight="700" fill="#ff8826">“</text>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Quote</text>
+</svg>

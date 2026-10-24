@@ -136,7 +136,7 @@ export default function PhotoFrameApp({ isActive, config }: AppProps) {
           <>
             <p className="theme-fade text-[3vmin] text-(--face-ink)">No photos on this clock</p>
             <p className="theme-fade text-[2.2vmin] text-(--face-ink-muted)">
-              pictures are read from public/photos/ and ship with the build
+              pictures are added to this clock with a deploy, not from the admin
             </p>
           </>
         ) : slowLoad ? (

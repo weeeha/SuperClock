@@ -6,6 +6,7 @@ import { useNavigation } from '../../core/navigation';
 import RoundList from '../../core/widgets/RoundList';
 import { todoAppSchema } from '../../shared/schemas/app.todo';
 import { createTodoStore, type TodoItem } from './store';
+import PageDots from '../../core/widgets/PageDots';
 
 type View = 'active' | 'done';
 
@@ -275,13 +276,8 @@ export default function TodoApp({ isActive, config }: AppProps) {
       )}
 
       {cfg.showCompleted && (
-        <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-          <div
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'active' ? 'bg-white' : 'bg-white/25'}`}
-          />
-          <div
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'done' ? 'bg-white' : 'bg-white/25'}`}
-          />
+        <div className="text-white">
+          <PageDots count={2} index={view === 'active' ? 0 : 1} />
         </div>
       )}
     </div>

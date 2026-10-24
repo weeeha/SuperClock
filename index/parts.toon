@@ -1,4 +1,4 @@
-parts[15]{kind,id,path,accent,parity,geometry,purpose}:
+parts[16]{kind,id,path,accent,parity,geometry,purpose}:
   face,analog,src/apps/clock/AnalogClock.meta.json,config:accent,lvgl,spec,"The Swiss railway reference: sixty ticks, heavy white hands on a black dial, an accent second hand and pip."
   face,aperture,src/apps/clock/ApertureClock.meta.json,--color-accent,none,specless,"A plate covers the dial; the hour and minute show through two windows and step, nothing sweeps."
   face,complications-dark,src/apps/clock/ComplicationsDark.meta.json,config:accent,none,pending,The dark sibling of Complications Light: the same layout on a fixed dark dial.
@@ -12,5 +12,6 @@ parts[15]{kind,id,path,accent,parity,geometry,purpose}:
   face,square,src/apps/clock/SquareClock.meta.json,config:accent,none,pending,"A rounded square dial with numerals at the four cardinals and tick marks, designed for the square device's rectangle."
   face,strokes,src/apps/clock/StrokesClock.meta.json,--color-accent,none,specless,A full-field lattice of 52 two-hand dials.
   face,world,src/apps/clock/WorldClock.meta.json,config:accent,none,pending,A primary dial for one timezone with secondary dials for others.
+  widget,page-dots,src/core/widgets/PageDots.meta.json,-,-,-,"The pager for a multi-view app: one dot per page, the current one solid, drawn at the same spot the Fields skin draws its dots (centre y 968 of 1080, 12px, 22px pitch)."
   widget,round-list,src/core/widgets/RoundList.meta.json,-,-,-,"A centre-column vertical list for the round viewport: about 62 percent wide with a 64px edge fade, so rows never touch the invisible corners."
   widget,state-ring,src/apps/agents/StateRing.meta.json,-,-,-,The always-on-mic indicator: a ring just inside the bezel whose state is the whole message.

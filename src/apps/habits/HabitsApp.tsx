@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { habitsAppSchema } from '../../shared/schemas/app.habits';
+import PageDots from '../../core/widgets/PageDots';
 
 type View = 'daily' | 'monthly';
 
@@ -340,9 +341,8 @@ export default function HabitsApp({ isActive, config }: AppProps) {
         ? <DailyView habits={habits} completions={completions} toggle={toggle} now={now} />
         : <MonthlyView habits={habits} completions={completions} now={now} />
       }
-      <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'daily' ? 'bg-white' : 'bg-white/25'}`} />
-        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${view === 'monthly' ? 'bg-white' : 'bg-white/25'}`} />
+      <div className="text-white">
+        <PageDots count={2} index={view === 'daily' ? 0 : 1} />
       </div>
     </div>
   );

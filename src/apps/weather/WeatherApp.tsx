@@ -8,6 +8,7 @@ import Dial from './Dial';
 import NowPage from './NowPage';
 import FieldsWeather, { FieldsWeatherMetric } from './FieldsWeather';
 import { useSkin } from '../../core/skin';
+import PageDots from '../../core/widgets/PageDots';
 
 export default function WeatherApp({ isActive, config }: AppProps) {
   // safeParse, not parse: a malformed fleet config must not white-screen a
@@ -132,13 +133,8 @@ export default function WeatherApp({ isActive, config }: AppProps) {
         </span>
       )}
 
-      <div className="pointer-events-none absolute bottom-[3.5%] left-1/2 flex -translate-x-1/2 gap-2">
-        {pages.map((id, i) => (
-          <div
-            key={id}
-            className={`h-1.5 w-1.5 rounded-full transition-colors ${i === safePage ? 'bg-white' : 'bg-white/25'}`}
-          />
-        ))}
+      <div className="text-white">
+        <PageDots count={pages.length} index={safePage} />
       </div>
     </div>
   );

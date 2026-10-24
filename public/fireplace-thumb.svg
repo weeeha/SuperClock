@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <path d="M100 40 c10 24 34 34 34 64 a34 34 0 0 1 -68 0 c0 -18 10 -26 16 -40 c4 12 10 16 14 16 c-4 -14 0 -28 4 -40 z" fill="#ff8826"/>
+  <path d="M100 86 c6 12 16 16 16 30 a16 16 0 0 1 -32 0 c0 -10 8 -14 10 -22 c2 6 4 8 6 8 z" fill="#e8e8e8"/>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Fireplace</text>
+</svg>

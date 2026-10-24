@@ -9,7 +9,11 @@
 /** Widget metas live beside their components, which are not all under one
  *  directory yet (StateRing is in the agents app). One list, imported by the
  *  contract gate and the index alike. */
-export const WIDGET_META_PATHS = ['src/core/widgets/RoundList.meta.json', 'src/apps/agents/StateRing.meta.json'];
+export const WIDGET_META_PATHS = [
+  'src/core/widgets/RoundList.meta.json',
+  'src/core/widgets/PageDots.meta.json',
+  'src/apps/agents/StateRing.meta.json',
+];
 
 export const INDEX_COLUMNS = ['kind', 'id', 'path', 'accent', 'parity', 'geometry', 'purpose'];
 

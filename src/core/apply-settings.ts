@@ -53,6 +53,16 @@ export function useIsNight(): boolean {
 //            backlight device, so the kiosk dims its own rendering; on this
 //            fixed-backlight LCD that is visually equivalent to compositor
 //            gamma. Panel power (sleep schedule) stays server-side.
+/** True when the kiosk is showing the dark palette: theme 'dark', or
+ *  theme 'system' inside the (overridable) night window. The same rule
+ *  useApplySettings writes onto <html>, for apps that paint their own
+ *  colours (Fitness) and cannot read the --face-* tokens from SVG hex. */
+export function useIsDark(): boolean {
+  const theme = useDeviceConfig()?.settings.theme;
+  const isNight = useIsNight();
+  return theme === 'dark' || (theme !== 'light' && isNight);
+}
+
 export function useApplySettings(): void {
   const config = useDeviceConfig();
   const accent = config?.settings.accent;

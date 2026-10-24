@@ -13,6 +13,7 @@ import DayView from './DayView';
 import DetailsView from './DetailsView';
 import FieldsCalendar from './FieldsCalendar';
 import { useSkin } from '../../core/skin';
+import PageDots from '../../core/widgets/PageDots';
 
 type LadderView = 'cover' | 'week' | 'month' | 'year';
 const LADDER: readonly LadderView[] = ['cover', 'week', 'month', 'year'];
@@ -232,13 +233,8 @@ export default function CalendarApp({ isActive, config }: AppProps) {
         </p>
       )}
       {!drill && (
-        <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-          {LADDER.map((v) => (
-            <div
-              key={v}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${view === v ? 'bg-white' : 'bg-white/25'}`}
-            />
-          ))}
+        <div className="text-white">
+          <PageDots count={LADDER.length} index={LADDER.indexOf(view)} />
         </div>
       )}
     </div>

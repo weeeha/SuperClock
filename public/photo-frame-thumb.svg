@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <rect x="54" y="58" width="92" height="72" rx="8" fill="none" stroke="#e8e8e8" stroke-width="7"/>
+  <path d="M62 122 l24 -28 l18 20 l12 -12 l22 20 z" fill="#e8e8e8"/>
+  <circle cx="120" cy="80" r="9" fill="#ff8826"/>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Photos</text>
+</svg>

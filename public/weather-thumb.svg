@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="82" cy="78" r="26" fill="#ff8826"/>
+  <path d="M70 128 a18 18 0 0 1 6 -35 a26 26 0 0 1 50 4 a16 16 0 0 1 2 31 z" fill="#e8e8e8"/>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Weather</text>
+</svg>

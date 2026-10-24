@@ -7,6 +7,7 @@ import { useMood } from './useMood';
 import { claudeUsageAppSchema } from '../../shared/schemas/app.claude-usage';
 import ClawdSprite from './ClawdSprite';
 import UsageDetailView from './UsageDetailView';
+import { describeUsageError } from './usage-error';
 
 type View = 'pet' | 'detail';
 
@@ -137,6 +138,7 @@ export default function ClaudeUsageApp({ isActive, config }: AppProps) {
   const errorState = !loading && data && !data.ok;
   const hasNoData = !loading && !data;
   const showData = data?.ok === true;
+  const errorCopy = describeUsageError(data?.error);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-[#0a0a09]">
@@ -237,11 +239,11 @@ export default function ClaudeUsageApp({ isActive, config }: AppProps) {
         {(errorState || hasNoData) && (
           <g fontFamily="'JetBrains Mono', ui-monospace, 'Menlo', monospace">
             <text x={CENTER} y={METRIC_TOP + 200} textAnchor="middle" fill="#f5a623" fontSize="28">
-              {hasNoData ? 'no data' : 'auth expired — open claude code'}
+              {hasNoData ? 'no data' : errorCopy.label}
             </text>
-            {errorState && data?.error && (
+            {errorState && (
               <text x={CENTER} y={METRIC_TOP + 234} textAnchor="middle" fill={TEXT_MUTED} fontSize="18">
-                {data.error}
+                {errorCopy.detail}
               </text>
             )}
           </g>
@@ -250,8 +252,8 @@ export default function ClaudeUsageApp({ isActive, config }: AppProps) {
       ) : (
         <UsageDetailView
           showData={showData}
-          offlineLabel={hasNoData ? 'no data' : errorState ? 'auth expired — open claude code' : null}
-          errorDetail={(errorState && data?.error) || null}
+          offlineLabel={hasNoData ? 'no data' : errorState ? errorCopy.label : null}
+          errorDetail={errorState ? errorCopy.detail : null}
           sessionFrac={sessionFrac}
           weekFrac={weekFrac}
           sessionColor={sessionColor}

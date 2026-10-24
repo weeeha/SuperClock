@@ -1,0 +1,14 @@
+{
+  "kind": "widget",
+  "id": "page-dots",
+  "purpose": "The pager for a multi-view app: one dot per page, the current one solid, drawn at the same spot the Fields skin draws its dots (centre y 968 of 1080, 12px, 22px pitch). Weather, Calendar, Habits, Todo and Focus consume it; Fields draws its own in SVG at the same geometry.",
+  "tokens": [],
+  "states": [
+    { "state": "single page", "recipe": "Renders nothing: one page has no pager, and reserving the space would push content for no reason." },
+    { "state": "current page", "recipe": "Full opacity; the other dots sit at 35 percent of the parent's text colour, so the widget inherits ink from the app and never names a colour of its own." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not draw dots at the disc's bottom edge", "why": "below y 1000 on a 1080 panel the dots sit inside the bezel shadow; the previous 6px dots at 3.5 percent from the bottom were invisible on the round devices" },
+    { "rule": "Do not make the dots tappable", "why": "paging is the vertical swipe; a tap target this small at the disc edge is a false affordance" }
+  ]
+}

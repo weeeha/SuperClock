@@ -42,14 +42,13 @@ describe('listAddableScreens', () => {
     expect(appIds).toEqual(kioskCaps.apps.map((a) => a.id).filter((id) => id !== 'clock'));
   });
 
-  it('resolves app icons from APP_ICONS, null when absent', () => {
+  it('resolves every app icon from APP_ICONS (every app has tile art since 2026-10-23)', () => {
     const apps = listAddableScreens(kioskCaps).filter((e) => e.kind === 'app');
-    const habits = apps.find((e) => e.appId === 'habits');
-    expect(habits?.icon).toBe(APP_ICONS['habits']);
-    // breathing deliberately has no grid tile art — icon must be an honest null
-    const breathing = apps.find((e) => e.appId === 'breathing');
-    expect(breathing).toBeDefined();
-    expect(breathing?.icon).toBeNull();
+    expect(apps.length).toBeGreaterThan(0);
+    for (const app of apps) {
+      expect(app.icon, `${app.appId} has no icon`).toBe(APP_ICONS[app.appId]);
+      expect(app.icon).not.toBeNull();
+    }
   });
 
   it('read-only slow device: faces still listed, app group empty (clock-only caps)', () => {

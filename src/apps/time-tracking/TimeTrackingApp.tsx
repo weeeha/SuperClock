@@ -4,6 +4,7 @@ import { useNavigation } from '../../core/navigation';
 import { useRadar } from '../../core/radar';
 import { timeTrackingAppSchema } from '../../shared/schemas/app.time-tracking';
 import type { OccupancySummary } from '../../shared/occupancy';
+import PageDots from '../../core/widgets/PageDots';
 
 type View = 0 | 1 | 2; // 0 focus timer, 1 task picker, 2 day summary
 
@@ -432,13 +433,8 @@ export default function TimeTrackingApp({ isActive, config }: AppProps) {
           dailyTargetHours={cfg.dailyTargetHours}
         />
       )}
-      <div className="absolute bottom-[3.5%] left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-        {([0, 1, 2] as const).map((v) => (
-          <div
-            key={v}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${view === v ? 'bg-white' : 'bg-white/25'}`}
-          />
-        ))}
+      <div className="text-white">
+        <PageDots count={3} index={view} />
       </div>
     </div>
   );

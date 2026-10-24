@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="100" cy="94" r="50" fill="none" stroke="#3a3f45" stroke-width="8"/>
+  <circle cx="100" cy="94" r="50" fill="none" stroke="#ff8826" stroke-width="8" stroke-dasharray="235 314" transform="rotate(-90 100 94)"/>
+  <text x="100" y="104" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="400" fill="#e8e8e8">25:00</text>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Focus</text>
+</svg>

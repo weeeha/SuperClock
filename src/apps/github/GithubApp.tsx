@@ -225,7 +225,7 @@ function EmptyState({ error, colors }: { error: string; colors: Palette }) {
   // Surface the server's own hint when it applies — the 503 message names
   // GITHUB_TOKEN explicitly; anything else is generic unreachability.
   const hint = error.includes('GITHUB_TOKEN')
-    ? 'set GITHUB_TOKEN on the server'
+    ? 'add a GitHub token on this clock'
     : 'server unreachable';
 
   return (

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="100" cy="92" r="54" fill="none" stroke="#3a3f45" stroke-width="7"/>
+  <line x1="100" y1="92" x2="100" y2="56" stroke="#e8e8e8" stroke-width="8" stroke-linecap="round"/>
+  <line x1="100" y1="92" x2="128" y2="108" stroke="#e8e8e8" stroke-width="8" stroke-linecap="round"/>
+  <line x1="100" y1="92" x2="74" y2="124" stroke="#ff8826" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="100" cy="92" r="5" fill="#ff8826"/>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Clock</text>
+</svg>

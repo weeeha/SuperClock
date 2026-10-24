@@ -27,6 +27,7 @@ import { WorkoutAudio } from './audio';
 import { loadStreak, saveStreak, completeWorkout, settleMissedDays, toDateKey, HEARTS_PER_MONTH } from './streak';
 import { deriveViewModel } from './view-model';
 import WatchFace from './WatchFace';
+import { useIsDark } from '../../core/apply-settings';
 
 /** Renew well inside the lease TTL so it never lapses mid-workout. */
 const LEASE_RENEW_MS = 30_000;
@@ -272,6 +273,11 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   }
 
   const vm = deriveViewModel(state, workout, now);
+  // The beige face is a day palette. At night (or theme 'dark') the app
+  // keeps the dark face it already draws for rest, so the panel never lights
+  // a bedroom at full beige. Rest is then indistinguishable from work by
+  // colour; the headline and ring still say which it is.
+  const dark = useIsDark();
 
   return (
     <div className="h-full w-full" onClick={handleTap}>
@@ -285,7 +291,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
         exerciseId={vm.artId}
         artPhase={vm.artPhase}
         playing={state.phase !== 'paused'}
-        inverted={state.phase === 'rest'}
+        inverted={dark || state.phase === 'rest'}
       />
     </div>
   );

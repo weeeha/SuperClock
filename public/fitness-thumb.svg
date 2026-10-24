@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#101418"/>
+  <circle cx="100" cy="94" r="48" fill="none" stroke="#3a3f45" stroke-width="9"/>
+  <circle cx="100" cy="94" r="48" fill="none" stroke="#ff8826" stroke-width="9" stroke-linecap="round" stroke-dasharray="200 302" transform="rotate(-90 100 94)"/>
+  <path d="M100 114 c-14 -10 -26 -20 -26 -32 a13 13 0 0 1 26 -6 a13 13 0 0 1 26 6 c0 12 -12 22 -26 32 z" fill="#e8e8e8"/>
+  <text x="100" y="184" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#e8e8e8">Fitness</text>
+</svg>
