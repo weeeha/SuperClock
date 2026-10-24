@@ -19,8 +19,8 @@ const ACCENT = 'var(--color-accent)';
 function ActiveRow({ item }: { item: TodoItem }) {
   return (
     <div className="h-full flex items-center gap-6 px-4 rounded-3xl active:bg-(--face-plate)">
-      <div className="w-11 h-11 rounded-full border-3 border-(--face-ghost) shrink-0" />
-      <div className="flex-1 min-w-0 text-2xl leading-tight truncate text-(--face-ink)">{item.title}</div>
+      <div className="w-[5vmin] h-[5vmin] rounded-full border-3 border-(--face-ghost) shrink-0" />
+      <div className="flex-1 min-w-0 text-[3vmin] leading-tight truncate text-(--face-ink)">{item.title}</div>
     </div>
   );
 }
@@ -30,12 +30,12 @@ function DoneRow({ item }: { item: TodoItem }) {
     <div className="h-full flex items-center gap-6 px-4 rounded-3xl active:bg-(--face-plate)">
       {/* Check ink on the accent fill is the page background colour: right in both palettes. */}
       <div
-        className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center text-(--face-bg)"
+        className="w-[5vmin] h-[5vmin] rounded-full shrink-0 flex items-center justify-center text-(--face-bg)"
         style={{ background: ACCENT }}
       >
         <Check size={26} strokeWidth={3} aria-hidden="true" />
       </div>
-      <div className="flex-1 min-w-0 text-2xl leading-tight truncate text-(--face-tick) line-through">
+      <div className="flex-1 min-w-0 text-[3vmin] leading-tight truncate text-(--face-tick) line-through">
         {item.title}
       </div>
     </div>
@@ -215,15 +215,16 @@ export default function TodoApp({ isActive, config }: AppProps) {
         <div className="w-full h-full pt-24 pb-16">
           <RoundList
             items={activeItems}
+            itemHeight={112}
             onSelect={toggle}
             header={
               <div className="text-center mb-4">
-                <h1 className="text-4xl font-semibold">Todo</h1>
-                <p className="text-(--face-tick) text-lg mt-1">
+                <h1 className="text-[5.4vmin] font-semibold">Todo</h1>
+                <p className="text-(--face-ink-muted) text-[2.8vmin] mt-[0.5vmin]">
                   {loading ? '…' : `${activeItems.length} open`}
                 </p>
                 <button
-                  className="mt-3 px-10 py-2.5 rounded-full bg-(--face-plate) text-xl font-semibold active:bg-(--face-spent)"
+                  className="mt-[2vmin] px-[4vmin] py-[1.2vmin] rounded-full bg-(--face-plate) text-[3vmin] font-semibold active:bg-(--face-spent)"
                   style={{ color: ACCENT }}
                   onClick={() => setAdding(true)}
                 >
@@ -232,7 +233,7 @@ export default function TodoApp({ isActive, config }: AppProps) {
               </div>
             }
             empty={
-              <p className="text-(--face-ink-muted) text-center mt-24">
+              <p className="text-(--face-ink-muted) text-center text-[3vmin] mt-[12vmin]">
                 {loading ? 'Loading…' : 'All clear — tap + Add to capture something.'}
               </p>
             }
@@ -243,13 +244,14 @@ export default function TodoApp({ isActive, config }: AppProps) {
         <div className="w-full h-full pt-24 pb-16">
           <RoundList
             items={doneItems}
+            itemHeight={112}
             onSelect={toggle}
             header={
               <div className="text-center mb-4">
-                <h1 className="text-4xl font-semibold">Done</h1>
-                <p className="text-(--face-tick) text-lg mt-1">{doneItems.length} completed</p>
+                <h1 className="text-[5.4vmin] font-semibold">Done</h1>
+                <p className="text-(--face-ink-muted) text-[2.8vmin] mt-[0.5vmin]">{doneItems.length} completed</p>
                 <button
-                  className="mt-3 px-10 py-2.5 rounded-full bg-(--face-plate) text-xl font-semibold active:bg-(--face-spent) disabled:opacity-30"
+                  className="mt-[2vmin] px-[4vmin] py-[1.2vmin] rounded-full bg-(--face-plate) text-[3vmin] font-semibold active:bg-(--face-spent) disabled:opacity-30"
                   style={{ color: confirmClear ? '#ff5555' : ACCENT }}
                   disabled={doneItems.length === 0}
                   onClick={clearDone}
@@ -258,7 +260,7 @@ export default function TodoApp({ isActive, config }: AppProps) {
                 </button>
               </div>
             }
-            empty={<p className="text-(--face-ink-muted) text-center mt-24">Nothing completed yet.</p>}
+            empty={<p className="text-(--face-ink-muted) text-center text-[3vmin] mt-[12vmin]">Nothing completed yet.</p>}
             renderItem={(i) => <DoneRow item={i} />}
           />
         </div>

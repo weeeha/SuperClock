@@ -6,6 +6,23 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · scale pass: Todo, Agents, Alarm, Habits, Calendar Classic on the Fields recipe
+
+Nick: "do the scale pass on Todo, Agents, Alarm, Habits and Calendar Classic using the Fields recipe (title, hero, subline)." Design-review finding 3: these five were set at phone scale on a 1080 disc read from a metre away (Todo's empty line 16 px and 200 px below its button, Agents subtitles 16 px with 56 px portraits, Alarm's empty state at 28 px, Habits' count at 24 px, Calendar's tell the smallest text on screen).
+
+**Recipe, in Inter on the palette, using only vmin steps already in the tree** (the font-size ratchet fell 54 → 51, ceiling lowered in `scripts/lib/design-ratchet.mjs`): title 4.2 to 5.4 vmin (45 to 58 px), body 3 vmin (32 px), subline 2.8 vmin (30 px), captions stay 2.6 and 2.2 vmin. Changes, all in place and verified at 1080:
+- `src/apps/todo/TodoApp.tsx`: titles 5.4 vmin, count 2.8 vmin in `--face-ink-muted`, the Add and Clear pills 3 vmin with 4 × 1.2 vmin padding, the empty sentence 3 vmin at 12 vmin below the header (now at the disc's centre, 476 px), rows 3 vmin with 5 vmin check discs and `itemHeight={112}`.
+- `src/apps/alarm/AlarmApp.tsx`: "No alarms" and "All alarms off" 4.2 vmin, their action and subline 3 and 2.8 vmin; the 17 vmin icon ring unchanged.
+- `src/apps/agents/AgentListView.tsx`: title 4.2 vmin, names 3 vmin, last message 2.6 vmin, portraits 80 px, unread dot 1.6 vmin, `itemHeight={120}`.
+- `src/apps/habits/HabitsApp.tsx`: disc labels 34 in `--face-ink-muted` (fits "Creative" in the 176-unit disc), the centre count is now the subline "N of 7 today" at 30 in muted ink.
+- `src/apps/calendar/CalendarApp.tsx`: the not-configured / offline tell 2.8 vmin.
+
+**Verified:** gates (see commit). Dev kiosk at 1080, measured: Todo 58 / 30 / 32 / 32 px; Agents 45 / 32 / 28 px with 80 px portraits; calendar tell 30 px above the pager dots; both palettes on Todo. Not seen on a Pi.
+
+**Not done:** Todo's add overlay and mini keyboard keep their sizes (a touch-target question for a real finger); Alarm's list and resting states keep 2.6 / 2.2 vmin body text; Habits' month view untouched; the Agents chat and avatar views untouched.
+
+---
+
 ## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · SUR-1: every app paints the palette; six apps converted
 
 Nick: "decide finding 1: one surface rule for every app in the carousel; propose the rule with evidence, then apply it."

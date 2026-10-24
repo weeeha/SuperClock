@@ -270,11 +270,11 @@ export default function AlarmApp({ isActive, config }: AppProps) {
         <span className="flex h-[17vmin] w-[17vmin] items-center justify-center rounded-full border-2 border-(--face-ghost)">
           <AlarmClock aria-hidden="true" strokeWidth={1.5} className="h-[7vmin] w-[7vmin] text-(--face-ink-muted)" />
         </span>
-        <p className="theme-fade mt-[3vmin] text-[2.6vmin] font-medium text-(--face-ink)">No alarms</p>
+        <p className="theme-fade mt-[3vmin] text-[4.2vmin] font-medium text-(--face-ink)">No alarms</p>
         <button
           type="button"
           onClick={() => startEdit(null)}
-          className="theme-fade mt-[1.5vmin] rounded-full border border-(--face-ghost) px-[3vmin] py-[1vmin] text-[2.6vmin] text-(--face-ink)"
+          className="theme-fade mt-[2.5vmin] rounded-full border border-(--face-ghost) px-[4vmin] py-[1.2vmin] text-[3vmin] text-(--face-ink)"
         >
           Add alarm
         </button>
@@ -286,8 +286,8 @@ export default function AlarmApp({ isActive, config }: AppProps) {
   if (!next) {
     return (
       <div className="theme-fade flex h-full w-full flex-col items-center justify-center gap-[1.5vmin] bg-(--face-bg) text-center">
-        <p className="theme-fade text-[2.6vmin] font-medium text-(--face-ink)">All alarms off</p>
-        <p className="theme-fade text-[2.2vmin] text-(--face-ink-muted)">Turn one on in the list</p>
+        <p className="theme-fade text-[4.2vmin] font-medium text-(--face-ink)">All alarms off</p>
+        <p className="theme-fade mt-[1vmin] text-[2.8vmin] text-(--face-ink-muted)">Turn one on in the list</p>
       </div>
     );
   }

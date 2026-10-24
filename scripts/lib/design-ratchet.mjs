@@ -40,7 +40,9 @@ export const CEILINGS = {
   // Same day, 56 to 54: the Breathing pass moved text-8xl, text-lg, text-base
   // and text-xs to vmin steps that already existed. Two of those four were
   // this app's only use anywhere the ratchet scans.
-  fontSizes: 54,
+  // 54 → 51 on 2026-10-23: the scale pass moved Todo, Agents, Alarm, Habits
+  // and Calendar Classic onto vmin steps that already existed.
+  fontSizes: 51,
   // 121 → 118 on 2026-09-07: three pairs were the same colour written twice
   // (#000/#000000, #fff/#ffffff, #888/#888888), collapsed onto the long form
   // for zero pixel change.

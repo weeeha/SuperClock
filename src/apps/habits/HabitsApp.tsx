@@ -118,8 +118,8 @@ function DailyView({
             <text
               x={bx} y={by}
               textAnchor="middle" dominantBaseline="middle"
-              fill={done ? 'var(--face-bg)' : 'var(--face-tick)'}
-              fontSize="30" fontFamily="Inter, sans-serif" fontWeight="600"
+              fill={done ? 'var(--face-bg)' : 'var(--face-ink-muted)'}
+              fontSize="34" fontFamily="Inter, sans-serif" fontWeight="600"
             >
               {habit.name}
             </text>
@@ -135,8 +135,8 @@ function DailyView({
         fontSize="90" fontFamily="Inter, sans-serif" fontWeight="700">{day}</text>
       <text x={CX} y={CY + 98} textAnchor="middle" fill="var(--face-ink-muted)"
         fontSize="34" fontFamily="Inter, sans-serif">{month}</text>
-      <text x={CX} y={CY + 138} textAnchor="middle" fill="var(--face-tick)"
-        fontSize="24" fontFamily="Inter, sans-serif">{doneCount}/{habits.length}</text>
+      <text x={CX} y={CY + 136} textAnchor="middle" fill="var(--face-ink-muted)"
+        fontSize="30" fontFamily="Inter, sans-serif">{doneCount} of {habits.length} today</text>
     </svg>
   );
 }
