@@ -6,6 +6,25 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · deployed 8343946 to fastclock; all 18 apps on the panel for the first time
+
+Nick: "deploy the merged main to fastclock (npm ci on the Pi), add an instance for every app through the admin, and verify each on the panel."
+
+**Deployed** `8343946` (local main, 29 commits ahead of origin, so `DEPLOY_ANYWAY=1`) with `bash scripts/deploy.sh nickv2026@100.78.29.28`; the script's health poll confirmed the stamp. Then `npm ci --omit=dev` on the Pi as asked (no runtime dependency had changed since the `e404cd9` build it replaced, only a script line), server restarted, health re-confirmed. fastclock had run the unmerged Fields branch build since 2026-10-02.
+
+**Config:** fastclock's live config went from one instance (Weather, Montreal) to 18, one per app, written through the server's own `POST /api/device/config` on the Pi with the bearer from its `config/admin.json` (the route is token-gated; the token stayed on the device). Settings untouched (`skin: fields`, night 21:00 to 07:00 at 30 percent). Backup `config/fleet.json.bak-before-all-apps-2026-10-23`. Countdown got Christmas 2026 with a 1 Oct start and the progress ring; GitHub the username `weeeha`; Clock the Minimalismo face. Playlist holds all 18 ids with rotation `null`.
+
+**Verified on glass (night palette, dimmed):** the playlist rotated at 20 s with a `grim` frame per app, 19 frames, every app rendered: Minimalismo, Weather Fields (Montreal 4°, hourly panel), Calendar Fields "No calendar yet", Countdown Fields 63 days, Timer, Alarm "No alarms" at the new scale, GitHub tell, Claude usage "signed out on the mac" against the live daemon, Habits with "0 of 7 today", Todo at the new scale, Focus with real desk time (7 h 18 m, radar live), Breathing on the real radar ("Hold still, measuring", 300 mm), **Fitness dark at night** (the SUR fix on glass), Photo Frame tell, Quote, Fireplace, Agents at the new scale, AI Face asleep. Second-hand sweep on Minimalismo: 12 frames at about 0.34 s, tip deltas 1.54 to 2.49 degrees, mean 2.04 per frame (about 6 deg/s), no stalled pair. Frames in this session's scratchpad only.
+
+**Found on glass:**
+- **GitHub's tell is wrong for a dead token.** The proxy answers `GitHub API HTTP 401` and the app shows "server unreachable"; the hint only fires on the string `GITHUB_TOKEN`. It should read as a rejected token.
+- Timer showed the 1-minute preset selected: stored state from the 2026-10-02 test on this device.
+- Nothing seen by day yet (deployed after 21:00 Montreal).
+
+**Open:** day palette on glass; the chime (needs a real touch); secrets (GitHub token, calendar feed, Claude usage sign-in on the Mac); squareclock still on `064d487` with no instances; smallclock offline. The admin's own UI was not used (the config went through its API).
+
+---
+
 ## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · scale pass: Todo, Agents, Alarm, Habits, Calendar Classic on the Fields recipe
 
 Nick: "do the scale pass on Todo, Agents, Alarm, Habits and Calendar Classic using the Fields recipe (title, hero, subline)." Design-review finding 3: these five were set at phone scale on a 1080 disc read from a metre away (Todo's empty line 16 px and 200 px below its button, Agents subtitles 16 px with 56 px portraits, Alarm's empty state at 28 px, Habits' count at 24 px, Calendar's tell the smallest text on screen).
