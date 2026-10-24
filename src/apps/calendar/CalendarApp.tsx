@@ -213,9 +213,11 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     );
   }
 
+  // The Fields skin paints its own disc from --fields-calendar*; the wrapper
+  // behind it is the palette surface like every other app (SUR-1).
   if (fields && view === 'cover' && !drill) {
     return (
-      <div className="relative h-full w-full bg-black overflow-hidden">
+      <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
         <FieldsCalendar now={now} events={events} timeFormat={cfg.timeFormat} offline={offline}
                         notConfigured={notConfigured} loading={loading} page={0} pageCount={LADDER.length} />
       </div>
@@ -223,17 +225,17 @@ export default function CalendarApp({ isActive, config }: AppProps) {
   }
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       {content}
       {/* Honest tells: config state beats network state — "not configured"
           is actionable (set CALENDAR_ICS_URL), "offline · cached" is not. */}
       {(notConfigured || offline) && (
-        <p className="absolute bottom-[7.5%] left-0 right-0 text-center text-white/40 text-[2.2vmin] pointer-events-none">
+        <p className="absolute bottom-[13%] left-0 right-0 text-center text-(--face-ink-muted) text-[2.2vmin] pointer-events-none">
           {notConfigured ? 'calendar not configured' : 'offline · cached'}
         </p>
       )}
       {!drill && (
-        <div className="text-white">
+        <div className="text-(--face-ink)">
           <PageDots count={LADDER.length} index={LADDER.indexOf(view)} />
         </div>
       )}

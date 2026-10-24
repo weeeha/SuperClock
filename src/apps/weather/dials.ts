@@ -38,7 +38,7 @@ export function dialFor(page: WeatherPageId, m: WeatherModel): DialProps | null 
         ...base,
         valueOf: () => '',
         markOf: (h: HourSample) => codeMark(h.code, h.isDay),
-        colorOf: () => '#e8e8ec',
+        colorOf: () => 'var(--face-ink)',
         centre: `${m.current.temp}°`,
         sub: conditionLabel(m.current.code),
         caption: `H ${m.today.high}°     L ${m.today.low}°`,

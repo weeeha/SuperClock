@@ -12,7 +12,7 @@ interface YearViewProps {
 }
 
 const ORANGE = '#FF8A1E';
-const GRAY = '#8A8A8A';
+const GRAY = 'var(--face-ink-muted)';
 const C = 500;
 const SECTOR = 30; // degrees per month, JAN centered at 12 o'clock, clockwise
 const PAD = 3.5; // degrees trimmed from each sector edge before laying dots
@@ -75,7 +75,7 @@ export default function YearView({
   const todayKey = dayKey(now);
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <svg viewBox="0 0 1000 1000" className="w-full h-full">
         {/* Sector divider lines */}
         {MONTHS.map((_, m) => {
@@ -84,7 +84,7 @@ export default function YearView({
           const [x2, y2] = polar(447, a);
           return (
             <line key={m} x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+              stroke="var(--face-ghost)" strokeWidth="1" />
           );
         })}
 
@@ -105,14 +105,14 @@ export default function YearView({
           return (
             <circle key={d.key} cx={d.x} cy={d.y}
               r={has ? 6 : 3.5}
-              fill={has ? ORANGE : 'rgba(255,255,255,0.22)'} />
+              fill={has ? ORANGE : 'var(--face-ghost)'} />
           );
         })}
 
         {/* Today: ring outline marker */}
         {dots.filter((d) => d.key === todayKey).map((d) => (
           <circle key="today" cx={d.x} cy={d.y} r={11}
-            fill="none" stroke="#ffffff" strokeWidth="2" />
+            fill="none" stroke="var(--face-ink)" strokeWidth="2" />
         ))}
 
         {/* Center year */}

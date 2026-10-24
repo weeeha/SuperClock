@@ -20,8 +20,9 @@ import { z } from 'zod';
 export const CATALOGUE_VERSION = 1;
 
 // Portable prefixes keep the anti-slop corpus ids (COL-1 means the same thing
-// here as in the donor repos); NAV/KIO/FCE are SuperClock's own topics.
-export const RULE_ID_PATTERN = /^(COL|TYP|LAY|CMP|ICO|MOT|CPY|CHT|STA|SYS|NAV|KIO|FCE)-\d+$/;
+// here as in the donor repos); NAV/KIO/FCE/SUR are SuperClock's own topics
+// (SUR = surface: apps paint the palette, decided 2026-10-23).
+export const RULE_ID_PATTERN = /^(COL|TYP|LAY|CMP|ICO|MOT|CPY|CHT|STA|SYS|NAV|KIO|FCE|SUR)-\d+$/;
 
 /** A sanctioned exception is a decision: it names the path substring and says why. */
 const exemptEntry = z.object({ path: z.string().min(1), reason: z.string().min(1) });

@@ -9,7 +9,7 @@ interface WeekViewProps {
 }
 
 const RED = '#E0342B';
-const GRAY = '#8A8A8A';
+const GRAY = 'var(--face-ink-muted)';
 const MAX_PILLS = 2;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -28,7 +28,7 @@ export default function WeekView({ now, events, weekStart, onSelectDay }: WeekVi
   const days = weekDays(now, weekStart);
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <p
         className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium tracking-[0.18em]"
         style={{ color: GRAY }}
@@ -54,14 +54,15 @@ export default function WeekView({ now, events, weekStart, onSelectDay }: WeekVi
                 <span className="text-[2.2vmin]" style={{ color: isToday ? 'rgba(255,255,255,0.8)' : GRAY }}>
                   {DAY_LETTERS[day.getDay()]}
                 </span>
-                <span className="text-white text-[3vmin] font-medium tabular-nums">{day.getDate()}</span>
+                {/* White only on the red today tile; other days sit on the page background. */}
+                <span className="text-[3vmin] font-medium tabular-nums" style={{ color: isToday ? '#ffffff' : 'var(--face-ink)' }}>{day.getDate()}</span>
               </span>
 
               <span className="flex items-center gap-[1vmin] min-w-0">
                 {dayEvents.slice(0, MAX_PILLS).map((e) => (
                   <span
                     key={e.uid}
-                    className="rounded-full bg-white/10 text-white text-[2.2vmin] px-[1.6vmin] py-[0.5vmin] truncate max-w-[22vmin]"
+                    className="rounded-full bg-(--face-plate) text-(--face-ink) text-[2.2vmin] px-[1.6vmin] py-[0.5vmin] truncate max-w-[22vmin]"
                   >
                     {e.title}
                   </span>

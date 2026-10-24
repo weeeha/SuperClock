@@ -50,7 +50,9 @@ export const CEILINGS = {
   // scale in src/shared/type-scale.ts — and apps migrate onto them in their
   // own design passes. Until then this ratchet is what stops the counts
   // climbing back.
-  colours: 118,
+  // 118 → 100 on 2026-10-23: SUR-1 moved six apps from hardcoded black/white
+  // and neutral greys onto the --face-* roles.
+  colours: 100,
 };
 
 // Files whose colours are data rather than design, so they are not counted.

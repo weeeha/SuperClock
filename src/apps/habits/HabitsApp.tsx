@@ -110,15 +110,15 @@ function DailyView({
           <g key={habit.id} onClick={() => toggle(habit.id)} style={{ cursor: 'pointer' }}>
             <circle
               cx={bx} cy={by} r={BTN_R}
-              fill={done ? habit.color : '#1c1c1c'}
-              stroke={done ? habit.color : '#2e2e2e'}
+              fill={done ? habit.color : 'var(--face-plate)'}
+              stroke={done ? habit.color : 'var(--face-ghost)'}
               strokeWidth="3"
               filter={done ? `url(#gd-${habit.id})` : undefined}
             />
             <text
               x={bx} y={by}
               textAnchor="middle" dominantBaseline="middle"
-              fill={done ? '#000000' : '#666'}
+              fill={done ? 'var(--face-bg)' : 'var(--face-tick)'}
               fontSize="30" fontFamily="Inter, sans-serif" fontWeight="600"
             >
               {habit.name}
@@ -128,14 +128,14 @@ function DailyView({
       })}
 
       {/* Center disc */}
-      <circle cx={CX} cy={CY} r={168} fill="#0d0d0d" />
-      <text x={CX} y={CY - 62} textAnchor="middle" fill="rgba(255,255,255,0.4)"
+      <circle cx={CX} cy={CY} r={168} fill="var(--face-plate)" />
+      <text x={CX} y={CY - 62} textAnchor="middle" fill="var(--face-ink-muted)"
         fontSize="34" fontFamily="Inter, sans-serif">{weekday}</text>
-      <text x={CX} y={CY + 28} textAnchor="middle" dominantBaseline="middle" fill="white"
+      <text x={CX} y={CY + 28} textAnchor="middle" dominantBaseline="middle" fill="var(--face-ink)"
         fontSize="90" fontFamily="Inter, sans-serif" fontWeight="700">{day}</text>
-      <text x={CX} y={CY + 98} textAnchor="middle" fill="rgba(255,255,255,0.4)"
+      <text x={CX} y={CY + 98} textAnchor="middle" fill="var(--face-ink-muted)"
         fontSize="34" fontFamily="Inter, sans-serif">{month}</text>
-      <text x={CX} y={CY + 138} textAnchor="middle" fill="rgba(255,255,255,0.25)"
+      <text x={CX} y={CY + 138} textAnchor="middle" fill="var(--face-tick)"
         fontSize="24" fontFamily="Inter, sans-serif">{doneCount}/{habits.length}</text>
     </svg>
   );
@@ -205,15 +205,15 @@ function MonthlyView({
         if (n === 0) {
           // An empty day is still a day: it keeps a track so the month reads as
           // a full circle and a gap means "none", not "missing". It has to be
-          // bright enough to actually close that circle — at #1e1e1e/6px the
-          // ring vanished on black and early in a month the view looked like a
+          // visible enough to actually close that circle — at a near-background tone and 6px the
+          // ring vanished into the page and early in a month the view looked like a
           // few bars floating with nothing to belong to.
           return (
             <path
               key={dayNum}
               d={arcPath(R_BASE, startDeg, endDeg)}
               fill="none"
-              stroke={isFuture ? '#1e1e1e' : '#2a2a2a'}
+              stroke={isFuture ? 'var(--face-spent)' : 'var(--face-ghost)'}
               strokeWidth={9}
               strokeLinecap="round"
             />
@@ -241,29 +241,29 @@ function MonthlyView({
             key={d}
             x={x} y={y}
             textAnchor="middle" dominantBaseline="central"
-            fill="#6a6a70" fontSize="26" fontFamily="Inter, sans-serif"
+            fill="var(--face-tick)" fontSize="26" fontFamily="Inter, sans-serif"
           >
             {d}
           </text>
         );
       })}
 
-      <circle cx={CX} cy={CY} r={118} fill="#090909" />
-      <text x={CX} y={CY - 26} textAnchor="middle" fill="rgba(255,255,255,0.4)"
+      <circle cx={CX} cy={CY} r={118} fill="var(--face-plate)" />
+      <text x={CX} y={CY - 26} textAnchor="middle" fill="var(--face-ink-muted)"
         fontSize="28" fontFamily="Inter, sans-serif">{monthName}</text>
-      <text x={CX} y={CY + 30} textAnchor="middle" dominantBaseline="middle" fill="white"
+      <text x={CX} y={CY + 30} textAnchor="middle" dominantBaseline="middle" fill="var(--face-ink)"
         fontSize="72" fontFamily="Inter, sans-serif" fontWeight="700">{todayDay}</text>
 
       {/* The month's own number, or an honest empty state. The ring alone
           cannot say "nothing logged yet" — with no data it is just a faint
           circle, which is what the old view left on screen with no message. */}
       {nothingLogged ? (
-        <text x={CX} y={CY + 168} textAnchor="middle" fill="#6a6a70"
+        <text x={CX} y={CY + 168} textAnchor="middle" fill="var(--face-tick)"
           fontSize="26" fontFamily="Inter, sans-serif">
           nothing logged this month
         </text>
       ) : (
-        <text x={CX} y={CY + 168} textAnchor="middle" fill="#6a6a70"
+        <text x={CX} y={CY + 168} textAnchor="middle" fill="var(--face-tick)"
           fontSize="26" fontFamily="Inter, sans-serif">
           {pct}% of {monthName}
         </text>
@@ -336,12 +336,12 @@ export default function HabitsApp({ isActive, config }: AppProps) {
   }
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden">
+    <div className="relative w-full h-full bg-(--face-bg) overflow-hidden">
       {view === 'daily'
         ? <DailyView habits={habits} completions={completions} toggle={toggle} now={now} />
         : <MonthlyView habits={habits} completions={completions} now={now} />
       }
-      <div className="text-white">
+      <div className="text-(--face-ink)">
         <PageDots count={2} index={view === 'daily' ? 0 : 1} />
       </div>
     </div>

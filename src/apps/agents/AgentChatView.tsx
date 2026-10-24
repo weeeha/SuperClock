@@ -39,7 +39,7 @@ export default function AgentChatView({
   }, [agent.id]);
 
   return (
-    <div className="relative w-full h-full bg-black text-white flex flex-col items-center">
+    <div className="relative w-full h-full bg-(--face-bg) text-(--face-ink) flex flex-col items-center">
       <StateRing state={micState} />
 
       {/* Header — the back affordance (vertical swipe is avatar, horizontal is apps) */}
@@ -68,8 +68,8 @@ export default function AgentChatView({
             key={m.id}
             className={
               m.from === 'agent'
-                ? 'self-start bg-neutral-800 rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
-                : 'self-end bg-sky-900 rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
+                ? 'self-start bg-(--face-plate) text-(--face-ink) rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
+                : 'self-end bg-(--face-spent) text-(--face-ink) rounded-3xl px-5 py-3 max-w-[70%] text-lg break-words'
             }
           >
             {m.text}
@@ -77,7 +77,7 @@ export default function AgentChatView({
         ))}
       </div>
 
-      <div className="pb-14 text-sky-400 text-lg">●  listening…</div>
+      <div className="pb-14 text-(--face-ink-muted) text-lg">●  listening…</div>
     </div>
   );
 }

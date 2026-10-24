@@ -83,9 +83,9 @@ Ledger `SCHEMA_UNREAD`: empty.
 - `face.strokes`
 - `face.world`
 
-## Rules (25, rules/superclock.json)
+## Rules (26, rules/superclock.json)
 
-By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3. By severity: blocker 20, review 3, warning 2.
+By method: delegated 4, grep 8, heuristic 5, judgment 3, rendered 3, requires 3. By severity: blocker 21, review 3, warning 2.
 
 | id | severity | method | title |
 | --- | --- | --- | --- |
@@ -113,6 +113,7 @@ By method: delegated 4, grep 7, heuristic 5, judgment 3, rendered 3, requires 3.
 | STA-3 | review | heuristic | outline-none never ships without a focus-visible replacement |
 | STA-5 | blocker | rendered | AA contrast on the surface the text actually sits on, in both palettes |
 | STA-7 | blocker | rendered | The admin passes at 375px |
+| SUR-1 | blocker | grep | Apps paint the palette, not a hardcoded surface |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
 Tree scan over 274 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
@@ -123,7 +124,7 @@ Unchecked on every run (needs a human or a browser): `CPY-4` (judgment), `FCE-1`
 
 Delegated to other gates: `FCE-2` → src/shared/lvgl-parity.test.ts, `FCE-3` → scripts/check-tokens.mjs, `KIO-3` → eslint.config.js, `SYS-1` → scripts/check-tokens.mjs.
 
-Sanctioned exemptions (9):
+Sanctioned exemptions (15):
 
 - `COL-4` src/admin/App.tsx: sticky admin header blurring scrolled content beneath it: real content, sanctioned 2026-09-05
 - `COL-4` src/core/components/QuickSettings.tsx: the quick-settings sheet blurs the live app beneath it: real content, sanctioned 2026-09-05
@@ -134,6 +135,12 @@ Sanctioned exemptions (9):
 - `MOT-1` src/apps/clock/: ambient carve-out (unslop Phase 0): clock hands are content
 - `MOT-1` src/apps/fireplace/: ambient carve-out (unslop Phase 0): the animation IS the app
 - `MOT-1` src/core/components/SwipeContainer.tsx: Suspense fallback spinner: a loading indicator bound to a real pending state
+- `SUR-1` src/apps/ai-face/: stage app: the vendored avatar pages draw on pure black and the iframe cannot read parent tokens (logged 2026-10-09)
+- `SUR-1` src/apps/breathing/: stage app: the glow ring is content that emits light on a black stage (decided 2026-10-23)
+- `SUR-1` src/apps/claude-usage/: themed instrument (pixel grid on black); same open finding 4 as GitHub
+- `SUR-1` src/apps/clock/: faces are governed by the --face-* night rule and FACE_TOKEN_EXEMPT (shrink-only) in scripts/lib/token-rules.mjs, not by this rule
+- `SUR-1` src/apps/fireplace/: stage app: the black is the fire's stage, content that emits light, the same in both palettes (decided 2026-10-23)
+- `SUR-1` src/apps/github/: themed instrument (dotted terminal on black); whether it joins the palette is design-review finding 4 (three visual worlds), open for Nick
 
 ## Devices (4)
 

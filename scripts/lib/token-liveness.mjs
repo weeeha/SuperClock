@@ -235,10 +235,6 @@ export const UNCONSUMED_LEDGER = [
     reason: 'admin primary/accent colour; the --color-primary and --color-accent aliases sub-project 2 plans are declaration lines the gate strips, so retiring this entry needs a component that writes hsl(var(--brand)) directly or a consumedRamps-style predicate for the alias-plus-utility path',
   },
   {
-    token: '--brand-ink',
-    reason: 'admin text on --brand; aliasing --color-primary-foreground and --color-accent-foreground onto this role only adds declaration lines the gate strips, leaving this ledgered until a component writes hsl(var(--brand-ink)) directly or the gate gains a tier-aware alias-plus-utility predicate',
-  },
-  {
     token: '--status-danger',
     reason: 'admin destructive colour; the --color-destructive alias sub-project 2 plans is a declaration line the gate strips, so this stays unreachable until a component writes hsl(var(--status-danger)) directly or a tier-aware predicate credits the alias',
   },

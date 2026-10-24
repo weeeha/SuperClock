@@ -10,7 +10,7 @@ interface DayViewProps {
 }
 
 const RED = '#E0342B';
-const GRAY = '#8A8A8A';
+const GRAY = 'var(--face-ink-muted)';
 
 function fmtTime(iso: string, timeFormat: '24h' | '12h'): string {
   return new Date(iso).toLocaleTimeString('en-US', {
@@ -30,7 +30,7 @@ export default function DayView({ day, events, timeFormat, onSelectEvent }: DayV
     `${day.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${day.getDate()}`;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <p
         className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium tracking-[0.18em]"
         style={{ color: GRAY }}
@@ -45,7 +45,7 @@ export default function DayView({ day, events, timeFormat, onSelectEvent }: DayV
               <button
                 key={e.uid}
                 onClick={() => onSelectEvent(e)}
-                className="rounded-full border-0 text-white text-[2.2vmin] px-[1.8vmin] py-[0.6vmin] truncate max-w-full"
+                className="rounded-full border-0 text-(--face-ink) text-[2.2vmin] px-[1.8vmin] py-[0.6vmin] truncate max-w-full"
                 style={{ background: 'rgba(224,52,43,0.28)' }}
               >
                 {e.title}
@@ -56,7 +56,7 @@ export default function DayView({ day, events, timeFormat, onSelectEvent }: DayV
 
         <div className="flex-1 min-h-0 overflow-y-auto calendar-scroll flex flex-col gap-[1.2vmin]">
           {dayEvents.length === 0 && (
-            <p className="text-center text-white/40 text-[2.6vmin] mt-[8vmin]">Nothing scheduled</p>
+            <p className="text-center text-(--face-tick) text-[2.6vmin] mt-[8vmin]">Nothing scheduled</p>
           )}
           {timed.map((e) => (
             <button
@@ -68,7 +68,7 @@ export default function DayView({ day, events, timeFormat, onSelectEvent }: DayV
                 {fmtTime(e.start, timeFormat)}
               </span>
               <span className="flex-none rounded-full self-stretch" style={{ width: '0.5vmin', background: RED }} />
-              <span className="text-white text-[2.8vmin] truncate py-[0.6vmin]">{e.title}</span>
+              <span className="text-(--face-ink) text-[2.8vmin] truncate py-[0.6vmin]">{e.title}</span>
             </button>
           ))}
         </div>

@@ -12,7 +12,7 @@ interface MonthViewProps {
 }
 
 const ORANGE = '#FF8A1E';
-const GRAY = '#8A8A8A';
+const GRAY = 'var(--face-ink-muted)';
 const MAX_DOTS = 2;
 const SUNDAY_FIRST = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONDAY_FIRST = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -26,7 +26,7 @@ export default function MonthView({
   const headers = weekStart === 'monday' ? MONDAY_FIRST : SUNDAY_FIRST;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <button
         onClick={onSnapToday}
         className="absolute top-[8%] left-1/2 -translate-x-1/2 bg-transparent border-0 font-semibold text-[4vmin] whitespace-nowrap"
@@ -58,7 +58,8 @@ export default function MonthView({
                     className="flex items-center justify-center rounded-[1.2vmin] w-[5.4vmin] h-[5.4vmin] text-[2.8vmin] tabular-nums"
                     style={{
                       background: isToday ? ORANGE : 'transparent',
-                      color: isToday ? '#ffffff' : inMonth ? '#ffffff' : 'rgba(255,255,255,0.25)',
+                      // White only on the orange today tile; other days sit on the page background.
+                      color: isToday ? '#ffffff' : inMonth ? 'var(--face-ink)' : 'var(--face-tick)',
                       fontWeight: isToday ? 600 : 400,
                     }}
                   >

@@ -61,7 +61,7 @@
     },
     {
       "id": "COL-6",
-      "title": "Indigo, violet and purple are not this system\u2019s hues (chrome and data, not artistic faces)",
+      "title": "Indigo, violet and purple are not this system’s hues (chrome and data, not artistic faces)",
       "severity": "warning",
       "detect": {
         "method": "heuristic",
@@ -81,7 +81,7 @@
         "falsePositives": "Matches the utility inside a string that quotes or discusses the banned class rather than applying it. Every hit still needs a look, hence warning."
       },
       "fix": "Remove it. The kiosk's colour is the configured accent plus the --face-* palette; the admin's is its semantic tokens. A second categorical hue is a token decision, not a Tailwind class.",
-      "why": "They are the model's default reach and they are not in this palette. Scoped 2026-09-07 (Nick): the rule governs chrome and data encodings, NOT a face in the `artistic` category \u2014 a face whose subject is flowers is entitled to violets, a progress quantity or a status tile is not. This detector only matches the Tailwind utility name, and every occurrence in this repo is raw hex, so it has never fired; the hue is computed instead by src/shared/design-ratchet.test.ts, which reads the artistic category from face-registry.ts rather than naming files."
+      "why": "They are the model's default reach and they are not in this palette. Scoped 2026-09-07 (Nick): the rule governs chrome and data encodings, NOT a face in the `artistic` category — a face whose subject is flowers is entitled to violets, a progress quantity or a status tile is not. This detector only matches the Tailwind utility name, and every occurrence in this repo is raw hex, so it has never fired; the hue is computed instead by src/shared/design-ratchet.test.ts, which reads the artistic category from face-registry.ts rather than naming files."
     },
     {
       "id": "ICO-2",
@@ -488,6 +488,50 @@
       },
       "fix": "Consume --face-bg and --face-ink at minimum; never fork a night variant of the component.",
       "why": "Night is a token flip, not per-face logic (unslop Phase 0)."
+    },
+    {
+      "id": "SUR-1",
+      "title": "Apps paint the palette, not a hardcoded surface",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "bg-black|bg-white|text-white|text-black|bg-neutral-[0-9]|text-neutral-[0-9]|border-neutral-[0-9]",
+        "flags": "",
+        "scope": [
+          "src/apps"
+        ],
+        "include": [
+          ".tsx"
+        ],
+        "exempt": [
+          {
+            "path": "src/apps/clock/",
+            "reason": "faces are governed by the --face-* night rule and FACE_TOKEN_EXEMPT (shrink-only) in scripts/lib/token-rules.mjs, not by this rule"
+          },
+          {
+            "path": "src/apps/fireplace/",
+            "reason": "stage app: the black is the fire's stage, content that emits light, the same in both palettes (decided 2026-10-23)"
+          },
+          {
+            "path": "src/apps/breathing/",
+            "reason": "stage app: the glow ring is content that emits light on a black stage (decided 2026-10-23)"
+          },
+          {
+            "path": "src/apps/ai-face/",
+            "reason": "stage app: the vendored avatar pages draw on pure black and the iframe cannot read parent tokens (logged 2026-10-09)"
+          },
+          {
+            "path": "src/apps/github/",
+            "reason": "themed instrument (dotted terminal on black); whether it joins the palette is design-review finding 4 (three visual worlds), open for Nick"
+          },
+          {
+            "path": "src/apps/claude-usage/",
+            "reason": "themed instrument (pixel grid on black); same open finding 4 as GitHub"
+          }
+        ]
+      },
+      "fix": "Paint bg-(--face-bg) and read --face-ink / --face-ink-muted / --face-tick for inks, --face-plate for platters, --face-ghost for hairlines and tracks; keep the app's one accent. Fields-skin files use their own --fields-<app>* roles and never hit this pattern.",
+      "why": "Decided 2026-10-23 from the app design review: seven apps were white by day and eleven hardcoded black, so the carousel flipped white, black, white on every swipe and night mode changed nothing on the dark apps. The clock faces, Timer, Alarm and Countdown already follow the palette; this rule makes the rest match. An app whose black is content (fire, a glow, a vendored stage) is a sanctioned exemption with its reason here."
     }
   ]
 }

@@ -110,7 +110,7 @@ describe('dialFor', () => {
     for (const page of ['temp', 'conditions', 'precip', 'wind', 'uv'] as const) {
       const d = dialFor(page, model())!;
       for (const h of d.hours) {
-        expect(d.colorOf(h)).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(d.colorOf(h)).toMatch(/^(#[0-9a-f]{6}|var\(--face-ink\))$/i);
       }
     }
   });

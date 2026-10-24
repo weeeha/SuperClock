@@ -93,14 +93,17 @@ export default function WeatherApp({ isActive, config }: AppProps) {
                    unconfigured={unconfigured} page={safePage} pageCount={pages.length} />
   );
 
+  // The Fields skin paints its own disc from --fields-weather*; the wrapper
+  // behind it is the palette surface like every other app (SUR-1), so the
+  // corners, visible only on the square device, follow day and night.
   if (fields && (!model || pages[safePage] === 'now')) {
-    return <div className="relative h-full w-full overflow-hidden bg-black">{fieldsNow}</div>;
+    return <div className="relative h-full w-full overflow-hidden bg-(--face-bg)">{fieldsNow}</div>;
   }
   if (fields && model) {
     const metricPage = pages[safePage];
     if (metricPage !== 'now') {
       return (
-        <div className="relative h-full w-full overflow-hidden bg-black">
+        <div className="relative h-full w-full overflow-hidden bg-(--face-bg)">
           <FieldsWeatherMetric page={metricPage} model={model} label={label} offline={offline}
                                updatedAt={updatedAt} pageIndex={safePage} pageCount={pages.length} />
         </div>
@@ -110,8 +113,8 @@ export default function WeatherApp({ isActive, config }: AppProps) {
 
   if (!model) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-black">
-        <span className="font-mono text-[3vmin] text-white/40">
+      <div className="flex h-full w-full items-center justify-center bg-(--face-bg)">
+        <span className="font-mono text-[3vmin] text-(--face-tick)">
           {offline ? 'weather offline' : 'loading…'}
         </span>
       </div>
@@ -122,18 +125,18 @@ export default function WeatherApp({ isActive, config }: AppProps) {
   const dial = current === 'now' ? null : dialFor(current, model);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-(--face-bg)">
       {current === 'now'
         ? <NowPage model={model} label={label} now={now} />
         : dial && <Dial {...dial} />}
 
       {offline && (
-        <span className="absolute left-1/2 top-[12%] -translate-x-1/2 font-mono text-[2.4vmin] text-white/30">
+        <span className="absolute left-1/2 top-[12%] -translate-x-1/2 font-mono text-[2.4vmin] text-(--face-tick)">
           offline
         </span>
       )}
 
-      <div className="text-white">
+      <div className="text-(--face-ink)">
         <PageDots count={pages.length} index={safePage} />
       </div>
     </div>

@@ -15,7 +15,7 @@ export default function AgentPortrait({
   if (failed) {
     return (
       <div
-        className="rounded-full bg-neutral-700 text-neutral-300 flex items-center justify-center font-semibold shrink-0"
+        className="rounded-full bg-(--face-ghost) text-(--face-ink-muted) flex items-center justify-center font-semibold shrink-0"
         style={{ width: size, height: size, fontSize: size * 0.42 }}
       >
         {name.charAt(0)}

@@ -33,8 +33,8 @@ export default function Dial({
 
   return (
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
-      <circle cx={C} cy={C} r={R_HOURS} fill="none" stroke="#1a1a1c" strokeWidth={92} />
-      <circle cx={C} cy={C} r={R_VALUES} fill="none" stroke="#111113" strokeWidth={92} />
+      <circle cx={C} cy={C} r={R_HOURS} fill="none" stroke="var(--face-plate)" strokeWidth={92} />
+      <circle cx={C} cy={C} r={R_VALUES} fill="none" stroke="var(--face-spent)" strokeWidth={92} />
 
       {slots.map((h, slot) => {
         if (!h) return null;
@@ -43,12 +43,12 @@ export default function Dial({
         const isNow = h.hour === nowHour;
         return (
           <g key={slot}>
-            {isNow && <circle cx={hp.x} cy={hp.y} r={44} fill="#ffffff" />}
+            {isNow && <circle cx={hp.x} cy={hp.y} r={44} fill="var(--face-ink)" />}
             <text
               x={hp.x} y={hp.y}
               textAnchor="middle" dominantBaseline="central"
               fontSize={44} fontWeight={isNow ? 600 : 500}
-              fill={isNow ? '#000000' : '#7a7a80'}
+              fill={isNow ? 'var(--face-bg)' : 'var(--face-tick)'}
             >
               {h.hour}
             </text>
@@ -76,15 +76,15 @@ export default function Dial({
       })}
 
       <text x={C} y={C - 26} textAnchor="middle" dominantBaseline="central"
-            fontSize={168} fontWeight={600} fill="#ffffff">
+            fontSize={168} fontWeight={600} fill="var(--face-ink)">
         {centre}
       </text>
       <text x={C} y={C + 78} textAnchor="middle" dominantBaseline="central"
-            fontSize={38} fill="#b0b0b6">
+            fontSize={38} fill="var(--face-ink-muted)">
         {sub}
       </text>
       <text x={C} y={C + 130} textAnchor="middle" dominantBaseline="central"
-            fontSize={30} fill="#6a6a70">
+            fontSize={30} fill="var(--face-tick)">
         {caption}
       </text>
     </svg>

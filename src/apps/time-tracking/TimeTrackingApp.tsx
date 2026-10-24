@@ -46,7 +46,7 @@ function HourlyStrip({ hourlyMs, baseY, maxH }: { hourlyMs: number[]; baseY: num
             width={barW}
             height={h}
             rx={2}
-            fill={ms > 0 ? '#FF8826' : '#2a2a2a'}
+            fill={ms > 0 ? '#FF8826' : 'var(--face-ghost)'}
             opacity={ms > 0 ? 0.45 + 0.55 * (ms / maxHourMs) : 1}
           />
         );
@@ -95,7 +95,7 @@ function FocusView({
     statusColor = '#EAB308';
   } else {
     status = elapsed > 0 ? 'TAP TO RESUME' : 'TAP TO START';
-    statusColor = '#666';
+    statusColor = 'var(--face-tick)';
   }
 
   const showOccupancy = occupancy !== null && (radarLive || occupancy.totalMs > 0);
@@ -111,7 +111,7 @@ function FocusView({
         className="h-full w-full"
       >
         {/* Progress ring — edge-to-edge */}
-        <circle cx="500" cy="500" r={ringRadius} fill="none" stroke="#1a1a1a" strokeWidth="30" />
+        <circle cx="500" cy="500" r={ringRadius} fill="none" stroke="var(--face-ghost)" strokeWidth="30" />
         <circle
           cx="500" cy="500" r={ringRadius}
           fill="none" stroke="#FF8826" strokeWidth="30" strokeLinecap="round"
@@ -120,12 +120,12 @@ function FocusView({
         />
 
         {/* Timer text */}
-        <text x="500" y="440" textAnchor="middle" fill="white" fontSize="160" fontWeight="600" fontFamily="Inter, sans-serif">
+        <text x="500" y="440" textAnchor="middle" fill="var(--face-ink)" fontSize="160" fontWeight="600" fontFamily="Inter, sans-serif">
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </text>
 
         {/* Task name */}
-        <text x="500" y="540" textAnchor="middle" fill="#888888" fontSize="48" fontFamily="Inter, sans-serif">
+        <text x="500" y="540" textAnchor="middle" fill="var(--face-ink-muted)" fontSize="48" fontFamily="Inter, sans-serif">
           {task}
         </text>
 
@@ -137,8 +137,8 @@ function FocusView({
         {showOccupancy && (
           <>
             {/* Radar-fed desk time vs daily target */}
-            <text x="500" y="695" textAnchor="middle" fill="#aaa" fontSize="34" fontFamily="Inter, sans-serif">
-              {radarLive && <tspan fill={present ? '#22C55E' : '#555'}>● </tspan>}
+            <text x="500" y="695" textAnchor="middle" fill="var(--face-ink-muted)" fontSize="34" fontFamily="Inter, sans-serif">
+              {radarLive && <tspan fill={present ? '#22C55E' : 'var(--face-tick)'}>● </tspan>}
               {deskLabel}
             </text>
 
@@ -169,7 +169,7 @@ function TaskPickerView({
 
   return (
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
-      <text x="500" y={startY - 60} textAnchor="middle" fill="#666" fontSize="34" fontFamily="Inter, sans-serif">
+      <text x="500" y={startY - 60} textAnchor="middle" fill="var(--face-tick)" fontSize="34" fontFamily="Inter, sans-serif">
         TASK
       </text>
       {projects.map((name, i) => {
@@ -183,8 +183,8 @@ function TaskPickerView({
               width={PILL_W}
               height={PILL_H}
               rx={PILL_H / 2}
-              fill={active ? '#FF8826' : '#1c1c1c'}
-              stroke={active ? '#FF8826' : '#2e2e2e'}
+              fill={active ? '#FF8826' : 'var(--face-plate)'}
+              stroke={active ? '#FF8826' : 'var(--face-ghost)'}
               strokeWidth="3"
             />
             <text
@@ -192,7 +192,7 @@ function TaskPickerView({
               y={y + PILL_H / 2}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill={active ? '#000000' : '#aaa'}
+              fill={active ? 'var(--brand-ink)' : 'var(--face-ink-muted)'}
               fontSize="44"
               fontWeight="600"
               fontFamily="Inter, sans-serif"
@@ -223,7 +223,7 @@ function SummaryView({
   if (occupancy === null) {
     return (
       <svg viewBox="0 0 1000 1000" className="h-full w-full">
-        <text x="500" y="500" textAnchor="middle" fill="#666" fontSize="36" fontFamily="Inter, sans-serif">
+        <text x="500" y="500" textAnchor="middle" fill="var(--face-tick)" fontSize="36" fontFamily="Inter, sans-serif">
           occupancy data unavailable
         </text>
       </svg>
@@ -239,14 +239,14 @@ function SummaryView({
 
   return (
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
-      <text x="500" y="255" textAnchor="middle" fill="#666" fontSize="34" fontFamily="Inter, sans-serif">
-        {radarLive && <tspan fill={present ? '#22C55E' : '#555'}>● </tspan>}
+      <text x="500" y="255" textAnchor="middle" fill="var(--face-tick)" fontSize="34" fontFamily="Inter, sans-serif">
+        {radarLive && <tspan fill={present ? '#22C55E' : 'var(--face-tick)'}>● </tspan>}
         AT DESK TODAY
       </text>
-      <text x="500" y="380" textAnchor="middle" fill="white" fontSize="120" fontWeight="600" fontFamily="Inter, sans-serif">
+      <text x="500" y="380" textAnchor="middle" fill="var(--face-ink)" fontSize="120" fontWeight="600" fontFamily="Inter, sans-serif">
         {formatHours(occupancy.totalMs)}
       </text>
-      <text x="500" y="445" textAnchor="middle" fill="#666" fontSize="34" fontFamily="Inter, sans-serif">
+      <text x="500" y="445" textAnchor="middle" fill="var(--face-tick)" fontSize="34" fontFamily="Inter, sans-serif">
         of {dailyTargetHours}h target
       </text>
 
@@ -265,13 +265,13 @@ function SummaryView({
               width={DAY_W}
               height={h}
               rx={4}
-              fill={day.totalMs > 0 ? (isToday ? '#FF8826' : '#7a4a1e') : '#2a2a2a'}
+              fill={day.totalMs > 0 ? (isToday ? '#FF8826' : '#7a4a1e') : 'var(--face-ghost)'}
             />
             <text
               x={x + DAY_W / 2}
               y="828"
               textAnchor="middle"
-              fill={isToday ? '#aaa' : '#555'}
+              fill={isToday ? 'var(--face-ink-muted)' : 'var(--face-tick)'}
               fontSize="26"
               fontFamily="Inter, sans-serif"
             >
@@ -410,7 +410,7 @@ export default function TimeTrackingApp({ isActive, config }: AppProps) {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-(--face-bg)">
       {view === 0 && (
         <FocusView
           elapsed={elapsed}
@@ -433,7 +433,7 @@ export default function TimeTrackingApp({ isActive, config }: AppProps) {
           dailyTargetHours={cfg.dailyTargetHours}
         />
       )}
-      <div className="text-white">
+      <div className="text-(--face-ink)">
         <PageDots count={3} index={view} />
       </div>
     </div>

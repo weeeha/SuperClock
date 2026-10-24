@@ -15,28 +15,29 @@ export default function CoverView({ now, todayEvents }: CoverViewProps) {
   const count = todayEvents.length;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-[3vmin]">
-        <div className="text-white font-medium text-[6.4vmin]">{weekday}</div>
+        <div className="text-(--face-ink) font-medium text-[6.4vmin]">{weekday}</div>
         <div
           className="flex items-center justify-center rounded-[4vmin]"
           style={{ background: RED, width: '32vmin', height: '28vmin' }}
         >
-          <span className="text-white font-bold leading-none text-[17vmin]">{now.getDate()}</span>
+          {/* White on the red tile, not on the page background: stays white in both palettes. */}
+          <span className="font-bold leading-none text-[17vmin]" style={{ color: '#ffffff' }}>{now.getDate()}</span>
         </div>
-        <div className="text-white/70 text-[4.2vmin]">{month}</div>
+        <div className="text-(--face-ink-muted) text-[4.2vmin]">{month}</div>
 
         <div className="flex items-center gap-[1.4vmin] h-[3vmin]">
           {count > 0 && count <= MAX_DOTS &&
             todayEvents.map((e) => (
               <span
                 key={e.uid}
-                className="rounded-full bg-white/60"
+                className="rounded-full bg-(--face-ink-muted)"
                 style={{ width: '1.2vmin', height: '1.2vmin' }}
               />
             ))}
           {count > MAX_DOTS && (
-            <span className="text-white/60 text-[2.6vmin]">{count} events</span>
+            <span className="text-(--face-ink-muted) text-[2.6vmin]">{count} events</span>
           )}
         </div>
       </div>

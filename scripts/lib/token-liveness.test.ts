@@ -325,7 +325,6 @@ describe('UNCONSUMED_LEDGER — shrink-only, every entry carries a reason', () =
         '--surface-sheet',
         '--surface-popover',
         '--brand',
-        '--brand-ink',
         '--status-danger',
         '--status-ok',
         '--status-warn',

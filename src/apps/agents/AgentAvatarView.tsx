@@ -20,11 +20,11 @@ export default function AgentAvatarView({
   micState: MicState;
 }) {
   return (
-    <div className="relative w-full h-full bg-black text-white flex flex-col items-center justify-center">
+    <div className="relative w-full h-full bg-(--face-bg) text-(--face-ink) flex flex-col items-center justify-center">
       <StateRing state={micState} />
       <AgentPortrait name={agent.name} src={agent.portrait} size={520} />
       <div className="text-5xl font-semibold mt-10">{agent.name}</div>
-      <div className="text-2xl text-sky-400 mt-4 h-8">{STATUS[micState]}</div>
+      <div className="text-2xl text-(--face-ink-muted) mt-4 h-8">{STATUS[micState]}</div>
     </div>
   );
 }

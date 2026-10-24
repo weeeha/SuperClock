@@ -8,7 +8,7 @@ interface DetailsViewProps {
 }
 
 const RED = '#E0342B';
-const GRAY = '#8A8A8A';
+const GRAY = 'var(--face-ink-muted)';
 
 function fmtTime(iso: string, timeFormat: '24h' | '12h'): string {
   return new Date(iso).toLocaleTimeString('en-US', {
@@ -29,17 +29,17 @@ export default function DetailsView({ event, now, timeFormat }: DetailsViewProps
     : `${fmtTime(event.start, timeFormat)} – ${fmtTime(event.end, timeFormat)}`;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <div className="absolute inset-0 left-[16%] right-[16%] flex flex-col items-center justify-center text-center gap-[2.6vmin]">
-        <div className="text-white font-semibold text-[5.4vmin] leading-tight">{event.title}</div>
+        <div className="text-(--face-ink) font-semibold text-[5.4vmin] leading-tight">{event.title}</div>
         {countdown ? (
           <div className="font-medium text-[4.2vmin]" style={{ color: RED }}>{countdown}</div>
         ) : (
-          <div className="text-white text-[4vmin]">{timeLine}</div>
+          <div className="text-(--face-ink) text-[4vmin]">{timeLine}</div>
         )}
         <div className="text-[3vmin]" style={{ color: GRAY }}>{dateLine}</div>
         {event.location && (
-          <div className="text-white/60 text-[2.8vmin] truncate max-w-full">{event.location}</div>
+          <div className="text-(--face-ink-muted) text-[2.8vmin] truncate max-w-full">{event.location}</div>
         )}
       </div>
     </div>

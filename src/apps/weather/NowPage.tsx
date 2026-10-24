@@ -32,41 +32,34 @@ export default function NowPage({ model, label, now }: NowPageProps) {
 
   return (
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
-      <defs>
-        <radialGradient id="wx-sky" cx="50%" cy="18%" r="95%">
-          <stop offset="0%" stopColor={daylight ? '#5b93c9' : '#1c2740'} />
-          <stop offset="55%" stopColor={daylight ? '#28527f' : '#111a2c'} />
-          <stop offset="100%" stopColor="#080d18" />
-        </radialGradient>
-      </defs>
-      <circle cx={C} cy={C} r={500} fill="url(#wx-sky)" />
-
-      <path d={dayArcPath()} fill="none" stroke="#ffffff" strokeOpacity={0.28} strokeWidth={5} />
-      <circle cx={sun.x} cy={sun.y} r={26} fill={daylight ? '#ffe9a8' : '#dfe6f2'} />
+      {/* The sky is the page: the app wrapper paints --face-bg. The one accent
+          is the sun marker; the arc is its track. */}
+      <path d={dayArcPath()} fill="none" stroke="var(--face-ghost)" strokeWidth={5} />
+      <circle cx={sun.x} cy={sun.y} r={26} fill={daylight ? '#5b93c9' : 'var(--face-ink)'} />
 
       <text x={C} y={196} textAnchor="middle" dominantBaseline="central"
-            fontSize={34} fill="#ffffff" fillOpacity={0.72}>
+            fontSize={34} fill="var(--face-ink-muted)">
         {label ? `⌖ ${label.toUpperCase()} · ${hhmm}` : hhmm}
       </text>
 
       <text x={C} y={412} textAnchor="middle" dominantBaseline="central"
-            fontSize={230} fontWeight={600} fill="#ffffff">
+            fontSize={230} fontWeight={600} fill="var(--face-ink)">
         {model.current.temp}°
       </text>
 
       <text x={C} y={560} textAnchor="middle" dominantBaseline="central"
-            fontSize={44} fill="#ffffff">
+            fontSize={44} fill="var(--face-ink)">
         {conditionLabel(model.current.code)}
       </text>
       <text x={C} y={614} textAnchor="middle" dominantBaseline="central"
-            fontSize={34} fill="#ffffff" fillOpacity={0.7}>
+            fontSize={34} fill="var(--face-ink-muted)">
         {`H ${model.today.high}°     L ${model.today.low}°`}
       </text>
 
-      <text x={112} y={520} textAnchor="middle" fontSize={26} fill="#ffffff" fillOpacity={0.45}>
+      <text x={112} y={520} textAnchor="middle" fontSize={26} fill="var(--face-tick)">
         {fmt(model.today.sunriseMin)}
       </text>
-      <text x={888} y={520} textAnchor="middle" fontSize={26} fill="#ffffff" fillOpacity={0.45}>
+      <text x={888} y={520} textAnchor="middle" fontSize={26} fill="var(--face-tick)">
         {fmt(model.today.sunsetMin)}
       </text>
 
@@ -79,8 +72,8 @@ export default function NowPage({ model, label, now }: NowPageProps) {
         return (
           <g key={k}>
             <text x={x} y={766} textAnchor="middle" fontSize={24}
-                  fill="#ffffff" fillOpacity={0.45}>{k}</text>
-            <text x={x} y={812} textAnchor="middle" fontSize={34} fill="#ffffff">{v}</text>
+                  fill="var(--face-tick)">{k}</text>
+            <text x={x} y={812} textAnchor="middle" fontSize={34} fill="var(--face-ink)">{v}</text>
           </g>
         );
       })}

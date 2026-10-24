@@ -6,6 +6,24 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · SUR-1: every app paints the palette; six apps converted
+
+Nick: "decide finding 1: one surface rule for every app in the carousel; propose the rule with evidence, then apply it."
+
+**Evidence:** in the day palette seven apps sat on white (Clock, Timer, Alarm, Countdown Classic, Quote, Photo Frame, Fitness) and eleven on hardcoded black (Weather Classic navy), so the carousel flipped white, black, white on every swipe and night changed nothing on the dark apps. Per-app counts of hardcoded surfaces and inks before the change: calendar 12 `bg-black` + 9 `text-white`, weather 4 + 11 `#ffffff`, todo 5 `bg-neutral-900` + 5 `text-white`, habits, time-tracking and agents 3 to 5 each, none reading a `--surface-*` or `--face-*` role.
+
+**The rule (SUR-1, `rules/superclock.json`, blocker, grep):** an app paints `bg-(--face-bg)` and reads `--face-ink` / `--face-ink-muted` / `--face-tick` for inks, `--face-plate` for platters, `--face-ghost` for hairlines and tracks, keeping its one accent; so every app is light by day and dark at night exactly like the faces, Timer, Alarm and Countdown already were. Pattern `bg-black|bg-white|text-white|text-black|bg-neutral-N|text-neutral-N|border-neutral-N` over `src/apps/*.tsx`. Sanctioned exemptions with reasons: `clock/` (faces have their own night gate), `fireplace/`, `breathing/`, `ai-face/` (stage apps: the black is content that emits light), `github/` and `claude-usage/` (themed instruments, held for design-review finding 4). `SUR` added to `RULE_ID_PATTERN` in `scripts/lib/rule-schema.mjs`; fixture pair `scripts/lib/__fixtures__/rules/sur-1-{bad,good}.tsx`. Rejected alternatives: dark-only kiosk (contradicts the faces' day palette and the two-mode contrast gate); palette for everything including the stage apps (a fire or a glow on white is not the app).
+
+**Converted (three Sonnet implementers, one pair each, controller reviewed and verified):** Weather Classic (`WeatherApp`, `NowPage`, `Dial`, `dials.ts`: navy sky removed, sun marker `#5b93c9` by day and `--face-ink` after sunset, dial rings plate/spent, now-hour disc inverted), Calendar Classic (`CalendarApp`, Cover/Day/Week/Month/Year/Details views: white kept only on the red and orange today tiles, commented), Habits (discs `--face-plate`, month tracks spent/ghost, completed-disc label `--face-bg`; the seven month hues untouched), Todo (overlay now opaque `--face-bg` since tokens take no opacity modifier, keys plate/spent, accent-button label `--face-bg`), Focus (ring track and dashed baseline `--face-ghost`, pill text `--brand-ink`, which gained its first reader), Agents (rows, portraits, chat bubbles plate/spent; the avatar status line moved from sky blue to `--face-ink-muted` for day contrast). Fields wrappers in Weather and Calendar also moved to `--face-bg` (corners only ever show on the square device). Calendar Classic's tell lifted to 13 percent from the bottom so it clears the pager dots. PageDots wrappers read `text-(--face-ink)`.
+
+**Ratchets moved the right way:** design-ratchet `colours` ceiling 118 → 100; `--brand-ink` left `UNCONSUMED_LEDGER`.
+
+**Verified:** gates (see commit), dev kiosk at 1080 for all six apps in both palettes by screenshot: light surfaces by day, dark at night, accents unchanged, calendar tell above the dots. Not seen on a Pi.
+
+**Open for Nick (from the conversions):** completed-habit labels in `--face-bg` are white on the saturated hues by day (low contrast on yellow and green: a hue decision, not touched); Agents' two bubble tones are close at night (plate vs spent, a token-value question); Todo's overlay lost its faint see-through; whether GitHub and Claude usage join the palette (finding 4).
+
+---
+
 ## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · design review of all 18 apps, then the off-system fixes
 
 Nick: "check each app and review its design", then "fix the off-system findings first". The review (`docs/design/2026-10-23-app-design-review.md`) rendered every app in the dev kiosk at a true 1080 x 1080, day and night, Classic and Fields, plus the grid: ten ranked cross-cutting findings, split off-system (token or Phase 0 rule, just fix) from judgment (Nick decides). Judgment items still open for him: one surface rule for the carousel (seven apps white by day, eleven hardcoded black), phone-scale type on Todo, Agents, Alarm, Habits and Calendar Classic, three visual worlds (flat Inter, mono terminal, Nunito Fields plus Fitness's 3D figure), em dashes in 63 app files, "TAP TO START" caps, the accent setting reaching five apps.
