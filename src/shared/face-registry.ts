@@ -128,6 +128,46 @@ export const FACES: FaceDescriptor[] = [
     configSchemaId: 'face.vinyl',
     slots: [],
   },
+  {
+    id: 'neon-tube',
+    name: 'Neon Tube',
+    preview: '/neon-tube-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.neon-tube',
+    slots: [],
+  },
+  {
+    id: 'neon-sign',
+    name: 'Neon Sign',
+    preview: '/neon-sign-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.neon-sign',
+    slots: [],
+  },
+  {
+    id: 'neon-nixie',
+    name: 'Nixie',
+    preview: '/neon-nixie-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.neon-nixie',
+    slots: [],
+  },
+  {
+    id: 'neon-plasma',
+    name: 'Plasma',
+    preview: '/neon-plasma-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.neon-plasma',
+    slots: [],
+  },
+  {
+    id: 'neon-horizon',
+    name: 'Horizon',
+    preview: '/neon-horizon-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.neon-horizon',
+    slots: [],
+  },
 ];
 
 const FACES_BY_ID = new Map(FACES.map((f) => [f.id, f]));

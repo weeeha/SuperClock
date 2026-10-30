@@ -1,0 +1,39 @@
+{
+  "kind": "face",
+  "id": "neon-horizon",
+  "purpose": "A synthwave horizon: a magenta grid floor rolling toward the viewer one spacing a second, a striped sun whose height follows the day, set below the horizon at night, and the time in cyan segment digits above it.",
+  "accent": {
+    "where": "the time digits; the grid, sun and ridge are magenta",
+    "color": "#00F0FF"
+  },
+  "night": {
+    "recipe": "The lit disc is content and stays dark in both palettes (the Vinyl precedent); the mat around it, visible on the square device, flips with --face-bg, and night dimming comes from the kiosk brightness. For a dark room the glow option pulls the halo in.",
+    "tokens": [
+      "--face-bg"
+    ]
+  },
+  "options": [
+    {
+      "key": "glow",
+      "intent": "full is the neon as designed; soft keeps the tubes and their white cores but pulls the halo in, the setting for a clock by the bed."
+    }
+  ],
+  "antiPatterns": [
+    {
+      "rule": "Never paint the neon or the stage with --face-ink or --face-bg",
+      "why": "the lit disc is content and stays dark in both palettes, like the Vinyl record; the day ink is black and would vanish on it, so only the mat outside the disc reads --face-bg"
+    },
+    {
+      "rule": "Never draw the still parts live every frame",
+      "why": "nine glow passes per stroke made the drafts cost 17 to 20 ms a frame at 1080; anything that changes at most once a minute goes through N.layer in src/apps/clock/neon/faces/horizon.ts or the Pi drops frames"
+    },
+    {
+      "rule": "Never let the sun cover the digits",
+      "why": "the time is the one cyan quantity; at noon the sun rises highest and must still sit below the numerals"
+    }
+  ],
+  "parity": {
+    "lvgl": null
+  },
+  "specless": "Drawn on a canvas by src/apps/clock/neon/faces/horizon.ts in the shared 1000-unit space. A perspective grid, a striped sun and segment digits have no place in the spec vocabulary of solid hands and two tick rings, so the numbers live in the draw module."
+}

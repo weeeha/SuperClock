@@ -13,7 +13,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const tIdx = args.indexOf('--t');
 const times = tIdx >= 0 ? args[tIdx + 1].split(',') : ['10:09:30'];
-const ids = args.filter((a, i) => !a.startsWith('--') && i !== tIdx + 1);
+const ids = args.filter((a, i) => !a.startsWith('--') && (tIdx < 0 || i !== tIdx + 1));
 if (!ids.length) {
   console.error('usage: node docs/drafts/neon-faces/shoot.mjs <id> [id ...] [--t HH:MM:SS,...]');
   process.exit(1);

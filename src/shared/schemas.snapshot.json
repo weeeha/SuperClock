@@ -901,6 +901,71 @@
       },
       "type": "object"
     },
+    "face.neon-horizon": {
+      "properties": {
+        "glow": {
+          "default": "full",
+          "enum": [
+            "full",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.neon-nixie": {
+      "properties": {
+        "glow": {
+          "default": "full",
+          "enum": [
+            "full",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.neon-plasma": {
+      "properties": {
+        "glow": {
+          "default": "full",
+          "enum": [
+            "full",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.neon-sign": {
+      "properties": {
+        "glow": {
+          "default": "full",
+          "enum": [
+            "full",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "face.neon-tube": {
+      "properties": {
+        "glow": {
+          "default": "full",
+          "enum": [
+            "full",
+            "soft"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "face.productivity": {
       "properties": {
         "accent": {

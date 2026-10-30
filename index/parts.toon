@@ -1,4 +1,4 @@
-parts[17]{kind,id,path,accent,parity,geometry,purpose}:
+parts[22]{kind,id,path,accent,parity,geometry,purpose}:
   face,analog,src/apps/clock/AnalogClock.meta.json,config:accent,lvgl,spec,"The Swiss railway reference: sixty ticks, heavy white hands on a black dial, an accent second hand and pip."
   face,aperture,src/apps/clock/ApertureClock.meta.json,--color-accent,none,specless,"A plate covers the dial; the hour and minute show through two windows and step, nothing sweeps."
   face,complications-dark,src/apps/clock/ComplicationsDark.meta.json,config:accent,none,pending,The dark sibling of Complications Light: the same layout on a fixed dark dial.
@@ -8,6 +8,11 @@ parts[17]{kind,id,path,accent,parity,geometry,purpose}:
   face,flip,src/apps/clock/FlipClock.meta.json,config:accent,none,specless,Split-flap digits that flip when they change.
   face,floral,src/apps/clock/FloralClock.meta.json,config:accent,none,pending,Hands over a floral artwork.
   face,minimalismo,src/apps/clock/MinimalismoClock.meta.json,#FFD700,none,spec,"A bare dial with two ink hands and a gold sweeping second hand, nothing else."
+  face,neon-horizon,src/apps/clock/NeonHorizonClock.meta.json,#00F0FF,none,specless,"A synthwave horizon: a magenta grid floor rolling toward the viewer one spacing a second, a striped sun whose height follows the day, set below the horizon at night, and the time in cyan segment digits above it."
+  face,neon-nixie,src/apps/clock/NeonNixieClock.meta.json,#ff7012,none,specless,"Four nixie tubes in a two by two block, hours over minutes: glass envelopes, a faint mesh, all ten cathodes stacked dimly behind and the lit numeral glowing orange, with two small neon dots blinking the seconds between the rows."
+  face,neon-plasma,src/apps/clock/NeonPlasmaClock.meta.json,#a855f7,none,specless,"A plasma globe whose two strongest tendrils are the hands: the thick one lands on the glass at the hour, the thinner one at the minute, both with a hot contact spot, while dim ambient tendrils wander the rest of the globe."
+  face,neon-sign,src/apps/clock/NeonSignClock.meta.json,#FF3D7F,none,specless,"The time as a bar sign: HH:MM in continuous bent pink tube, dim blacked-out return tubes and mounting standoffs, a colon that breathes once a second and one stroke that stutters once a minute."
+  face,neon-tube,src/apps/clock/NeonTubeClock.meta.json,#FF2BD6,none,specless,"An analog clock bent from cyan glass tube, as if a sign maker built it: twelve tube marks, two tube hands on a hub ring, and one magenta spark running the rim for the seconds."
   face,productivity,src/apps/clock/ProductivityClock.meta.json,config:accent,none,pending,Coloured rim segments block the day into spans around a plain dial.
   face,square,src/apps/clock/SquareClock.meta.json,config:accent,none,pending,"A rounded square dial with numerals at the four cardinals and tick marks, designed for the square device's rectangle."
   face,strokes,src/apps/clock/StrokesClock.meta.json,--color-accent,none,specless,A full-field lattice of 52 two-hand dials.

@@ -1,0 +1,39 @@
+{
+  "kind": "face",
+  "id": "neon-sign",
+  "purpose": "The time as a bar sign: HH:MM in continuous bent pink tube, dim blacked-out return tubes and mounting standoffs, a colon that breathes once a second and one stroke that stutters once a minute. It refuses seven segments and any second colour.",
+  "accent": {
+    "where": "the whole sign, one pink tube; brightness carries the hierarchy",
+    "color": "#FF3D7F"
+  },
+  "night": {
+    "recipe": "The lit disc is content and stays dark in both palettes (the Vinyl precedent); the mat around it, visible on the square device, flips with --face-bg, and night dimming comes from the kiosk brightness. For a dark room the glow option pulls the halo in.",
+    "tokens": [
+      "--face-bg"
+    ]
+  },
+  "options": [
+    {
+      "key": "glow",
+      "intent": "full is the neon as designed; soft keeps the tubes and their white cores but pulls the halo in, the setting for a clock by the bed."
+    }
+  ],
+  "antiPatterns": [
+    {
+      "rule": "Never paint the neon or the stage with --face-ink or --face-bg",
+      "why": "the lit disc is content and stays dark in both palettes, like the Vinyl record; the day ink is black and would vanish on it, so only the mat outside the disc reads --face-bg"
+    },
+    {
+      "rule": "Never draw the still parts live every frame",
+      "why": "nine glow passes per stroke made the drafts cost 17 to 20 ms a frame at 1080; anything that changes at most once a minute goes through N.layer in src/apps/clock/neon/faces/sign.ts or the Pi drops frames"
+    },
+    {
+      "rule": "Do not redraw the lettering as seven segments",
+      "why": "the face is a bent-tube sign; segment digits would make it a generic LED clock and lose the one thing it is"
+    }
+  ],
+  "parity": {
+    "lvgl": null
+  },
+  "specless": "Drawn on a canvas by src/apps/clock/neon/faces/sign.ts in the shared 1000-unit space. Bent-tube numerals, return tubes and standoffs have no place in the spec vocabulary of solid hands and two tick rings, so the numbers live in the draw module."
+}

@@ -59,16 +59,30 @@ export function useClockHands(isActive: boolean, options: ClockHandsOptions = {}
     return () => clearInterval(id);
   }, [isActive, sweep]);
 
+  const { hourDeg, minuteDeg, secondDeg } = clockAngles(time, sweep);
+  return {
+    time,
+    hourDeg,
+    minuteDeg,
+    secondDeg: sweep ? secondDeg : MOUNT_ANGLE + (Math.floor(time.getTime() / 1000) - MOUNT_SEC) * 6,
+  };
+}
+
+/**
+ * The hand angles for one moment, in degrees clockwise from 12 o'clock: the
+ * formulas themselves, pure, so a canvas face that draws every animation
+ * frame (src/apps/clock/neon/) reads the same numbers this hook does instead
+ * of keeping its own copy. `sweep` folds the milliseconds into the seconds.
+ * The second angle here is bounded (0 to 360); the hook's tick path keeps its
+ * mount-relative angle for the legacy transform faces.
+ */
+export function clockAngles(time: Date, sweep = false): { hourDeg: number; minuteDeg: number; secondDeg: number } {
   const hours = time.getHours() % 12;
   const minutes = time.getMinutes();
   const seconds = sweep ? time.getSeconds() + time.getMilliseconds() / 1000 : time.getSeconds();
-
   return {
-    time,
     hourDeg: hours * 30 + minutes * 0.5,
     minuteDeg: minutes * 6 + seconds * 0.1,
-    secondDeg: sweep
-      ? seconds * 6
-      : MOUNT_ANGLE + (Math.floor(time.getTime() / 1000) - MOUNT_SEC) * 6,
+    secondDeg: seconds * 6,
   };
 }

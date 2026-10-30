@@ -13,6 +13,11 @@ import ApertureClock from './ApertureClock';
 import DaylightClock from './DaylightClock';
 import StrokesClock from './StrokesClock';
 import VinylClock from './VinylClock';
+import NeonTubeClock from './NeonTubeClock';
+import NeonSignClock from './NeonSignClock';
+import NeonNixieClock from './NeonNixieClock';
+import NeonPlasmaClock from './NeonPlasmaClock';
+import NeonHorizonClock from './NeonHorizonClock';
 
 export interface FaceProps {
   isActive: boolean;
@@ -40,6 +45,11 @@ export const FACE_COMPONENTS: Record<string, FaceComponent> = {
   daylight: DaylightClock,
   strokes: StrokesClock,
   vinyl: VinylClock,
+  'neon-tube': NeonTubeClock,
+  'neon-sign': NeonSignClock,
+  'neon-nixie': NeonNixieClock,
+  'neon-plasma': NeonPlasmaClock,
+  'neon-horizon': NeonHorizonClock,
 };
 
 export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
@@ -57,4 +67,9 @@ export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
   DaylightClock,
   StrokesClock,
   VinylClock,
+  NeonTubeClock,
+  NeonSignClock,
+  NeonNixieClock,
+  NeonPlasmaClock,
+  NeonHorizonClock,
 ];
