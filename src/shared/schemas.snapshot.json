@@ -945,6 +945,27 @@
       },
       "type": "object"
     },
+    "face.vinyl": {
+      "properties": {
+        "rpm": {
+          "default": "33",
+          "enum": [
+            "33",
+            "45"
+          ],
+          "type": "string"
+        },
+        "shimmer": {
+          "default": "prismatic",
+          "enum": [
+            "prismatic",
+            "warm"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "face.world": {
       "properties": {
         "accent": {

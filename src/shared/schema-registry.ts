@@ -51,6 +51,7 @@ import { depletionFaceSchema, depletionFaceMeta } from './schemas/face.depletion
 import { apertureFaceSchema, apertureFaceMeta } from './schemas/face.aperture';
 import { daylightFaceSchema, daylightFaceMeta } from './schemas/face.daylight';
 import { strokesFaceSchema, strokesFaceMeta } from './schemas/face.strokes';
+import { vinylFaceSchema, vinylFaceMeta } from './schemas/face.vinyl';
 
 export interface SchemaEntry {
   schema: z.ZodObject<z.ZodRawShape>;
@@ -100,6 +101,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'face.aperture': { schema: apertureFaceSchema, meta: apertureFaceMeta },
   'face.daylight': { schema: daylightFaceSchema, meta: daylightFaceMeta },
   'face.strokes': { schema: strokesFaceSchema, meta: strokesFaceMeta },
+  'face.vinyl': { schema: vinylFaceSchema, meta: vinylFaceMeta },
 };
 
 export function getSchema(id: string | undefined): SchemaEntry | undefined {

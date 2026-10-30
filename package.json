@@ -20,7 +20,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs",
-    "start:src": "node --env-file-if-exists=.env --import tsx server.ts"
+    "start:src": "node --env-file-if-exists=.env --import tsx server.ts",
+    "preview:face": "node scripts/face-preview.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

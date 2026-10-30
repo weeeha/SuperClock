@@ -1142,3 +1142,21 @@ These twelve entries were written to a second log file, `AGENT-LOG.md`, by sessi
   4 AGENTS.md drift gate; 5 regenerable health report; 6 path-scoped rules split;
   7 deliberately skip index/instance-count/sidecar metadata. Recommended 1 then 2.
 - **Open:** Nick's pick. Each pick gets its own brainstorm classification before any code.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Radiant shaders assessed for watchfaces, draft lookbook, no kiosk code
+
+Nick: "check this lib https://radiant-shaders.com/gallery/all, which ones we can use for super awesome watchfaces?"
+
+**Library facts** (repo `pbakaus/radiant`, MIT, attribution optional): 88 shaders on the site, 94 in the repo; 61 WebGL, 27 Canvas 2D. Each is one self-contained HTML file (10 to 35 KB), hosted at `https://radiant-shaders.com/<id>` with no frame-ancestors header, so it embeds cross-origin. Every file listens for `postMessage({type:'param', name, value})` with two to four numeric params (speed, density, complexity), pauses on `visibilitychange`, caps DPR at 2, and draws its own title label at the top of the canvas. Tags: `object` (centred, 20 shaders) fits the disc; `fill` composes for a rectangle. Six colour schemes are CSS `filter` on the iframe (hue-rotate, grayscale), so night can be a filter too.
+
+**Draft:** `docs/drafts/radiant-shaders-lookbook.html`, served by the Vite dev server at `/docs/drafts/radiant-shaders-lookbook.html`. 21 candidates clipped to a disc with Minimalismo's hands (spec numbers from the meta) redrawn once a second over each, pointer-events off on the frames. Frames are mounted by an IntersectionObserver only while on screen: Chrome keeps about 16 live WebGL contexts per page and the first version lost half of them.
+
+**Verified:** all 21 draw in the Browser pane (Chrome engine) at 1480 wide, after about 15 s for a row's first load. Not seen in Safari, not measured on any Pi.
+
+**Shortlist, A = becomes the clock:** Vinyl Grooves (already round, tonearm as hour), Analog Drift (Lissajous ratio hour:minute, canvas 2D), Golden Throne (counter-rotating mandala, layers per hour and minute), Chladni Resonance ((m, n) mode from the time), Magnetic Field (poles at the hand angles), Eclipse Glow (lit arc as daylight), Moire Interference, Tesseract Shadow, Phyllotaxis (one seed a minute), Clockwork Mind (needs re-centring, composed off-centre), Pendulum Wave (composed as a top row, weak in a disc). **B = dial under hands:** Smolder, Stardust Veil, Aurora Curtain, Topographic, Dither Gradient, Vortex, Moonlit Ripple; Chromatic Bloom and Liquid Gold are too bright for white hands; Radiant Geometry too dense. **Skipped:** raymarched or refractive ones (Event Horizon, Rain on Glass, Rain on Umbrella, Metamorphosis, Navier-Stokes) on Pi cost; 18K-particle canvas ones (Luminous Silt, Murmuration, Glitter Storm) on CPU; corner- or horizon-composed fills (Gothic Filigree, Digital Rain, Neon Drive); flashing ones (Strobe Geometry, Thunder Sermon, the lasers) for a bedroom clock; glitch ones (Vintage Static, Hologram Glitch) because a glitch on a wall clock reads as a fault.
+
+**Integration shape, not built:** the `AvatarFrame` pattern in `src/apps/ai-face/` already does everything a shader face needs (iframe, unmount 60 s after going inactive for KIO-1, frame guard full → half → paused at median fps under 24, `safeController` so a lost GL context cannot unmount the kiosk). A shader face would vendor the one HTML file into `public/`, strip its title label, add a `TIME` param next to the existing ones, and overlay the hands as a normal face component so `--face-*` and the hand source of truth stay in React.
+
+**Open:** Pi 5 and Pi 4 frame rates for the WebGL picks (fastclock reachable, unmeasured); whether a shader face is one `face.shader` with a shader option or one face id per shader (one accent, one meta each argues per face); Nick's pick from the lookbook. This worktree's `node_modules` lacks `@fontsource-variable/nunito` (the kiosk root 500s in dev), so `npm ci` before tests or build.

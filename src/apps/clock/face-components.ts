@@ -12,6 +12,7 @@ import DepletionClock from './DepletionClock';
 import ApertureClock from './ApertureClock';
 import DaylightClock from './DaylightClock';
 import StrokesClock from './StrokesClock';
+import VinylClock from './VinylClock';
 
 export interface FaceProps {
   isActive: boolean;
@@ -38,6 +39,7 @@ export const FACE_COMPONENTS: Record<string, FaceComponent> = {
   aperture: ApertureClock,
   daylight: DaylightClock,
   strokes: StrokesClock,
+  vinyl: VinylClock,
 };
 
 export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
@@ -54,4 +56,5 @@ export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
   ApertureClock,
   DaylightClock,
   StrokesClock,
+  VinylClock,
 ];

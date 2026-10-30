@@ -1,0 +1,32 @@
+{
+  "kind": "face",
+  "id": "vinyl",
+  "purpose": "A record on a mat: the Radiant Vinyl Grooves shader paints a spinning LP whose grooves catch the light, two ink hands tell the time over it and a tonearm plays one side per hour, landing on the lead-in at :00 and reaching the run-out before the hour turns. It refuses digits, ticks and a second hand: the spinning grooves are the motion.",
+  "accent": { "where": "the groove sheen the shader paints, prismatic or warm by the shimmer option", "color": "#734d1f" },
+  "night": {
+    "recipe": "The mat flips with --face-bg and the tells read --face-ink-muted. The record is content and stays dark in both palettes, so the hands and the arm read --sheet-ink, the role that does not invert, never --face-ink.",
+    "tokens": ["--face-bg", "--face-ink-muted"]
+  },
+  "options": [
+    { "key": "rpm", "intent": "33 is the LP default; 45 only when the faster groove shimmer is wanted, the hands and arm do not change." },
+    { "key": "shimmer", "intent": "prismatic shows the diffraction rainbow the grooves really make; warm desaturates it to one sheen for a calmer dial or a bedroom." }
+  ],
+  "antiPatterns": [
+    { "rule": "Never read --face-ink for anything drawn over the record", "why": "the record is dark in both palettes, so the day palette's black ink vanishes on it; --sheet-ink is the mode-stable role for a surface that does not flip" },
+    { "rule": "Do not add a second hand or a seconds readout", "why": "the record already spins at real 33 rpm; a second motion on the dial competes with it and the face stops being a turntable" },
+    { "rule": "Do not let the shader draw the tonearm, numerals or any ink", "why": "the page cannot read the kiosk tokens, so anything it draws is hardcoded colour; everything that must respond to the palette is drawn by React over the frame" },
+    { "rule": "Do not keep the frame alive while the face is inactive", "why": "a WebGL page redraws every frame; the clock app swaps faces and apps for weeks on a Pi, so the frame pauses when inactive and unmounts a minute later" }
+  ],
+  "parity": { "lvgl": null },
+  "spec": {
+    "space": 1000,
+    "radius": 500,
+    "face": { "background": "--face-bg", "ink": "--sheet-ink" },
+    "hands": {
+      "hour": { "tip": 280, "width": 28 },
+      "minute": { "tip": 380, "width": 20 }
+    },
+    "ticks": null,
+    "dot": null
+  }
+}

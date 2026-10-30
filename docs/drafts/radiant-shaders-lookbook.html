@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radiant shaders in the disc</title>
+<style>
+  :root { --bg:#0b0b0c; --ink:#f2f0ea; --muted:#9a968c; --gold:#FFD700; --line:#232326; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { background:var(--bg); color:var(--ink); font:16px/1.45 Inter, system-ui, sans-serif; }
+  header { padding:40px 48px 8px; max-width:1480px; margin:0 auto; }
+  h1 { font-size:28px; font-weight:600; letter-spacing:-0.01em; }
+  header p { color:var(--muted); margin-top:6px; max-width:70ch; }
+  h2 { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); padding:40px 48px 16px; max-width:1480px; margin:0 auto; }
+  h2 span { color:var(--ink); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:40px 32px; padding:0 48px 24px; max-width:1480px; margin:0 auto; }
+  .card { display:flex; flex-direction:column; gap:12px; }
+  .disc { position:relative; width:100%; aspect-ratio:1; border-radius:50%; overflow:hidden; background:#000; box-shadow:0 0 0 10px #151517, 0 0 0 11px #2a2a2e; }
+  .disc iframe { position:absolute; inset:0; width:100%; height:100%; border:0; pointer-events:none; background:#000; }
+  .disc svg { position:absolute; inset:0; width:100%; height:100%; }
+  .title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .title b { font-weight:600; font-size:17px; }
+  .tech { font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); padding:2px 7px; border-radius:999px; white-space:nowrap; }
+  .how { color:var(--muted); font-size:14px; }
+  .how em { color:var(--ink); font-style:normal; }
+  footer { padding:32px 48px 64px; max-width:1480px; margin:0 auto; color:var(--muted); font-size:14px; }
+  footer b { color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Radiant shaders in the disc</h1>
+  <p>Live shaders from radiant-shaders.com clipped to the round 1080 viewport, Minimalismo hands over each one at the real time. Draft for choosing, nothing here is wired into the kiosk.</p>
+</header>
+
+<h2><span>A. Becomes the clock</span> - centred object, time drives the motion</h2>
+<div class="grid" id="a"></div>
+
+<h2><span>B. Dial under the hands</span> - ambient fill, hands stay legible</h2>
+<div class="grid" id="b"></div>
+
+<footer>
+  <b>Hands</b> are Minimalismo's spec (hour tip 280, minute 380, gold second 350 on a 1000 space), redrawn once a second here. <b>Pointer events</b> are off on every frame so the kiosk swipe would still work. All 88 shaders pause when the document is hidden and cap DPR at 2.
+</footer>
+
+<script>
+const A = [
+  ['vinyl-grooves','Vinyl Grooves','webgl','Record spins at real 33 rpm, the <em>tonearm tracks the hour</em> across the grooves, label carries the digits. Already round.'],
+  ['clockwork-mind','Clockwork Mind','canvas 2d','Gears mesh correctly, so <em>drive the train at 1:12:720</em> and the hour, minute and second wheels are the movement itself.'],
+  ['analog-drift','Analog Drift','canvas 2d','Oscilloscope Lissajous: <em>frequency ratio = hour:minute</em>, phase sweeps with the seconds. Has a deep-dive article.'],
+  ['pendulum-wave','Pendulum Wave','canvas 2d','Cycle is already <em>60 s</em>: the pattern realigns on the minute. Needs its own second hand.'],
+  ['chladni-resonance','Chladni Resonance','webgl','Sand on a plate: pick the <em>(m, n) mode from hour and minute</em>, the pattern reforms every five minutes.'],
+  ['golden-throne','Golden Throne','webgl','Counter-rotating mandala layers: <em>outer layer per hour, inner per minute</em>. Reads as a dial from a metre.'],
+  ['magnetic-field','Magnetic Field','webgl','Dipole lines between two poles: <em>put the poles at the hand angles</em> and the field is the only hand.'],
+  ['eclipse-glow','Eclipse Glow','webgl','Corona ring around a dark disc: <em>sunrise to sunset as the lit arc</em>, the Daylight face in light.'],
+  ['phyllotaxis','Phyllotaxis Spiral','canvas 2d','Golden-angle seeds: <em>one seed per minute, 1440 a day</em>, the spiral fills by midnight. Depletion in reverse.'],
+  ['moire-interference','Moire Interference','webgl','Two concentric ring sets: <em>offset one by the second hand</em>, the beat pattern breathes once a minute.'],
+  ['tesseract-shadow','Tesseract Shadow','canvas 2d','Hypercube wireframe: <em>rotation planes mapped to hour and minute</em>, a strange one for the Square.'],
+];
+const B = [
+  ['smolder','Smolder','webgl','Radial warmth with cool edges, <em>white hands stay readable</em>, and the glow sits where the pip would be.'],
+  ['chromatic-bloom','Chromatic Bloom','webgl','Big soft colour orbs with grain, <em>bright, a day face</em>; the hands need a shadow and night would have to dim it hard.'],
+  ['stardust-veil','Stardust Veil','webgl','Parallax starfield with aurora ribbons, <em>the bedroom clock at 3 am</em>.'],
+  ['aurora-curtain','Aurora Curtain','webgl','Vertical threads swaying, has a ROTATION param, <em>could sit around the rim</em>.'],
+  ['liquid-gold','Liquid Gold','webgl','Molten metal, strong specular, <em>white hands lose contrast on it</em>: ink hands with a shadow or skip.'],
+  ['moonlit-ripple','Moonlit Ripple','webgl','Moon on water with camera tilt, <em>a horizon inside a disc</em>, check the crop.'],
+  ['topographic','Topographic Contour Map','canvas 2d','Living isolines with elevation labels, <em>a map dial</em>. The labels fight the digits.'],
+  ['dither-gradient','Dither Gradient','webgl','Ordered dither waves, <em>the Fields skin in motion</em>, very cheap on the GPU.'],
+  ['vortex','Vortex','webgl','Log-spiral arms into a drifting centre, <em>the centre is where the pip would be</em>.'],
+  ['radiant-geometry','Radiant Geometry','webgl','Islamic star tracery counter-rotating, <em>dense, maybe too busy under hands</em>.'],
+];
+const hands = (id) => `<svg viewBox="0 0 1000 1000" aria-hidden="true">
+  <g id="h-${id}" stroke-linecap="butt">
+    <line class="hr" x1="500" y1="500" x2="500" y2="220" stroke="#f2f0ea" stroke-width="28"/>
+    <line class="mn" x1="500" y1="500" x2="500" y2="120" stroke="#f2f0ea" stroke-width="20"/>
+    <line class="sc" x1="500" y1="580" x2="500" y2="150" stroke="#FFD700" stroke-width="6"/>
+  </g></svg>`;
+function card([id, title, tech, how]) {
+  return `<div class="card">
+    <div class="disc"><iframe data-src="https://radiant-shaders.com/${id}" title="${title}"></iframe>${hands(id)}</div>
+    <div class="title"><b>${title}</b><span class="tech">${tech}</span></div>
+    <div class="how">${how}</div>
+  </div>`;
+}
+document.getElementById('a').innerHTML = A.map(card).join('');
+document.getElementById('b').innerHTML = B.map(card).join('');
+function tick() {
+  const d = new Date();
+  const s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60;
+  document.querySelectorAll('.hr').forEach(e => e.setAttribute('transform', `rotate(${h * 30} 500 500)`));
+  document.querySelectorAll('.mn').forEach(e => e.setAttribute('transform', `rotate(${m * 6} 500 500)`));
+  document.querySelectorAll('.sc').forEach(e => e.setAttribute('transform', `rotate(${s * 6} 500 500)`));
+}
+tick(); setInterval(tick, 1000);
+// Chrome keeps about 16 live WebGL contexts per page and 14 of these frames are
+// WebGL, so a frame is mounted only while its disc is near the viewport.
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    const f = e.target.querySelector("iframe");
+    if (e.isIntersecting) { if (!f.src) f.src = f.dataset.src; }
+    else if (f.src) { f.removeAttribute("src"); }
+  }
+}, { rootMargin: "120px 0px" });
+document.querySelectorAll(".disc").forEach((d) => io.observe(d));
+</script>
+</body>
+</html>

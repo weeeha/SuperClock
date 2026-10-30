@@ -120,6 +120,14 @@ export const FACES: FaceDescriptor[] = [
     configSchemaId: 'face.strokes',
     slots: [],
   },
+  {
+    id: 'vinyl',
+    name: 'Vinyl',
+    preview: '/vinyl-preview.png',
+    category: 'artistic',
+    configSchemaId: 'face.vinyl',
+    slots: [],
+  },
 ];
 
 const FACES_BY_ID = new Map(FACES.map((f) => [f.id, f]));
