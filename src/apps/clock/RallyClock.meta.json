@@ -1,0 +1,25 @@
+{
+  "kind": "face",
+  "id": "rally",
+  "purpose": "An endless, generated rally stage seen from above in low-poly 3D, with the time on top. The car drives itself and the road never repeats. It is ambient art you glance at, not a game: no controls, no lap times.",
+  "accent": { "where": "the rally car", "color": "config:car" },
+  "night": {
+    "recipe": "The kiosk's night palette forces the night scene (moonlight, headlights, tail lights); the mat behind the canvas is --face-bg and the time keeps a non-inverting ink because it sits on the scene, falling back to --face-ink on the bare mat.",
+    "tokens": ["--face-bg", "--face-ink", "--face-ink-muted", "--face-shadow"]
+  },
+  "options": [
+    { "key": "world", "intent": "Auto drives through every world, a new one every ten minutes; pick one to stay there." },
+    { "key": "weather", "intent": "Auto rolls a new sky every 30 seconds from what the world allows, so the dunes never get rain." },
+    { "key": "light", "intent": "Real follows the time of day; night mode always wins and drives at night." },
+    { "key": "car", "intent": "Auto picks a car that suits the world and changes it every minute." },
+    { "key": "speed", "intent": "Cruising speed on straights in km/h; the car always brakes for bends, and mountains run slower." },
+    { "key": "hour24", "intent": "24-hour by default; off drops the leading zero and counts 1 to 12." }
+  ],
+  "antiPatterns": [
+    { "rule": "Do not let the render loop run while the face is not shown", "why": "a kiosk runs for weeks and a hidden 3D scene is pure heat on a Pi" },
+    { "rule": "Do not render every frame at 60 fps", "why": "a stage seen from 50 m up reads the same at 30, at half the GPU load" },
+    { "rule": "Do not load three.js from the main bundle", "why": "every other face would pay for it; it ships as a chunk imported when this face mounts" }
+  ],
+  "parity": { "lvgl": null },
+  "specless": "A 3D scene with digital time; there is no hand geometry to describe."
+}

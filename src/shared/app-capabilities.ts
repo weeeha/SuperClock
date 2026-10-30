@@ -25,7 +25,7 @@ export const APP_CAPABILITIES: Record<string, readonly AppCapability[]> = {
   calendar: ['fetches', 'ticks', 'multiView'],
   'claude-usage': ['fetches', 'ticks', 'multiView'],
   // Face cycling is the multi-view; hands tick through useClockHands in core.
-  clock: ['multiView'],
+  clock: ['ticks', 'multiView'],
   fireplace: ['ticks'],
   // audio: circuit-runner cues (AudioContext / new Audio).
   fitness: ['ticks', 'multiView', 'audio'],

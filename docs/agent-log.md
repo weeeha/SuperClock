@@ -6,6 +6,34 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/generative-world-tracks-b89fa4 · Rally on fastclock: deployed, then overwritten by the Horizon session within minutes
+
+Nick: "Yes, deploy". fastclock was running the radiant-shaders session's Horizon build (`c0a08e0`, Horizon pinned), so by Nick's choice ("Combine both") I applied the uncommitted Rally work onto `c0a08e0` in a throwaway worktree, regenerated the derived files, ran `./scripts/gates.sh` (exit 0, 1412 tests) and deployed a detached commit `c4ddfa1` with `DEPLOY_ANYWAY=1`; `deploy.sh` verified the stamp. That session redeployed its own `859f958` at 02:28 local, six minutes later, so Rally is not on the device.
+
+**Config:** backup `config/fleet.json.bak-before-rally-2026-10-30`; I added an `i-rally` instance and pinned it, then, once the build was gone, removed it and restored the playlist to `['i-clock']` (Horizon). fastclock is as that session left it: 18 instances, Horizon pinned.
+
+**Measured (headless Chromium on the Pi, real GPU `ANGLE (Broadcom, V3D 7.1.7.0)`, while the kiosk drew Horizon):** about 29 to 30 frames a second in snow, mountains, dunes and plains, 24.6 in the city; p95 frame 50 ms (67 in the city). Not conclusive: the canvas probe read 0 and the flat 30 may be headless pacing. Without a GPU flag headless Chromium has no WebGL and the face shows its fallback (time on the mat plus the tell), which confirms that path on a device. fastclock itself: swap 2047.9 of 2048 MB used and `upowerd` at 580 MB resident after 96 days up, pre-existing. Temp 58.9 C.
+
+**Open:** two sessions deploying to one clock overwrite each other. Rally needs either a commit the Horizon session can merge, or a turn when that session is done.
+
+---
+
+## 2026-10-30 · branch claude/generative-world-tracks-b89fa4 · Rally face: endless low-poly 3D rally stage with the time on top
+
+Nick: "can we make generative render like art or rally game, endless tracks around the world", then after five throwaway drafts in the gitignored `.superpowers/brainstorm/87286-1793338535/content/` ("ok looks good"): "let's make it a watchface". Design note: `docs/superpowers/specs/2026-10-30-rally-face-design.md` (what Nick decided vs my calls).
+
+**Added:** face `rally` via `npm run new:face`. `src/apps/clock/RallyClock.tsx` (+ `.meta.json`), `src/apps/clock/rally/{worlds,models,scene}.ts` + `rally.test.ts`, schema `src/shared/schemas/face.rally.ts` (world, weather, light, car, speed, hour24; all default auto / real / 130 km/h / 24h), preview `public/rally-preview.png` (a real capture, mountains by day), category `artistic`. New dependency **three 0.170.0** (+ `@types/three`), loaded by dynamic import: it ships as its own `scene-*.js` chunk (547 KB), the kiosk bundle stayed at 183 KB.
+
+**How it works:** eight worlds as data (Africa, Desert road, Sand dunes, Snow forest, European city, Plains, Mountains, Iceland); the road is three non-repeating sines, grown in 60 m chunks seeded by index, props instanced (about 24 draw calls). Weather (clear, clouds with shadows that cross the stage, rain with wet road and spray, snow), light (morning, noon, sunset, night with headlights) and seven car models with eight liveries. Sand dunes is `offroad` (no road surface, only ruts) with ridged crests, per Nick mid-build. The car brakes for bends; mountains run at 0.6 pace. Render loop and scene creation gate on `isActive`, capped at 30 fps, pixel ratio 1, 1024 shadow map; the GL context is released on unmount. Night: `useIsDark()` forces the night scene; the mat is `--face-bg`, the time is `--sheet-ink` with a two-layer `--face-shadow` text shadow (falls back to `--face-ink` on the bare mat if WebGL fails, with a one-line tell).
+
+**Gate changes:** `clock` capability now `['ticks', 'multiView']` (the directory owns a rAF loop). `scripts/lib/design-ratchet.mjs` NOT_DESIGN gained the three rally data files: the stage palette is content, and counted it takes the kiosk from 100 to 293 distinct colours. **That exemption is my call for Nick to confirm** (the neon branch raised the ceiling by his decision instead). Derived files regenerated (`index/parts.toon`, schema snapshot, declared-vs-read, health).
+
+**Verified:** `./scripts/gates.sh` exit 0, 1383 tests. Headless Chrome against the dev kiosk (dev-alt :5181) at 1080: the face on the clock app at night (desert road, headlights) and by day (timezone override) in desert road, city, mountains; pinned worlds via an in-browser answer to the kiosk's config request (nothing written to any server): snow forest (time legible on white), sand dunes (no road), plains in rain, Iceland in snow. **Not seen on a Pi**: fps on fastclock and especially the Pi 4 clocks is unmeasured; not deployed.
+
+**Open:** Pi fps (levers: shadows off, fewer props and streaks); the NOT_DESIGN call above; "crossing lights" read as cloud shadows and time of day, railway or traffic signals not built; admin enum labels are raw ids (`dunes`, `snow`); the brainstorm drafts are gitignored.
+
+---
+
 ## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · deployed 8343946 to fastclock; all 18 apps on the panel for the first time
 
 Nick: "deploy the merged main to fastclock (npm ci on the Pi), add an instance for every app through the admin, and verify each on the panel."

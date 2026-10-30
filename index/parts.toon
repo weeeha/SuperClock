@@ -1,4 +1,4 @@
-parts[16]{kind,id,path,accent,parity,geometry,purpose}:
+parts[17]{kind,id,path,accent,parity,geometry,purpose}:
   face,analog,src/apps/clock/AnalogClock.meta.json,config:accent,lvgl,spec,"The Swiss railway reference: sixty ticks, heavy white hands on a black dial, an accent second hand and pip."
   face,aperture,src/apps/clock/ApertureClock.meta.json,--color-accent,none,specless,"A plate covers the dial; the hour and minute show through two windows and step, nothing sweeps."
   face,complications-dark,src/apps/clock/ComplicationsDark.meta.json,config:accent,none,pending,The dark sibling of Complications Light: the same layout on a fixed dark dial.
@@ -9,6 +9,7 @@ parts[16]{kind,id,path,accent,parity,geometry,purpose}:
   face,floral,src/apps/clock/FloralClock.meta.json,config:accent,none,pending,Hands over a floral artwork.
   face,minimalismo,src/apps/clock/MinimalismoClock.meta.json,#FFD700,none,spec,"A bare dial with two ink hands and a gold sweeping second hand, nothing else."
   face,productivity,src/apps/clock/ProductivityClock.meta.json,config:accent,none,pending,Coloured rim segments block the day into spans around a plain dial.
+  face,rally,src/apps/clock/RallyClock.meta.json,config:car,none,specless,"An endless, generated rally stage seen from above in low-poly 3D, with the time on top."
   face,square,src/apps/clock/SquareClock.meta.json,config:accent,none,pending,"A rounded square dial with numerals at the four cardinals and tick marks, designed for the square device's rectangle."
   face,strokes,src/apps/clock/StrokesClock.meta.json,--color-accent,none,specless,A full-field lattice of 52 two-hand dials.
   face,world,src/apps/clock/WorldClock.meta.json,config:accent,none,pending,A primary dial for one timezone with secondary dials for others.
