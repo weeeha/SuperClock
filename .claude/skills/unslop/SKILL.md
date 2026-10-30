@@ -18,7 +18,7 @@ Portable origin: the `unslop` skill shared by Minimal-Design-System and
 Super-AI-Components (research: 12 lenses, ~110 indicators, ~40 sources in
 Minimal-Design-System's `docs/superpowers/specs/2026-08-11-anti-slop-rules.md`).
 Phase 0 below rebinds it to this repo and holds every SuperClock amendment;
-Phases 1–3 are the portable core, generated from me:unslop.
+Phases 1–3 are the portable core, generated from unslop:unslop.
 
 ## Phase 0 — SuperClock's bindings
 
@@ -113,7 +113,7 @@ read `unslop-waive` comments, so a waiver is read by the audit, not by
 the script, until that lands.
 
 **Render tier.** The six unchecked rules are what
-`node ~/.claude/me-skills/skills/unslop/scripts/render.mjs` measures:
+`node "$HOME/ClaudeCode Projects/Unslop/skills/unslop/scripts/render.mjs"` (the unslop plugin's checkout) measures:
 `STA-7` and the admin's tap targets at `--widths 375` against the admin
 routes on the dev server (`/`, `/clock/<id>`, `/clock/<id>/apps`), `STA-5`
 as contrast read from the pixels behind the text, run once per palette
@@ -142,8 +142,8 @@ kiosk does not get the 375 pass; the admin does not get the circle crop.
 | App surface hardcoded (white by day, black by night) | `bg-(--face-bg)` plus the `--face-*` inks (`SUR-1`); a black that is content gets its reason in the rule record |
 | Mode-stable surface reading `--ink` | Read `--sheet-ink` / `--fill-knob`, the roles that do not invert |
 
-<!-- unslop-core:start me@1.31.0 sha256:9b1218f032776083 -->
-<!-- Generated from me:unslop by its scripts/sync.mjs. Edit that skill, not this block; this repo's own rules go in Phase 0 above. -->
+<!-- unslop-core:start unslop@2.0.0 sha256:011c356a950bad0e -->
+<!-- Generated from unslop:unslop (weeeha/unslop) by its scripts/sync.mjs. Edit that skill, not this block; this repo's own rules go in Phase 0 above. -->
 <!-- prettier-ignore-start -->
 ## Phase 1: Constraints while generating
 
@@ -219,7 +219,9 @@ rule between tiers with a reason; it may not delete one.
    something**: a form that prints "Sent" with no request behind it is an
    invented outcome (validate, post nowhere, say "Nothing was sent; this
    form is not connected yet"); a nav link to nowhere and a button with no
-   handler ship labelled "Coming soon" or not at all.
+   handler ship labelled "Coming soon" or not at all. **One filled control
+   per view**: the primary action is filled, every other control is
+   outlined or plain, so the way forward is the one solid shape (R).
 5. **Icons.** One library, one weight, 2–3 sizes; zero emoji in chrome.
 6. **Motion.** Only on state change; no idle loops, scroll-reveal, marquee,
    typewriter, parallax; never `transition: all`; transform/opacity only;
@@ -227,12 +229,16 @@ rule between tiers with a reason; it may not delete one.
    hidden at rest**: a reveal class that sets `opacity: 0` or
    `visibility: hidden` until a script runs ships blank when the script
    fails; hide only under a `.js` class, or animate from visible with
-   `@starting-style`.
+   `@starting-style`. A `setInterval` or animation-frame loop runs only
+   while its view is visible: gate it on `document.hidden` or the view's
+   own active flag (R).
 7. **Copy.** Verb + object labels (never "Get Started"/"Learn More"); banned
    register: elevate/unlock/empower/seamless/effortless/supercharge,
    "not just X, it's Y", exclamation marks in microcopy, aphoristic cadence
    (a run of two- or three-word fragments, "Fast. Simple. Yours.", standing
-   in for a sentence) (R); zero fabricated
+   in for a sentence) (R), cheerleading ("You've got this", "Great job!")
+   and celebration overlays (confetti, trophies) for a routine action,
+   where the interface should report the result (R); zero fabricated
    numbers, names, quotes, logos, or demo data no real system could emit.
    **No template punctuation**: meta strings joined with middle dots
    (`A · B · C`), an arrow glued to link or button text (`Learn more →`),
@@ -246,13 +252,22 @@ rule between tiers with a reason; it may not delete one.
    zero-based; <4 data points is a stat, not a chart. **The title is the
    question the chart answers** ("Failed jobs per hour, last 24h"), never
    "Overview" or "Performance"; a delta ("+12% this week") only with a
-   real, named comparison period behind it.
+   real, named comparison period behind it. **One channel, one
+   variable**: colour, length, position and size each encode one thing; a
+   ring whose colour is the status and whose length is the progress makes
+   the reader decode two scales at once (R).
 9. **States & a11y.** Empty/loading/error/populated all designed; anything
    that fetches also gets an honest offline/stale tell, never fallback or
    mock data rendered as live; visible focus on everything interactive; AA
-   contrast on the actual surface, in every theme the project ships;
-   semantic elements (no onClick divs); accessible names on icon buttons;
-   the page loads with no broken image and no uncaught script error.
+   contrast on the actual surface, in every theme the project ships; a
+   surface that keeps its colour in both themes takes text roles that keep
+   theirs too, or its text inverts against it. **Never colour alone**: a
+   state or reading carried by colour (overdue, failed, done, over budget)
+   also carries a word, an icon, a shape or a position. **Themes flip
+   tokens, not components**: dark mode is the same component reading
+   flipped roles, never a forked dark variant (R). Semantic elements (no
+   onClick divs); accessible names on icon buttons; the page loads with no
+   broken image and no uncaught script error.
    **Chrome states count too**: every collapsed/compact/truncating mode a
    component declares is designed and checked, and truncation is decided for
    the tree, not per leaf.
@@ -343,7 +358,9 @@ browser defaults are the cheapest tell a page was assembled) ·
 at a time) · **chrome states** (render every collapsed/compact/truncating
 mode; a clipped focus ring still passes the DOM, so this pass is a
 screenshot or it did not happen) · **hostile fixtures** (plausible, never
-random: 3× strings, a one-letter name, a count of exactly 1, a missing
+random: the worst real day (everything overdue, nothing done),
+which is the screen to design for rather than the demo's good day, 3×
+strings, a one-letter name, a count of exactly 1, a missing
 optional field, diacritics, empty, error, offline, mixed-sign data, 200%
 zoom, labels 40% longer as a translation makes them, one unbroken
 40-character token such as a URL or email, a right-to-left run, a number
@@ -394,6 +411,12 @@ repo's row wins.
 | Hero metric / section numbers | The real headline leads; a number earns size only as the answer to the screen's question; ordinals only where order is information |
 | Aphoristic cadence | One plain sentence with a verb that says what the thing does |
 | Broken image / script error | Fix the path or the error; an image that may be missing gets a sized placeholder and alt text |
+| Colour-only state | Add the word, icon, shape or position; the colour stays as reinforcement |
+| Two variables on one channel | Give the second variable its own channel: position, length or a label |
+| Cheerleading / celebration | State the result plainly with the next small action; a celebration becomes the result plus Undo |
+| Second filled control | Demote it to outlined or plain; one filled control per view |
+| Loop running while hidden | Gate the interval or frame loop on visibility or the view's active flag |
+| Forked dark variant / fixed surface with flipping text | One component reading roles; a surface that keeps its colour reads roles that do not invert |
 
 Report as: violation → tier → rule area → fix applied, or the waiver with
 its evidence. Each PASS names what was checked ("STA-7 PASS: render tier,
