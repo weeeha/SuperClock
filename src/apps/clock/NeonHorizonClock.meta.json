@@ -1,9 +1,9 @@
 {
   "kind": "face",
   "id": "neon-horizon",
-  "purpose": "A synthwave horizon: a magenta grid floor rolling toward the viewer one spacing a second, a striped sun whose height follows the day, set below the horizon at night, and the time in cyan segment digits above it.",
+  "purpose": "A synthwave horizon: a magenta grid floor rolling toward the viewer one spacing a second, a striped sun whose height follows the day, set below the horizon at night, an 80s wedge supercar weaving down the road ahead with hot pink tail-light trails streaming back, and the time in cyan segment digits above it all.",
   "accent": {
-    "where": "the time digits; the grid, sun and ridge are magenta",
+    "where": "the time digits; the grid, sun, ridge and car are the warm magenta scene, its tail lights the same family in hot pink",
     "color": "#00F0FF"
   },
   "night": {
@@ -30,6 +30,14 @@
     {
       "rule": "Never let the sun cover the digits",
       "why": "the time is the one cyan quantity; at noon the sun rises highest and must still sit below the numerals"
+    },
+    {
+      "rule": "Never give the car a badge, a maker name or a plate",
+      "why": "the silhouette is a homage to the 80s wedge supercars; a logo would turn it into a trademark and pull the eye off the time"
+    },
+    {
+      "rule": "Never store the car trail as a history of past frames",
+      "why": "the trail is weave(t - d) re-projected d seconds closer, a pure function of time, so it survives a dropped frame, a pause and a remount without a jump"
     }
   ],
   "parity": {
