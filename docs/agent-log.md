@@ -6,6 +6,16 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/rally-clock-fasclocks-672015 · Rally pinned on fastclock
+
+Nick: "Launch Rally clock on fastclock". No code change and no deploy: fastclock already ran c757c73, which carries Rally. On the Pi, backed up `config/fleet.json.bak-before-rally-launch-2026-10-30`, then POSTed the device config with `playlist: {items: ['i-rally'], rotationSeconds: 3600}` (it was `['i-clock']`, null), updatedAt bumped.
+
+**Verified:** two grim frames 2 s apart at 04:24 show Rally (city biome, night palette) with the road and buildings moving between them. Chromium ~30% + ~10% of a core, 57.1 C, throttled=0x0.
+
+**Open:** Horizon is no longer showing; restore with items ['i-clock']. Pi 4 fps for Rally (small/square) still unmeasured.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Rally merged in and deployed with the neon faces
 
 The Rally session (claude/generative-world-tracks-b89fa4) asked for its face to ride this branch's next fastclock deploy; Nick said "Merge and deploy" here. Merge commit c757c73 brings d2de6f5 (Rally, three 0.170.0) and main's eee3e2f (unslop 1.31 sync). Conflicts were all both-sides-added: face-components, face-registry (Horizon's entry closed before Rally's), schema-registry and this log keep both; the index, analysis and health report were regenerated from the merged tree; the neon-glow Phase 0 line survives the sync. `./scripts/gates.sh` green: 128 files, 1413 tests, build; check:rules has only the old ICO-2.
