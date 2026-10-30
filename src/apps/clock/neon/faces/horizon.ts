@@ -34,12 +34,77 @@ const LANE = 140; // lane separators
 // The car holds a fixed depth ahead of you. Its weave is a pure function of
 // time, so where a tail light was d seconds ago is weave(t - d), now d * ROLL
 // closer: the trail needs no stored history and curves with the weave.
-const CAR_U = 0.8;
-const CAR_S = spread(CAR_U);
-const TRAIL_S = (1.08 - CAR_U) / ROLL;
-const TAIL_X = 80; // tail light centres on screen at the car (120 floor units)
-const TAIL_H = 52; // and their height (about 78 floor units: light centre 58 x HY)
-const weave = (t: number) => 120 * Math.sin((t * TAU) / 9) + 25 * Math.sin((t * TAU) / 3.7 + 1.3);
+const CAR_U = 0.8; // the car's depth at cruising speed
+const TAIL_WX = 120; // tail light centres from the car's middle, floor units
+const TAIL_WY = 78; // their height above the road, floor units
+
+// Speed, in rungs a second, like a game's: long swells with quicker surges
+// on top, from a near crawl (0.15) to almost double (1.85). Three sines with
+// periods that never line up, so it never visibly repeats. travel() is its
+// exact integral, the distance driven, and everything that moves (rungs,
+// dashes, gates, palms, trails) reads travel(), so a dropped frame or a
+// remount never makes the world jump.
+const SPEEDS: ReadonlyArray<readonly [number, number, number]> = [
+  [0.5, 19, 0], // amplitude, period in seconds, phase
+  [0.2, 6.1, 1.7],
+  [0.15, 41, 4.2],
+];
+const speed = (t: number) => SPEEDS.reduce((v, [a, per, ph]) => v + a * Math.sin((TAU * t) / per + ph), 1);
+const travel = (t: number) => SPEEDS.reduce((d, [a, per, ph]) => d - ((a * per) / TAU) * Math.cos((TAU * t) / per + ph), t);
+const accel = (t: number) => SPEEDS.reduce((g, [a, per, ph]) => g + ((a * TAU) / per) * Math.cos((TAU * t) / per + ph), 0);
+// The car pulls ahead when it is fast and drops back toward you when it brakes.
+const carDepth = (t: number) => CAR_U - 0.05 * (speed(t) - 1);
+// The weave: three rhythms that never line up, kept inside the road (max 170
+// against 240 of room).
+const weave = (t: number) =>
+  95 * Math.sin((t * TAU) / 9) + 35 * Math.sin((t * TAU) / 3.7 + 1.3) + 40 * Math.sin((t * TAU) / 17.3 + 0.4);
+
+// Palms: one every PALM_EVERY rungs on each side, outside the gates, rolling
+// with the floor. A palm keeps its id as it rolls, so its height and lean
+// (from N.hash(id)) stay its own.
+const PALM_EVERY = 1.5;
+const PALM_X = ROAD + 200;
+interface Palm { u: number; id: number }
+const palmSlots = (dist: number): Palm[] => {
+  const k0 = Math.floor(dist / PALM_EVERY);
+  const phase = dist / PALM_EVERY - k0;
+  const out: Palm[] = [];
+  for (let n = 0; n < 8; n++) out.push({ u: (n + phase) * PALM_EVERY * ROLL, id: k0 - n });
+  return out;
+};
+const FRONDS = [-170, -142, -116, -90, -64, -38, -10].map((d) => (d * Math.PI) / 180);
+
+function palms(ctx: CanvasRenderingContext2D, N: NeonKit, list: Palm[]) {
+  const col = N.mix(N.c.magenta, N.c.violet, 0.35);
+  for (const p of list) {
+    if (p.u < 0.04 || p.u > 0.93) continue;
+    const fade = Math.min(1, (p.u - 0.04) / 0.2) * Math.min(1, (0.93 - p.u) / 0.1);
+    const sc = spread(p.u);
+    const by = floorY(p.u);
+    for (const side of [-1, 1]) {
+      const h = N.hash(p.id * 2 + (side > 0 ? 1 : 0));
+      const H = 380 + 90 * h;
+      const lean = side * (30 + 50 * h);
+      const bx = CX + side * (PALM_X + 60 * h) * sc;
+      const tx = bx + lean * sc;
+      const ty = by - H * sc;
+      N.glow(ctx, col, 1.5 + 7 * sc, (c) => {
+        // A trunk that bows outward, then the crown: fronds that arc up and droop.
+        c.moveTo(bx, by);
+        c.quadraticCurveTo(bx + lean * 0.15 * sc, by - H * 0.55 * sc, tx, ty);
+        FRONDS.forEach((a, fi) => {
+          const len = (150 + 40 * N.hash(p.id * 7 + fi + side)) * sc;
+          const ang = a + (N.hash(p.id * 3 + fi) - 0.5) * 0.2;
+          c.moveTo(tx, ty);
+          c.quadraticCurveTo(
+            tx + Math.cos(ang) * len * 0.5, ty + Math.sin(ang) * len * 0.5 - 40 * sc,
+            tx + Math.cos(ang) * len, ty + Math.sin(ang) * len + 55 * sc,
+          );
+        });
+      }, { intensity: 0.75 * fade, halo: 0.5 });
+    }
+  }
+}
 
 // Gates: one every GATE_S seconds, rolling with the floor, posts just outside
 // the road edges. GATE_H is in floor units and below the eye height (450,
@@ -50,11 +115,9 @@ const GATE_S = 3;
 const GATE_X = ROAD + 60;
 const GATE_H = 300;
 
-/** Gate depths now: GATE_S seconds apart in time is GATE_S * ROLL in u. Keyed
- *  on the clock's seconds, which divide 60 by GATE_S, so the minute rolls over
- *  without a jump. */
-const gateDepths = (sf: number) => {
-  const phase = (sf % GATE_S) / GATE_S;
+/** Gate depths now: one every GATE_S rungs of distance driven. */
+const gateDepths = (dist: number) => {
+  const phase = (((dist % GATE_S) + GATE_S) % GATE_S) / GATE_S;
   const step = GATE_S * ROLL;
   const out: number[] = [];
   for (let n = 0; n < 5; n++) out.push((n + phase) * step);
@@ -122,22 +185,31 @@ function build(N: NeonKit, state: State) {
   state.peaks = [range(30, 172, 11), range(970, 828, 29)];
 }
 
-function trails(ctx: CanvasRenderingContext2D, N: NeonKit, t: number) {
-  const SEGS = 14;
+function trails(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, carU: number) {
+  // Where a tail light was `age` seconds ago is now as much closer as the
+  // road travelled since: travel(t) - travel(t - age). So the trail stretches
+  // when the car is fast and shrinks to a stub when it crawls.
+  const SEGS = 16;
   const STEPS = 3;
+  const WINDOW = 4; // seconds of history at most
+  const dNow = travel(t);
+  const carS = spread(carU);
   for (let i = 0; i < SEGS; i++) {
     const f = i / SEGS;
-    const uMid = CAR_U + ((i + 0.5) / SEGS) * TRAIL_S * ROLL;
-    const grow = spread(uMid) / CAR_S;
+    const age0 = f * WINDOW;
+    const u0 = carU + (dNow - travel(t - age0)) * ROLL;
+    if (u0 > 1.1) break;
+    const ageMid = (f + 0.5 / SEGS) * WINDOW;
+    const grow = spread(carU + (dNow - travel(t - ageMid)) * ROLL) / carS;
     // Hot orange at the car, cooling to pink as it streams away.
     N.glow(ctx, N.mix(N.c.orange, N.c.pink, f), 8 * grow, (c) => {
       for (const side of [-1, 1]) {
         for (let k = 0; k <= STEPS; k++) {
-          const d = ((i + k / STEPS) / SEGS) * TRAIL_S;
-          const u = CAR_U + d * ROLL;
+          const age = ((i + k / STEPS) / SEGS) * WINDOW;
+          const u = carU + (dNow - travel(t - age)) * ROLL;
           const sc = spread(u);
-          const px = CX + (weave(t - d) + (side * TAIL_X) / CAR_S) * sc;
-          const py = floorY(u) - (TAIL_H * sc) / CAR_S;
+          const px = CX + (weave(t - age) + side * TAIL_WX) * sc;
+          const py = floorY(u) - TAIL_WY * sc;
           if (k === 0) c.moveTo(px, py);
           else c.lineTo(px, py);
         }
@@ -235,15 +307,17 @@ const pathOf = (c: CanvasRenderingContext2D, pts: [number, number][]) => {
 };
 
 /** Light from a gate passing over the car: 1 when a gate is right above it. */
-const gateLight = (depths: number[]) =>
-  depths.reduce((m, u) => Math.max(m, Math.exp(-(((u - CAR_U) / 0.07) ** 2))), 0);
+const gateLight = (depths: number[], carU: number) =>
+  depths.reduce((m, u) => Math.max(m, Math.exp(-(((u - carU) / 0.07) ** 2))), 0);
 
-function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number) {
+/** lit: a gate overhead (0 to 1). brake and boost: how hard the car is
+ *  slowing or speeding up (0 to 1), for the brake lights and exhaust flames. */
+function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number, carU: number, brake: number, boost: number) {
   const ink = N.c.magenta;
   const violet = N.c.violet;
   // Steer into the weave: the nose points where the car is heading.
   const vx = (weave(t + 0.05) - weave(t - 0.05)) / 0.1;
-  const pose: Pose = { X: weave(t), Z0: F / CAR_S, yaw: N.clamp(vx * 0.003, -0.26, 0.26), bob: 1.5 * Math.sin(t * 11) };
+  const pose: Pose = { X: weave(t), Z0: F / spread(carU), yaw: N.clamp(vx * 0.003, -0.26, 0.26), bob: 1.5 * Math.sin(t * 11) };
   const cam: W3 = { x: 0, y: CAM_Y, z: 0 };
   const centre = world(CENTRE, pose);
   const proj = (pts: V3[], mirror = false) => pts.map((v) => screen(world(v, pose), mirror));
@@ -280,9 +354,10 @@ function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number) 
   for (const l of LIGHTS) pathOf(ctx, proj(l, true));
   ctx.fill();
   ctx.restore();
-  const base = screen(world(onRear(0, 0), pose));
-  N.glowDot(ctx, N.c.orange, base[0] - TAIL_X, base[1] + 4, 20, 0.26);
-  N.glowDot(ctx, N.c.orange, base[0] + TAIL_X, base[1] + 4, 20, 0.26);
+  for (const side of [-1, 1]) {
+    const [gx, gy] = screen(world([side * TAIL_WX, 0, 0], pose));
+    N.glowDot(ctx, N.c.orange, gx, gy + 4, 20, 0.26 + 0.25 * brake);
+  }
 
   // Tyres show under the body from behind.
   ctx.fillStyle = STAGE;
@@ -364,11 +439,12 @@ function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number) 
   ctx.globalAlpha = 1;
   N.glow(ctx, N.c.orange, 4, (c) => {
     for (const l of lights) pathOf(c, l);
-  }, { intensity: 0.9 + 0.1 * lit, halo: 0.8 });
+  }, { intensity: 0.85 + 0.1 * lit + 0.35 * brake, halo: 0.8 + 0.4 * brake });
   const hot = N.mix(N.c.orange, N.c.white, 0.55);
   for (const v of [onRear(-158, 58), onRear(158, 58)]) {
     const [hx, hy] = screen(world(v, pose));
-    N.glowDot(ctx, hot, hx, hy, 7, 0.85 + 0.15 * lit);
+    // Brake lights: the hot ends swell when the car slows.
+    N.glowDot(ctx, hot, hx, hy, 7 + 6 * brake, 0.85 + 0.15 * lit);
   }
 
   // A blank plate, softly lit; two chrome exhaust tips.
@@ -388,6 +464,16 @@ function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number) 
     ctx.strokeStyle = N.rgba(N.c.white, 0.6);
     ctx.lineWidth = 2.5;
     ctx.stroke();
+    // Accelerating: a flickering cyan-white flame out of the tip, toward you.
+    if (boost > 0.05) {
+      const flick = 0.6 + 0.4 * N.noise(t * 30 + ex);
+      const len = r * (3 + 7 * boost * flick);
+      N.glow(ctx, N.c.cyan, r * 0.9, (c) => {
+        c.moveTo(cx, cy);
+        c.lineTo(cx, cy + len);
+      }, { intensity: boost * flick, halo: 0.6 });
+      N.glowDot(ctx, N.mix(N.c.cyan, N.c.white, 0.6), cx, cy, r * 0.8, boost * flick);
+    }
   }
 
   // The wing on its struts, nearest of all.
@@ -507,7 +593,13 @@ const face: NeonFace<State> = {
     ctx.fill();
 
     // The floor: violet rungs rolling toward you, one spacing a second.
-    const fr = T.sf % 1;
+    // The drive: distance, speed, the car's depth, braking and boosting.
+    const dist = travel(T.t);
+    const carU = carDepth(T.t);
+    const a = accel(T.t);
+    const brake = N.clamp(-a / 0.25, 0, 1);
+    const boost = N.clamp(a / 0.2, 0, 1);
+    const fr = ((dist % 1) + 1) % 1;
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, HZ, 1000, 500);
@@ -655,16 +747,19 @@ const face: NeonFace<State> = {
 
     // Gates behind the car, then the trails and the car, then gates nearer
     // than the car, which pass over it.
-    const depths = gateDepths(T.sf);
-    gates(ctx, N, depths.filter((u) => u <= CAR_U));
-    trails(ctx, N, T.t);
-    car(ctx, N, T.t, gateLight(depths));
-    gates(ctx, N, depths.filter((u) => u > CAR_U));
+    const depths = gateDepths(dist);
+    const trees = palmSlots(dist);
+    gates(ctx, N, depths.filter((u) => u <= carU));
+    palms(ctx, N, trees.filter((p) => p.u <= carU));
+    trails(ctx, N, T.t, carU);
+    car(ctx, N, T.t, gateLight(depths, carU), carU, brake, boost);
+    gates(ctx, N, depths.filter((u) => u > carU));
+    palms(ctx, N, trees.filter((p) => p.u > carU));
 
     // The colon: two cyan dots that breathe once a second.
     const DH = 172, y0 = 138, DW = 84, GAP = 26, COLON = 62;
     const colonX = CX - (DW * 4 + GAP * 2 + COLON) / 2 + (DW * 2 + GAP) + COLON / 2;
-    const on = 0.55 + 0.45 * (0.5 + 0.5 * Math.cos(TAU * fr));
+    const on = 0.55 + 0.45 * (0.5 + 0.5 * Math.cos(TAU * (T.sf % 1)));
     N.glowDot(ctx, cyan, colonX, y0 + DH * 0.3, 8, on);
     N.glowDot(ctx, cyan, colonX, y0 + DH * 0.7, 8, on);
   },
