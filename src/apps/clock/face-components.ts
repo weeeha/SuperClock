@@ -18,6 +18,7 @@ import NeonSignClock from './NeonSignClock';
 import NeonNixieClock from './NeonNixieClock';
 import NeonPlasmaClock from './NeonPlasmaClock';
 import NeonHorizonClock from './NeonHorizonClock';
+import RallyClock from './RallyClock';
 
 export interface FaceProps {
   isActive: boolean;
@@ -50,6 +51,7 @@ export const FACE_COMPONENTS: Record<string, FaceComponent> = {
   'neon-nixie': NeonNixieClock,
   'neon-plasma': NeonPlasmaClock,
   'neon-horizon': NeonHorizonClock,
+  rally: RallyClock,
 };
 
 export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
@@ -72,4 +74,5 @@ export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
   NeonNixieClock,
   NeonPlasmaClock,
   NeonHorizonClock,
+  RallyClock,
 ];

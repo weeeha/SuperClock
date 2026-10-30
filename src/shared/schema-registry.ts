@@ -57,6 +57,7 @@ import { neonSignFaceSchema, neonSignFaceMeta } from './schemas/face.neon-sign';
 import { neonNixieFaceSchema, neonNixieFaceMeta } from './schemas/face.neon-nixie';
 import { neonPlasmaFaceSchema, neonPlasmaFaceMeta } from './schemas/face.neon-plasma';
 import { neonHorizonFaceSchema, neonHorizonFaceMeta } from './schemas/face.neon-horizon';
+import { rallyFaceSchema, rallyFaceMeta } from './schemas/face.rally';
 
 export interface SchemaEntry {
   schema: z.ZodObject<z.ZodRawShape>;
@@ -112,6 +113,7 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'face.neon-nixie': { schema: neonNixieFaceSchema, meta: neonNixieFaceMeta },
   'face.neon-plasma': { schema: neonPlasmaFaceSchema, meta: neonPlasmaFaceMeta },
   'face.neon-horizon': { schema: neonHorizonFaceSchema, meta: neonHorizonFaceMeta },
+  'face.rally': { schema: rallyFaceSchema, meta: rallyFaceMeta },
 };
 
 export function getSchema(id: string | undefined): SchemaEntry | undefined {

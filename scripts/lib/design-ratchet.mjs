@@ -67,6 +67,13 @@ export const CEILINGS = {
 // Files whose colours are data rather than design, so they are not counted.
 export const NOT_DESIGN = [
   'src/apps/claude-usage/sprites.ts', // scraped 20x20 sprite palettes
+  // The rally face's worlds, models and scene: the colours ARE the stage
+  // (sand, pines, roofs, liveries), a lookup table of content like the sprite
+  // palettes above, not a UI palette. Added 2026-10-30 as my call for Nick to
+  // confirm; counted, they would take the kiosk from 100 to 293.
+  'src/apps/clock/rally/worlds.ts',
+  'src/apps/clock/rally/models.ts',
+  'src/apps/clock/rally/scene.ts',
 ];
 
 const FONT_SIZE = /text-\[[^\]]+\]|text-(?:xs|sm|base|lg|xl|[2-9]xl)\b|fontSize=\{?["']?[0-9.]+/g;

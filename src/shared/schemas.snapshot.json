@@ -988,6 +988,73 @@
       },
       "type": "object"
     },
+    "face.rally": {
+      "properties": {
+        "car": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "hatch",
+            "saloon",
+            "wedge",
+            "coupe",
+            "safari",
+            "mini",
+            "beetle"
+          ],
+          "type": "string"
+        },
+        "hour24": {
+          "default": true,
+          "type": "boolean"
+        },
+        "light": {
+          "default": "real",
+          "enum": [
+            "real",
+            "cycle",
+            "morning",
+            "noon",
+            "sunset",
+            "night"
+          ],
+          "type": "string"
+        },
+        "speed": {
+          "default": 130,
+          "maximum": 250,
+          "minimum": 40,
+          "type": "number"
+        },
+        "weather": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "clear",
+            "clouds",
+            "rain",
+            "snow"
+          ],
+          "type": "string"
+        },
+        "world": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "africa",
+            "desert",
+            "dunes",
+            "snow",
+            "city",
+            "plains",
+            "mountains",
+            "iceland"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "face.square": {
       "properties": {
         "accent": {
