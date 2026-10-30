@@ -15,8 +15,9 @@ import { STAGE } from '../neon';
 // road masks, the rolling floor, the lane dashes and the car draw live.
 
 interface Star { x: number; y: number; r: number; a: number }
-interface Building { x: number; w: number; h: number; antenna: boolean }
-interface State { stars?: Star[]; city?: Building[]; peaks?: [number, number][][] }
+interface Building { x: number; w: number; h: number; antenna: boolean; id: number }
+interface Range { base: number; w: number; pts: [number, number][] }
+interface State { stars?: Star[]; city?: Building[]; ranges?: Range[] }
 
 const CX = 500;
 const HZ = 560; // vanishing point and horizon line
@@ -35,8 +36,8 @@ const LANE = 165; // lane separators, halfway between the lane centres
 // time, so where a tail light was d seconds ago is heroX(t - d), now d * ROLL
 // closer: the trail needs no stored history and curves with the weave.
 const CAR_U = 0.8; // the car's depth at cruising speed
-const TAIL_WX = 102; // tail light centres from the car's middle, floor units (120 x HX)
-const TAIL_WY = 78; // their height above the road, floor units
+const TAIL_WX = 82; // tail light centres from the car's middle, floor units (120 x HX)
+const TAIL_WY = 63; // their height above the road, floor units (58 x HY)
 
 // Speed, in rungs a second, like a game's: long swells with quicker surges
 // on top, from a near crawl (0.15) to almost double (1.85). Three sines with
@@ -58,19 +59,21 @@ const travel = (t: number) =>
 const accel = (t: number) =>
   SPEED_BASE * SPEEDS.reduce((g, [a, per, ph]) => g + ((a * TAU) / per) * Math.cos((TAU * t) / per + ph), 0);
 // The car pulls ahead when it is fast and drops back toward you when it brakes.
-const carDepth = (t: number) => CAR_U - 0.05 * (speed(t) / SPEED_BASE - 1);
+export const carDepth = (t: number) => CAR_U - 0.05 * (speed(t) / SPEED_BASE - 1);
 
 // Lanes, Neon Drive style: the car snaps between three lanes on the beat.
 // The beat is the clock's own seconds (the face shifts its time so beats land
-// on the ticks); a lane holds for a BLOCK of two beats, and each block picks
-// its lane from a hash, so about two blocks in three bring a snap, sometimes
-// across two lanes (a drift). Pure functions of time, like the speed.
+// on the ticks); a lane holds for a BLOCK of four beats, and each block
+// picks its lane from a hash, so about two blocks in three bring a snap,
+// sometimes across two lanes (a drift). A snap takes SNAP seconds on a
+// smootherstep, which starts and ends with zero acceleration, so there is no
+// jolt at either end. Pure functions of time, like the speed.
 // Lane centres -330, 0, 330. With both cars at HX width (hero 306 wide,
 // sedan 280) neighbours keep a 37-unit gap, and the outer lane stays inside
 // the disc at the car's depth.
 const LANE_X = 330;
-const BLOCK = 2;
-const SNAP = 0.38; // seconds a snap takes
+const BLOCK = 4;
+const SNAP = 0.9; // seconds a snap takes
 const h1 = (n: number) => {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
@@ -78,38 +81,63 @@ const h1 = (n: number) => {
 const laneOf = (b: number) => Math.floor(h1(b * 1.37 + 0.5) * 3) - 1;
 const ease = (x: number) => {
   const u = Math.min(1, Math.max(0, x));
-  return u * u * (3 - 2 * u);
+  return u * u * u * (u * (u * 6 - 15) + 10); // smootherstep
 };
 /** The car's sideways position: snapping lane to lane, with a little life. */
-const heroX = (t: number) => {
+export const heroX = (t: number) => {
   const b = Math.floor(t / BLOCK);
   const from = laneOf(b - 1) * LANE_X;
   const to = laneOf(b) * LANE_X;
-  return from + (to - from) * ease((t - b * BLOCK) / SNAP) + 10 * Math.sin(t * 2.3);
+  return from + (to - from) * ease((t - b * BLOCK) / SNAP) + 6 * Math.sin(t * 1.7);
 };
 /** 0 to 1 while the car is in a two-lane snap: the drift. */
 const driftOf = (t: number) => {
   const b = Math.floor(t / BLOCK);
   if (Math.abs(laneOf(b) - laneOf(b - 1)) < 2) return 0;
-  const s = (t - b * BLOCK) / (SNAP * 2.2);
+  const s = (t - b * BLOCK) / (SNAP * 1.5);
   return s < 1 ? Math.sin(Math.PI * s) : 0;
 };
 
-// Traffic, Electro Ride style: slower boxy sedans in the lanes. Each snap
-// dodges one: a sedan sits in the lane the car is leaving and its tail passes
-// the car's tail a second into the block, after the snap, and a second
-// before the next one, so the car never steers into a sedan it just passed.
-const TRAFFIC_V = 0.4; // rungs a second, under the car's slowest
-interface Rival { u: number; X: number; id: number }
-const trafficNow = (t: number, carU: number): Rival[] => {
+// Traffic, Electro Ride style: slower boxy sedans in the lanes, kept sparse.
+// About half the snaps dodge one: a sedan sits ahead in the lane the car is
+// leaving. It is placed by distance, not time, from the closing speed at the
+// snap: a car length plus the ground the car closes while it clears the lane
+// (CLEAR_S), plus a margin. If the next snap ends in or drifts across that
+// lane, the sedan
+// is only placed when the car will have passed all of it by then (checked on
+// the distance actually driven over the block); otherwise that block has no
+// traffic. So the car never steers into a sedan it is passing.
+// horizon-schedule.test.ts drives fifteen minutes and fails on any overlap.
+const TRAFFIC_V = 0.3; // rungs a second, well under the car's slowest
+const CAR_RUNGS = 1.2; // the car's length in rungs at its depth
+const CLEAR_S = 0.85; // seconds a snap takes to carry the car clear of a lane
+const MIN_CLOSING = 1.0; // rungs a second; slower blocks get no traffic
+const TRAFFIC_SHARE = 0.5;
+export interface Rival { u: number; X: number; id: number }
+export const trafficNow = (t: number, carU: number): Rival[] => {
   const out: Rival[] = [];
   const b0 = Math.floor(t / BLOCK);
   const dNow = travel(t);
   for (let b = b0 - 1; b <= b0 + 3; b++) {
     const from = laneOf(b - 1);
-    if (from === laneOf(b)) continue;
-    const tp = b * BLOCK + 1;
-    const D = travel(tp) + TRAFFIC_V * (t - tp);
+    if (from === laneOf(b) || h1(b * 3.3 + 1) > TRAFFIC_SHARE) continue;
+    const tb = b * BLOCK;
+    const closing = speed(tb) - TRAFFIC_V;
+    if (closing < MIN_CLOSING) continue;
+    const lead = CAR_RUNGS + closing * CLEAR_S + 0.3;
+    const to = laneOf(b);
+    const next = laneOf(b + 1);
+    if (from >= Math.min(to, next) && from <= Math.max(to, next)) {
+      // Fully passed means the sedan's nose is behind the car's tail. Closer
+      // to the camera a car spans more depth, so solve it on the camera:
+      // the depth whose distance is the car's minus a sedan length.
+      const tn = tb + BLOCK;
+      const zCar = F / spread(carDepth(tn));
+      const uClear = Math.sqrt(((F / (zCar - SEDAN_LEN)) * (1010 - HZ)) / 470);
+      const gained = travel(tn) - travel(tb) - TRAFFIC_V * BLOCK;
+      if (gained < lead + (uClear - carDepth(tn)) / ROLL + 0.3) continue;
+    }
+    const D = travel(tb) + lead + TRAFFIC_V * (t - tb);
     const u = carU - (D - dNow) * ROLL;
     if (u > 0.03 && u < 1.08) out.push({ u, X: from * LANE_X, id: b });
   }
@@ -210,36 +238,33 @@ function build(N: NeonKit, state: State) {
     if ((x - 500) ** 2 + (y - 500) ** 2 > 470 ** 2) continue;
     stars.push({ x, y, r: 0.8 + N.hash(i * 5.3) * 1.5, a: 0.2 + N.hash(i * 7.1) * 0.6 });
   }
+  // The skyline is a looping strip STRIP wide that scrolls past (see
+  // scenery()); the mountains are a wider, slower strip behind it.
   const city: Building[] = [];
-  let x = 172;
-  for (let i = 0; x < 828; i++) {
+  let x = 0;
+  for (let i = 0; x < STRIP - 30; i++) {
     const w = 24 + Math.floor(N.hash(i * 3.1) * 30);
-    const mid = Math.abs(x + w / 2 - CX);
-    // Taller toward the middle, low right at the vanishing point so the road
-    // runs into light.
-    let h = 40 + N.hash(i * 7.7) * 120 * (1 - (0.5 * mid) / 370);
-    if (mid < 36) h = 16 + N.hash(i + 0.5) * 18;
-    city.push({ x, w, h, antenna: h > 120 && N.hash(i * 13.3) > 0.45 });
+    const h = 40 + N.hash(i * 7.7) * 130;
+    city.push({ x, w, h, antenna: h > 125 && N.hash(i * 13.3) > 0.45, id: i });
     x += w + 2 + Math.floor(N.hash(i * 5.3) * 6);
   }
   state.stars = stars;
   state.city = city;
-  // Two low-poly ranges at the ends of the horizon: a ridge of peaks, kept
-  // inside the disc (at y 560 the disc spans x 27 to 973).
-  const range = (x0: number, x1: number, seed: number): [number, number][] => {
-    const pts: [number, number][] = [[x0, HZ]];
+  // Low-poly ranges along the mountain strip: tents of peaks, base at the horizon.
+  const ranges: Range[] = [];
+  for (let k = 0; k < 8; k++) {
+    const w = 150 + N.hash(k * 9.1) * 80;
+    const pts: [number, number][] = [[0, HZ]];
     const n = 7;
     for (let i = 1; i < n; i++) {
       const f = i / n;
-      const px = x0 + (x1 - x0) * f + (N.hash(seed + i) - 0.5) * 8;
-      // A tent: highest a third of the way in from the outer edge.
-      const tall = Math.max(0.12, 1 - Math.abs(f - 0.4) * 1.9);
-      pts.push([px, HZ - (12 + 72 * tall * (0.7 + 0.3 * N.hash(seed + i * 3.3)))]);
+      const tall = Math.max(0.12, 1 - Math.abs(f - 0.45) * 1.9);
+      pts.push([w * f + (N.hash(k * 31 + i) - 0.5) * 8, HZ - (12 + 72 * tall * (0.7 + 0.3 * N.hash(k * 17 + i * 3.3)))]);
     }
-    pts.push([x1, HZ]);
-    return pts;
-  };
-  state.peaks = [range(30, 172, 11), range(970, 828, 29)];
+    pts.push([w, HZ]);
+    ranges.push({ base: k * (MTN_STRIP / 8) + N.hash(k * 4.4) * 60, w, pts });
+  }
+  state.ranges = ranges;
 }
 
 function trails(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, carU: number) {
@@ -284,18 +309,22 @@ function trails(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, carU: numb
 // seen by the same camera: drift it left and you see its right flank, yaw it
 // into a turn and the nose swings, and the roof and deck show from above.
 const F = 800; // focal length in floor units
+const SEDAN_LZ = 0.85 * 0.8; // the sedan's length scale (0.85 of its model, at CAR_SCALE)
+const SEDAN_LEN = 700 * SEDAN_LZ; // its length in floor units
 const CAM_Y = 450;
 const PIVOT_Z = 380; // the car yaws about its middle (local units)
 // The mesh is modelled low and long; seen from the floor camera it needs
 // height to show its rear face and less length so the deck does not run to
 // the horizon. These scale it into the world.
-const HY = 1.35;
-const LZ = 0.8;
+// Both cars are drawn at CAR_SCALE of their models, leaving room on the road.
+const CAR_SCALE = 0.8;
+const HY = 1.35 * CAR_SCALE;
+const LZ = 0.8 * CAR_SCALE;
 
 type V3 = [number, number, number];
 interface Pose { X: number; Z0: number; yaw: number; bob: number; hy: number; lz: number; hx: number }
 // Both cars are modelled wide; this narrows them to fit two-car-wide lanes.
-const HX = 0.85;
+const HX = 0.85 * CAR_SCALE;
 interface W3 { x: number; y: number; z: number }
 
 const world = (p: V3, pose: Pose): W3 => {
@@ -378,7 +407,7 @@ function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number, 
   // Steer into the weave: the nose points where the car is heading.
   const vx = (heroX(t + 0.05) - heroX(t - 0.05)) / 0.1;
   // Steer into the snap; in a drift the tail swings out past it.
-  const yaw = N.clamp(vx * 0.0009, -0.3, 0.3) * (1 + 0.9 * drift);
+  const yaw = N.clamp(vx * 0.00018, -0.14, 0.14) * (1 + 0.4 * drift);
   const pose: Pose = { X: heroX(t), Z0: F / spread(carU), yaw, bob: 1.5 * Math.sin(t * 11), hy: HY, lz: LZ, hx: HX };
   const cam: W3 = { x: 0, y: CAM_Y, z: 0 };
   const centre = world(CENTRE, pose);
@@ -519,7 +548,7 @@ function car(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, lit: number, 
   for (const ex of [-60, 60]) {
     const q = world(onRear(ex, 30), pose);
     const [cx, cy] = screen(q);
-    const r = 10 * (F / q.z);
+    const r = 10 * CAR_SCALE * (F / q.z);
     ctx.fillStyle = STAGE;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, TAU);
@@ -588,7 +617,7 @@ const SEDAN_CENTRE: V3 = [0, 60, 350];
  *  lights. near (0 to 1) flares it as the car slips past. */
 function sedan(ctx: CanvasRenderingContext2D, N: NeonKit, r: Rival, near: number) {
   const sc0 = spread(r.u);
-  const pose: Pose = { X: r.X, Z0: F / sc0, yaw: 0, bob: 0, hy: 1.3, lz: 0.85, hx: HX };
+  const pose: Pose = { X: r.X, Z0: F / sc0, yaw: 0, bob: 0, hy: 1.3 * CAR_SCALE, lz: SEDAN_LZ, hx: HX };
   const cam: W3 = { x: 0, y: CAM_Y, z: 0 };
   const centre = world(SEDAN_CENTRE, pose);
   const fade = Math.min(1, (r.u - 0.03) / 0.15);
@@ -622,6 +651,159 @@ function sedan(ctx: CanvasRenderingContext2D, N: NeonKit, r: Rival, near: number
   }, { intensity: 0.85 * fade, halo: 0.6 });
 }
 
+/** Two searchlights sweeping slowly from behind the skyline, stopping short
+ *  of the digits (clipped at y 330). Drawn before the city, which hides
+ *  their bases. */
+function searchlights(ctx: CanvasRenderingContext2D, N: NeonKit, t: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 330, 1000, HZ - 330);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [bx, ph, per] of [[330, 0, 11], [690, 2.1, 14]] as const) {
+    const ang = -Math.PI / 2 + 0.42 * Math.sin((TAU * t) / per + ph);
+    const by = HZ - 30;
+    const len = 320;
+    const ex = bx + Math.cos(ang) * len;
+    const ey = by + Math.sin(ang) * len;
+    const nx = -Math.sin(ang) * 26;
+    const ny = Math.cos(ang) * 26;
+    const g = ctx.createLinearGradient(bx, by, ex, ey);
+    g.addColorStop(0, N.rgba(N.mix(N.c.violet, N.c.white, 0.5), 0.2));
+    g.addColorStop(1, N.rgba(N.c.violet, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(bx - nx * 0.15, by - ny * 0.15);
+    ctx.lineTo(bx + nx * 0.15, by + ny * 0.15);
+    ctx.lineTo(ex + nx, ey + ny);
+    ctx.lineTo(ex - nx, ey - ny);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ---- Parallax scenery, the way 80s arcade racers scrolled their backdrops ----
+//
+// The far scenery is two looping strips that scroll sideways as if the road
+// bends: a slow drift with swings. The mountains move at 0.4 of the city's
+// speed, so they read as farther; both shift a little against your lane; the
+// city breathes in scale, closing in and easing back but never arriving. New
+// buildings slide in at one side as others leave at the other. The sun does
+// not scroll: it is infinitely far.
+const STRIP = 1700;
+const MTN_STRIP = 2400;
+const scroll = (t: number) => 9 * t + 150 * Math.sin((TAU * t) / 37) + 55 * Math.sin((TAU * t) / 13 + 1);
+const onStrip = (x: number, off: number, strip: number) => ((((x - off) % strip) + strip) % strip) - strip / 2 + CX;
+
+function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: number) {
+  const violet = N.c.violet;
+  const lean = -heroX(t) * 0.12;
+  const off = scroll(t);
+
+  // Far: the wireframe ranges.
+  const mo = off * 0.4 + lean * 0.5;
+  const mtns: [number, number][][] = [];
+  for (const r of state.ranges ?? []) {
+    const x0 = onStrip(r.base, mo, MTN_STRIP);
+    if (x0 + r.w < 0 || x0 > 1000) continue;
+    mtns.push(r.pts.map(([x, y]) => [x0 + x, y]));
+  }
+  ctx.beginPath();
+  for (const pts of mtns) {
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+  }
+  ctx.fillStyle = STAGE;
+  ctx.fill();
+  ctx.fillStyle = N.rgba(violet, 0.1);
+  ctx.fill();
+  N.glow(ctx, N.c.cyan, 2, (c) => {
+    for (const pts of mtns) {
+      c.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const [px, py] = pts[i];
+        c.moveTo((px + pts[i - 1][0]) / 2, HZ);
+        c.lineTo(px, py);
+        c.lineTo((px + pts[i + 1][0]) / 2, HZ);
+      }
+    }
+  }, { intensity: 0.5, halo: 0.4 });
+
+  // Near: the city.
+  const zoom = 1 + 0.06 * Math.sin((TAU * t) / 31);
+  const co = off + lean;
+  const shown: { b: Building; x: number; w: number; h: number }[] = [];
+  for (const b of state.city ?? []) {
+    const x = CX + (onStrip(b.x, co, STRIP) - CX) * zoom;
+    const w = b.w * zoom;
+    if (x + w < 10 || x > 990) continue;
+    shown.push({ b, x, w, h: b.h * zoom });
+  }
+  ctx.beginPath();
+  for (const q of shown) ctx.rect(q.x, HZ - q.h, q.w, q.h);
+  ctx.fillStyle = STAGE;
+  ctx.fill();
+  ctx.fillStyle = N.rgba(violet, 0.1);
+  ctx.fill();
+
+  // Windows: each building keeps its own pattern; now and then a window flips.
+  const tints = [N.c.white, N.c.cyan, N.c.pink];
+  for (let ti = 0; ti < tints.length; ti++) {
+    ctx.fillStyle = N.rgba(tints[ti], ti === 0 ? 0.42 : 0.55);
+    ctx.beginPath();
+    for (const q of shown) {
+      const id = q.b.id;
+      let ri = 0;
+      for (let wy = HZ - q.h + 8 * zoom; wy < HZ - 8; wy += 9 * zoom, ri++) {
+        let ci = 0;
+        for (let wx = q.x + 4 * zoom; wx < q.x + q.w - 6; wx += 8 * zoom, ci++) {
+          const epoch = Math.floor(t / (2.5 + 4 * h1(id * 5 + ri * 7 + ci)));
+          const flipped = h1(id * 7 + ri * 5 + ci * 11 + epoch * 0.37) > 0.92;
+          if (h1(id * 131 + ri * 17 + ci * 3) > 0.6 === flipped) continue;
+          const tr = h1(id * 31 + ri * 3 + ci * 7);
+          if ((tr < 0.75 ? 0 : tr < 0.9 ? 1 : 2) === ti) ctx.rect(wx, wy, 4 * zoom, 3 * zoom);
+        }
+      }
+    }
+    ctx.fill();
+  }
+  N.glow(ctx, violet, 2, (c) => {
+    for (const q of shown) {
+      c.moveTo(q.x, HZ - q.h);
+      c.lineTo(q.x + q.w, HZ - q.h);
+    }
+  }, { intensity: 0.35, halo: 0.3 });
+
+  // Antennas with slow pink beacons, and a light chaser up the tallest tower.
+  ctx.strokeStyle = N.rgba(violet, 0.5);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (const q of shown) {
+    if (!q.b.antenna) continue;
+    ctx.moveTo(q.x + q.w / 2, HZ - q.h);
+    ctx.lineTo(q.x + q.w / 2, HZ - q.h - 26 * zoom);
+  }
+  ctx.stroke();
+  for (const q of shown) {
+    if (!q.b.antenna) continue;
+    const on = 0.5 + 0.5 * Math.sin(t * 1.6 + q.b.id * 1.9);
+    N.glowDot(ctx, N.c.pink, q.x + q.w / 2, HZ - q.h - 27 * zoom, 3.5, 0.35 + 0.5 * on);
+  }
+  if (shown.length) {
+    const tall = shown.reduce((m, q) => (q.h > m.h ? q : m), shown[0]);
+    const n = 9;
+    const head = (t * 5) % (n + 4);
+    for (let j = 0; j < n; j++) {
+      const d = head - j;
+      if (d < 0 || d > 3) continue;
+      N.glowDot(ctx, N.c.cyan, tall.x + tall.w - 3, HZ - 10 - j * ((tall.h - 20) / (n - 1)), 2.6, 1 - d / 3.5);
+    }
+  }
+}
+
 /** Tyre smoke and sparks off the rear wheels in a drift: puffs left behind
  *  roll toward you with the road, growing and fading. */
 function smoke(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, carU: number) {
@@ -635,7 +817,7 @@ function smoke(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, carU: numbe
     const u = carU + (dNow - travel(t - age)) * ROLL;
     const sc = spread(u);
     for (const side of [-1, 1]) {
-      const x = CX + (heroX(t - age) + side * 128) * sc;
+      const x = CX + (heroX(t - age) + side * 102) * sc;
       const y = floorY(u) - 20 * sc;
       const r = (14 + 60 * age) * sc * 1.5;
       ctx.fillStyle = N.rgba(N.c.white, 0.09 * d * (1 - i / 9));
@@ -664,13 +846,162 @@ function streaks(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, k: number
   }, { intensity: 0.45 * k, halo: 0.3 });
 }
 
+// ---- The time: 80s chrome lettering ----
+//
+// Heavy geometric numerals drawn as thick strokes along vector skeletons, so
+// they look the same on every device and never depend on a font loading.
+// Skeletons live in a 100 x 160 box, centre lines inset by half the stroke.
+// Arcs are [cx, cy, rx, ry, fromDeg, toDeg], canvas angles (0 right, 90 down).
+type Seg = { line: [number, number][] } | { arc: [number, number, number, number, number, number] };
+const GLYPHS: Record<string, Seg[]> = {
+  0: [{ arc: [50, 80, 34, 64, 0, 360] }],
+  1: [{ line: [[28, 36], [58, 16], [58, 144]] }],
+  2: [{ arc: [50, 52, 34, 36, 175, 385] }, { line: [[82, 64], [16, 144], [86, 144]] }],
+  3: [{ arc: [48, 50, 34, 34, 200, 450] }, { arc: [48, 112, 36, 32, 270, 520] }],
+  4: [{ line: [[70, 144], [70, 16], [16, 104], [86, 104]] }],
+  5: [{ line: [[82, 16], [24, 16], [20, 76]] }, { arc: [48, 106, 36, 38, 215, 520] }],
+  6: [{ arc: [50, 104, 34, 40, 0, 360] }, { arc: [68, 92, 52, 74, 180, 290] }],
+  7: [{ line: [[16, 16], [84, 16], [36, 144]] }],
+  8: [{ arc: [50, 46, 28, 30, 0, 360] }, { arc: [50, 110, 34, 34, 0, 360] }],
+  9: [{ arc: [50, 56, 34, 40, 0, 360] }, { arc: [32, 68, 52, 74, 0, 110] }],
+};
+const GLYPH_W = 32; // stroke width in box units: heavy
+const GLYPH_K = 190 / 160; // box units to face units: digits 190 tall
+const DIGIT_W = 100 * GLYPH_K;
+const DIGIT_GAP = 18;
+const COLON_W = 46;
+const DIGITS_Y = 126;
+const DIGITS_X0 = CX - (4 * DIGIT_W + 2 * DIGIT_GAP + COLON_W) / 2;
+// HH, a gap, the colon, MM: [d0] gap [d1] colon [d2] gap [d3].
+const digitX = (i: number) =>
+  DIGITS_X0 + i * DIGIT_W + (i >= 1 ? DIGIT_GAP : 0) + (i >= 2 ? COLON_W : 0) + (i >= 3 ? DIGIT_GAP : 0);
+
+/** Points along a glyph's skeleton, arcs sampled, in box units. */
+const glyphPolys = (ch: string): [number, number][][] =>
+  (GLYPHS[ch] ?? []).map((seg) => {
+    if ('line' in seg) return seg.line;
+    const [cx, cy, rx, ry, a0, a1] = seg.arc;
+    const n = Math.max(8, Math.round(Math.abs(a1 - a0) / 10));
+    const pts: [number, number][] = [];
+    for (let k = 0; k <= n; k++) {
+      const a = ((a0 + ((a1 - a0) * k) / n) * Math.PI) / 180;
+      pts.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]);
+    }
+    return pts;
+  });
+const GLYPH_POLYS: Record<string, [number, number][][]> = Object.fromEntries(
+  Object.keys(GLYPHS).map((k) => [k, glyphPolys(k)]),
+);
+const tracePolys = (c: CanvasRenderingContext2D, polys: [number, number][][]) => {
+  for (const pl of polys) {
+    c.moveTo(pl[0][0], pl[0][1]);
+    for (let k = 1; k < pl.length; k++) c.lineTo(pl[k][0], pl[k][1]);
+  }
+};
+/** The horizon inside the letters: a jagged line just under the middle, one
+ *  continuous range across all four digits (hashed on the face x). */
+const chromeHorizon = (xFace: number) => 80 + 7 * Math.sin(xFace * 0.09) + 5 * (h1(Math.floor(xFace / 9)) - 0.5);
+
+function forEachDigit(c: CanvasRenderingContext2D, digits: string[], fn: (i: number, polys: [number, number][][], x: number) => void) {
+  digits.forEach((ch, i) => {
+    const x = digitX(i);
+    c.save();
+    c.translate(x, DIGITS_Y);
+    c.scale(GLYPH_K, GLYPH_K);
+    fn(i, GLYPH_POLYS[ch] ?? [], x);
+    c.restore();
+  });
+}
+
+/** Opaque dark behind the letters, live, so the sky does not show through the
+ *  chrome (the cached layer adds light; it cannot darken). */
+function chromeMask(ctx: CanvasRenderingContext2D, digits: string[]) {
+  forEachDigit(ctx, digits, (_i, polys) => {
+    ctx.strokeStyle = STAGE;
+    ctx.lineWidth = GLYPH_W + 9;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    ctx.beginPath();
+    tracePolys(ctx, polys);
+    ctx.stroke();
+  });
+}
+
+/** The chrome itself, drawn once a minute into the cached layer: magenta
+ *  bloom, a pink-white rim, a sky body above the horizon (white to cyan to
+ *  deep blue) and a sunset body below (dark violet to magenta to pink). */
+function chromeDigits(l: CanvasRenderingContext2D, N: NeonKit, digits: string[]) {
+  const rim = N.mix(N.c.white, N.c.pink, 0.3);
+  forEachDigit(l, digits, (_i, polys, x) => {
+    N.glow(l, N.c.magenta, GLYPH_W + 9, (c) => tracePolys(c, polys), { intensity: 0.32, core: false, cap: 'butt' });
+    l.lineCap = 'butt';
+    l.lineJoin = 'miter';
+    l.strokeStyle = rim;
+    l.lineWidth = GLYPH_W + 8;
+    l.beginPath();
+    tracePolys(l, polys);
+    l.stroke();
+    const horizon = (bx: number) => chromeHorizon(x + bx * GLYPH_K);
+    for (const half of ['sky', 'sunset'] as const) {
+      l.save();
+      l.beginPath();
+      l.moveTo(-30, half === 'sky' ? -30 : 200);
+      for (let bx = -30; bx <= 130; bx += 6) l.lineTo(bx, horizon(bx));
+      l.lineTo(130, half === 'sky' ? -30 : 200);
+      l.closePath();
+      l.clip();
+      const g = half === 'sky' ? l.createLinearGradient(0, 16, 0, 84) : l.createLinearGradient(0, 78, 0, 146);
+      if (half === 'sky') {
+        g.addColorStop(0, N.mix(N.c.white, N.c.cyan, 0.25));
+        g.addColorStop(0.55, N.c.cyan);
+        g.addColorStop(1, N.mix(N.c.cyan, N.c.violet, 0.65));
+      } else {
+        g.addColorStop(0, N.rgba(N.c.violet, 0.3));
+        g.addColorStop(0.55, N.mix(N.c.magenta, N.c.violet, 0.3));
+        g.addColorStop(1, N.c.pink);
+      }
+      l.strokeStyle = g;
+      l.lineWidth = GLYPH_W;
+      l.beginPath();
+      tracePolys(l, polys);
+      l.stroke();
+      l.restore();
+    }
+  });
+}
+
+/** Star sparkles that glint on the letters' upper edges, a few at a time. */
+function sparkles(ctx: CanvasRenderingContext2D, N: NeonKit, digits: string[], t: number) {
+  for (let i = 0; i < 3; i++) {
+    const per = 2.4 + i * 0.7;
+    const phase = t / per + i * 0.37;
+    const epoch = Math.floor(phase);
+    const k = phase - epoch;
+    const di = Math.floor(h1(epoch * 3.1 + i) * 4);
+    const polys = GLYPH_POLYS[digits[di]] ?? [];
+    const pts = polys.flat().filter((q) => q[1] < 60);
+    if (!pts.length) continue;
+    const [px, py] = pts[Math.floor(h1(epoch * 7.7 + i * 2) * pts.length)];
+    const sx = digitX(di) + px * GLYPH_K;
+    const sy = DIGITS_Y + (py - GLYPH_W / 2) * GLYPH_K;
+    const a = Math.sin(Math.PI * k) ** 2;
+    if (a < 0.02) continue;
+    const r = 26 * a;
+    N.glow(ctx, N.c.white, 1.4, (c) => {
+      c.moveTo(sx - r, sy);
+      c.lineTo(sx + r, sy);
+      c.moveTo(sx, sy - r);
+      c.lineTo(sx, sy + r);
+    }, { intensity: a, halo: 0.6 });
+    N.glowDot(ctx, N.c.white, sx, sy, 4, a);
+  }
+}
+
 const face: NeonFace<State> = {
   id: 'neon-horizon',
   draw(ctx, T, N, state) {
-    if (!state.stars || !state.city || !state.peaks) build(N, state);
+    if (!state.stars || !state.city || !state.ranges) build(N, state);
     const stars = state.stars ?? [];
-    const city = state.city ?? [];
-    const peaks = state.peaks ?? [];
     const ink = N.c.magenta;
     const cyan = N.c.cyan;
     const violet = N.c.violet;
@@ -680,7 +1011,7 @@ const face: NeonFace<State> = {
 
     // Camera roll: the scene leans into each snap; the time stays level.
     const vxCam = (heroX(t + 0.05) - heroX(t - 0.05)) / 0.1;
-    const roll = Math.max(-0.045, Math.min(0.045, -vxCam * 0.00005));
+    const roll = Math.max(-0.02, Math.min(0.02, -vxCam * 0.000014));
     ctx.save();
     ctx.translate(CX, 760);
     ctx.rotate(roll);
@@ -759,18 +1090,10 @@ const face: NeonFace<State> = {
     ctx.fill();
     ctx.restore();
 
-    // The city and the two ranges: dark shapes in front of the sun, faintly violet.
-    ctx.beginPath();
-    for (const b of city) ctx.rect(b.x, HZ - b.h, b.w, b.h);
-    for (const r of peaks) {
-      ctx.moveTo(r[0][0], r[0][1]);
-      for (let i = 1; i < r.length; i++) ctx.lineTo(r[i][0], r[i][1]);
-      ctx.closePath();
-    }
-    ctx.fillStyle = STAGE;
-    ctx.fill();
-    ctx.fillStyle = N.rgba(violet, 0.1);
-    ctx.fill();
+    searchlights(ctx, N, T.t);
+
+    // The scrolling scenery: mountains, then the city in front of the sun.
+    scenery(ctx, N, state, t);
 
     // The floor: violet rungs rolling toward you, one spacing a second.
     // The drive: distance, speed, the car's depth, braking and boosting.
@@ -805,60 +1128,9 @@ const face: NeonFace<State> = {
     ctx.closePath();
     ctx.fill();
 
-    // Everything still: city windows and roofs, the horizon line, the floor's
-    // long lines, the cyan road edges, and the time.
+    // Everything still: the horizon line, the floor's long lines and the cyan
+    // road edges.
     N.layer(ctx, state, 'fixed', T.hh + T.mm, (l) => {
-      const tints = [N.c.white, cyan, N.c.pink];
-      for (let ti = 0; ti < tints.length; ti++) {
-        l.fillStyle = N.rgba(tints[ti], ti === 0 ? 0.42 : 0.55);
-        l.beginPath();
-        city.forEach((b, bi) => {
-          for (let wy = HZ - b.h + 8; wy < HZ - 8; wy += 9) {
-            for (let wx = b.x + 4; wx < b.x + b.w - 6; wx += 8) {
-              const r = N.hash(bi * 131 + wy * 7 + wx);
-              if (r < 0.6) continue;
-              const tint = r < 0.84 ? 0 : r < 0.94 ? 1 : 2;
-              if (tint === ti) l.rect(wx, wy, 4, 3);
-            }
-          }
-        });
-        l.fill();
-      }
-      N.glow(l, violet, 2, (c) => {
-        for (const b of city) {
-          c.moveTo(b.x, HZ - b.h);
-          c.lineTo(b.x + b.w, HZ - b.h);
-        }
-      }, { intensity: 0.35, halo: 0.3 });
-      for (const b of city) {
-        if (!b.antenna) continue;
-        l.strokeStyle = N.rgba(violet, 0.5);
-        l.lineWidth = 1.5;
-        l.beginPath();
-        l.moveTo(b.x + b.w / 2, HZ - b.h);
-        l.lineTo(b.x + b.w / 2, HZ - b.h - 26);
-        l.stroke();
-      }
-
-      // The ranges as low-poly wireframe: the ridge, and from every peak a
-      // facet edge down to the base, zig-zagging like a polygon mesh.
-      N.glow(l, cyan, 2, (c) => {
-        for (const r of peaks) {
-          c.moveTo(r[0][0], r[0][1]);
-          for (let i = 1; i < r.length; i++) c.lineTo(r[i][0], r[i][1]);
-          // Facets: from every peak a diagonal down each side, meeting the
-          // base halfway to its neighbours.
-          for (let i = 1; i < r.length - 1; i++) {
-            const [px, py] = r[i];
-            const left = (px + r[i - 1][0]) / 2;
-            const right = (px + r[i + 1][0]) / 2;
-            c.moveTo(left, HZ);
-            c.lineTo(px, py);
-            c.lineTo(right, HZ);
-          }
-        }
-      }, { intensity: 0.5, halo: 0.4 });
-
       l.save();
       l.beginPath();
       l.rect(0, HZ, 1000, 500);
@@ -884,13 +1156,6 @@ const face: NeonFace<State> = {
         c.lineTo(970, HZ);
       }, { intensity: 0.9 });
 
-    });
-
-    // Antenna tips blink slowly, each on its own beat.
-    city.forEach((b, bi) => {
-      if (!b.antenna) return;
-      const on = 0.5 + 0.5 * Math.sin(T.t * 1.6 + bi * 1.9);
-      N.glowDot(ctx, N.c.pink, b.x + b.w / 2, HZ - b.h - 27, 3.5, 0.35 + 0.5 * on);
     });
 
     // Lane dashes: cyan, rolling with the floor, wider as they come closer.
@@ -930,30 +1195,30 @@ const face: NeonFace<State> = {
     streaks(ctx, N, t, N.clamp((speed(t) / SPEED_BASE - 1.15) / 0.35, 0, 1));
     ctx.restore(); // end of the rolled scene
 
-    // The time, level and on top of everything.
-    N.layer(ctx, state, 'time', T.hh + T.mm, (l) => {
-      // The time: cyan seven-segment tubes, the one thing at full intensity.
-      const DW = 84, DH = 172, GAP = 26, COLON = 62;
-      const pair = DW * 2 + GAP;
-      const x0 = CX - (pair * 2 + COLON) / 2;
-      const y0 = 138;
-      const digits = [T.hh[0], T.hh[1], T.mm[0], T.mm[1]];
-      const px = [x0, x0 + DW + GAP, x0 + pair + COLON, x0 + pair + COLON + DW + GAP];
-      N.glow(l, cyan, 3, (c) => {
-        for (let i = 0; i < 4; i++) N.seg7(c, digits[i], px[i], y0, DW, DH, { off: true, gap: 9 });
-      }, { intensity: 0.1, halo: 0 });
-      N.glow(l, cyan, 14, (c) => {
-        for (let i = 0; i < 4; i++) N.seg7(c, digits[i], px[i], y0, DW, DH, { gap: 9 });
-      }, { intensity: 1 });
-    });
+    // The time, level and on top of everything: 80s chrome numerals.
+    const digits = [T.hh[0], T.hh[1], T.mm[0], T.mm[1]];
+    chromeMask(ctx, digits);
+    N.layer(ctx, state, 'time', T.hh + T.mm, (l) => chromeDigits(l, N, digits));
+    sparkles(ctx, N, digits, T.t);
 
-    // The colon: two cyan dots that breathe once a second.
-    const DH = 172, y0 = 138, DW = 84, GAP = 26, COLON = 62;
-    const colonX = CX - (DW * 4 + GAP * 2 + COLON) / 2 + (DW * 2 + GAP) + COLON / 2;
+    // The colon: two chrome-pink dots that breathe once a second.
+    const colonX = DIGITS_X0 + 2 * DIGIT_W + DIGIT_GAP + COLON_W / 2;
     const on = 0.55 + 0.45 * (0.5 + 0.5 * Math.cos(TAU * (T.sf % 1)));
-    N.glowDot(ctx, cyan, colonX, y0 + DH * 0.3, 8, on);
-    N.glowDot(ctx, cyan, colonX, y0 + DH * 0.7, 8, on);
+    N.glowDot(ctx, N.c.cyan, colonX, DIGITS_Y + 58 * GLYPH_K, 9, on);
+    N.glowDot(ctx, N.c.pink, colonX, DIGITS_Y + 112 * GLYPH_K, 9, on);
   },
+};
+
+/** The cars' footprints on the road, from the same constants the drawing
+ *  uses, for horizon-schedule.test.ts: half-widths and lengths in floor units
+ *  after HX/LZ scaling, and the camera that turns a depth u into a distance. */
+export const FOOTPRINT = {
+  F,
+  spread,
+  heroHalfW: 180 * HX,
+  heroLen: 760 * LZ,
+  sedanHalfW: 165 * HX,
+  sedanLen: SEDAN_LEN,
 };
 
 export default face;
