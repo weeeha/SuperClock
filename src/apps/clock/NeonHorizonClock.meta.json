@@ -1,0 +1,71 @@
+{
+  "kind": "face",
+  "id": "neon-horizon",
+  "purpose": "A neon night drive played like Neon Drive: an 80s wedge supercar, modelled in 3D and seen through the road's own camera, glides between three lanes on the clock's seconds to slip past sparse Electro Ride-style traffic, with a calm yaw, brake lights, exhaust flames and a gentle camera lean; behind it a city and wireframe ranges scroll in parallax the way 80s arcade racers did, the city breathing closer without arriving, windows flickering and searchlights sweeping; violet gates and neon palms rush past; the sun sets behind it all with the day; every ten minutes the drive crossfades between the city and open wireframe country (big pink low-poly ranges, a rolling hill mesh, a yellow-orange scanlined sun); the time is 80s chrome lettering, slanted, with a dark-to-cyan sky mirror over a jagged horizon, a maroon-to-pink striped ground, a white-pink rim over a dark bevel, a blue extrusion and lens-flare sparkles, held level above the scene.",
+  "accent": {
+    "where": "the time in 80s chrome lettering, the one quantity; cyan also draws the road edges, lane dashes, wireframe ranges and the traffic rims as scenery",
+    "color": "#00F0FF"
+  },
+  "night": {
+    "recipe": "The lit disc is content and stays dark in both palettes (the Vinyl precedent); the mat around it, visible on the square device, flips with --face-bg, and night dimming comes from the kiosk brightness. For a dark room the glow option pulls the halo in.",
+    "tokens": [
+      "--face-bg"
+    ]
+  },
+  "options": [
+    {
+      "key": "glow",
+      "intent": "full is the neon as designed; soft keeps the tubes and their white cores but pulls the halo in, the setting for a clock by the bed."
+    }
+  ],
+  "antiPatterns": [
+    {
+      "rule": "Never paint the neon or the stage with --face-ink or --face-bg",
+      "why": "the lit disc is content and stays dark in both palettes, like the Vinyl record; the day ink is black and would vanish on it, so only the mat outside the disc reads --face-bg"
+    },
+    {
+      "rule": "Never draw the still parts live every frame",
+      "why": "nine glow passes per stroke made the drafts cost 17 to 20 ms a frame at 1080; anything that changes at most once a minute goes through N.layer in src/apps/clock/neon/faces/horizon.ts or the Pi drops frames"
+    },
+    {
+      "rule": "Never give the car a badge, a maker name or a plate",
+      "why": "the silhouette is a homage to the 80s wedge supercars; a logo would turn it into a trademark and pull the eye off the time"
+    },
+    {
+      "rule": "Never store the car trail as a history of past frames",
+      "why": "the trail is weave(t - d) re-projected d seconds closer, a pure function of time, so it survives a dropped frame, a pause and a remount without a jump"
+    },
+    {
+      "rule": "Never let the sun, the city or a gate reach the digits",
+      "why": "the time is the only quantity on the face; the sun tops out at y 370, the city at about 400 and gate bars stay under the horizon by construction (gate height below the eye height), all under the digits ending at 310"
+    },
+    {
+      "rule": "Never put text on the car plate or a sign in the scene",
+      "why": "the time is the only text the face carries; a plate or billboard word reads before the digits and is a brand waiting to happen"
+    },
+    {
+      "rule": "Never draw the car as a flat sprite or with its own perspective",
+      "why": "it is a mesh projected by the same camera as the floor (spread = F / Z), so its flank, yaw and size agree with the lanes and gates at every weave position; a second perspective would make it slide on the road"
+    },
+    {
+      "rule": "Never step the motion frame by frame or key it to the wall clock",
+      "why": "speed is a sum of sines and travel() its exact integral; rungs, dashes, gates, palms and trails all read travel(), so a dropped frame, a pause or a remount never makes the road jump or the trails tear"
+    },
+    {
+      "rule": "Never let the hero steer into a lane holding a car it is passing",
+      "why": "traffic is placed from the lane schedule itself: a sedan sits in the lane the hero leaves and its tail passes a second into the block, a second before the next snap; changing BLOCK, SNAP or the traffic timing independently brings back cars driving through each other"
+    },
+    {
+      "rule": "Never roll the time with the scene",
+      "why": "the camera leans into each snap for the game feel, but the digits are the one thing read at a glance; they sit in their own layer drawn after the rolled scene is restored"
+    },
+    {
+      "rule": "Never draw the digits with a canvas font",
+      "why": "the chrome numerals are vector skeletons stroked in layers; a font would differ between the Mac and the Pi and a late-loading one would be frozen into the minute cache"
+    }
+  ],
+  "parity": {
+    "lvgl": null
+  },
+  "specless": "Drawn on a canvas by src/apps/clock/neon/faces/horizon.ts in the shared 1000-unit space. A perspective grid, a striped sun and segment digits have no place in the spec vocabulary of solid hands and two tick rings, so the numbers live in the draw module."
+}

@@ -55,6 +55,14 @@ This repo has already decided, and these are law:
 - **The kiosk viewport is a 1080×1080 circle.** The kiosk responsive pass is
   "nothing load-bearing outside the disc" (corners are invisible on round
   devices), not 375px. The admin is phone-first: 375px applies there.
+- **Neon glow is content on the neon faces** (decided 2026-10-30, when Nick
+  asked for intense neon faces). The `neon-*` faces (src/apps/clock/neon/)
+  draw additive glow and white-hot cores because a neon tube is light: the
+  core's "no glowing shadows" and "no blurred orbs" Floor rules do not apply
+  inside their canvas, the same way the ambient-motion line below lets clock
+  hands move. The carve-out stops at the canvas: chrome, overlays, the admin
+  and every other face keep the Floor rules, and a neon face still holds one
+  saturated accent quantity (FCE-1, named in its meta).
 - **Ambient motion is content, not chrome.** Breathing, Fireplace, and clock
   hands are sanctioned idle animation because the animation IS the app.
   Chrome, overlays, and every admin surface animate only on state change.

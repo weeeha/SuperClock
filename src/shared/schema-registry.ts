@@ -51,6 +51,12 @@ import { depletionFaceSchema, depletionFaceMeta } from './schemas/face.depletion
 import { apertureFaceSchema, apertureFaceMeta } from './schemas/face.aperture';
 import { daylightFaceSchema, daylightFaceMeta } from './schemas/face.daylight';
 import { strokesFaceSchema, strokesFaceMeta } from './schemas/face.strokes';
+import { vinylFaceSchema, vinylFaceMeta } from './schemas/face.vinyl';
+import { neonTubeFaceSchema, neonTubeFaceMeta } from './schemas/face.neon-tube';
+import { neonSignFaceSchema, neonSignFaceMeta } from './schemas/face.neon-sign';
+import { neonNixieFaceSchema, neonNixieFaceMeta } from './schemas/face.neon-nixie';
+import { neonPlasmaFaceSchema, neonPlasmaFaceMeta } from './schemas/face.neon-plasma';
+import { neonHorizonFaceSchema, neonHorizonFaceMeta } from './schemas/face.neon-horizon';
 import { rallyFaceSchema, rallyFaceMeta } from './schemas/face.rally';
 
 export interface SchemaEntry {
@@ -101,6 +107,12 @@ export const SCHEMAS: Record<string, SchemaEntry> = {
   'face.aperture': { schema: apertureFaceSchema, meta: apertureFaceMeta },
   'face.daylight': { schema: daylightFaceSchema, meta: daylightFaceMeta },
   'face.strokes': { schema: strokesFaceSchema, meta: strokesFaceMeta },
+  'face.vinyl': { schema: vinylFaceSchema, meta: vinylFaceMeta },
+  'face.neon-tube': { schema: neonTubeFaceSchema, meta: neonTubeFaceMeta },
+  'face.neon-sign': { schema: neonSignFaceSchema, meta: neonSignFaceMeta },
+  'face.neon-nixie': { schema: neonNixieFaceSchema, meta: neonNixieFaceMeta },
+  'face.neon-plasma': { schema: neonPlasmaFaceSchema, meta: neonPlasmaFaceMeta },
+  'face.neon-horizon': { schema: neonHorizonFaceSchema, meta: neonHorizonFaceMeta },
   'face.rally': { schema: rallyFaceSchema, meta: rallyFaceMeta },
 };
 

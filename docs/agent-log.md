@@ -6,6 +6,137 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Rally merged in and deployed with the neon faces
+
+The Rally session (claude/generative-world-tracks-b89fa4) asked for its face to ride this branch's next fastclock deploy; Nick said "Merge and deploy" here. Merge commit c757c73 brings d2de6f5 (Rally, three 0.170.0) and main's eee3e2f (unslop 1.31 sync). Conflicts were all both-sides-added: face-components, face-registry (Horizon's entry closed before Rally's), schema-registry and this log keep both; the index, analysis and health report were regenerated from the merged tree; the neon-glow Phase 0 line survives the sync. `./scripts/gates.sh` green: 128 files, 1413 tests, build; check:rules has only the old ICO-2.
+
+**Verified:** deployed with DEPLOY_ANYWAY=1, health c757c73, kiosk reloaded, the rally chunk in dist, Horizon on glass at 03:41 (city scene), config untouched (i-clock on neon-horizon, playlist ['i-clock'], 18 instances). Rally not pinned: the Rally session owns that and its fps check. That session reports Rally is going to main through PR #72, merged by Nick once CI is green.
+
+**Open:** whether this branch (neon faces, Vinyl, Horizon) goes to main through a PR: Nick's call in this session.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon v3 and v4: smooth glides, parallax city, 80s chrome digits, a hills scene
+
+Nick, in a run of short messages: smoother movement and fewer cars; the car turns too hard and the cars should be smaller; the city is static, animate it the way old computer games did; the digits in 80s chrome type (two rounds of references, "exactly like this mirror and glow", "even better effects"); and "maybe sometimes it's not city" with a wireframe-terrain reference.
+
+**Tags (local):** `horizon-game-v1` 6f7ea15, `horizon-dodge-v2` c0a08e0, `horizon-chrome-v3` 859f958, `horizon-scenes-v4` a448f92 (live on fastclock).
+
+**Motion:** snaps take 0.9 s on a smootherstep every four beats; yaw and camera roll about halved; cars at CAR_SCALE 0.8. Traffic is sparse (about half the snaps) and placed by distance from the closing speed; a sedan is skipped when the next snap would end in or drift across its lane before the overtake is done, solved on the camera model. `src/apps/clock/neon/horizon-schedule.test.ts` drives fifteen minutes at 50 samples a second and fails on any car-sedan overlap: it caught three real overlap cases while this was tuned (time-based placement at slow speed, a next snap back into the lane, a drift through it) before passing.
+
+**Scenery:** the city and the small wireframe ranges are looping parallax strips (`scroll()`: drift plus swings as if the road bends), mountains at 0.4 of the city's speed, the city breathing in scale; windows flicker (one pass, three tint lists), two searchlights sweep, a chaser runs up the tallest tower. A second scene (`sceneWeight()`, minutes 5 to 9 of every ten, 6 s crossfade): big pink low-poly ranges, a hill mesh on the rungs either side of the road, the sun warming to yellow-orange, VHS scanlines under the digits.
+
+**Digits:** vector skeletons for 0 to 9 (no canvas font), slanted 0.16, a three-step blue extrusion, a white-to-pink rim over a dark bevel, a sky mirror dark navy to bright cyan over a jagged horizon, a maroon-to-pink ground with three slits from hard gradient stops, lens-flare sparkles on the upper rims; cached per minute over a live dark mask. Two defects found on glass and fixed with isolation shots (mask off, then layer off): wide bloom passes with flat caps cut the glow into dark shards, and mixed caps let the bloom poke past the rim; resolved with round bloom caps inside square rim caps.
+
+**Verified:** gates and 127 files / 1405 tests (old ICO-2 only). Mac bench 2.2 ms (city) and 1.2 ms (hills) per 1080 frame. All ten numerals shot. fastclock: deployed a448f92, kiosk reloaded, on glass at 02:38 in the hills scene; kiosk browser 56% of one core in the hills, 78% measured for the city scene at 859f958 before the window pass was merged, 58 C, no throttling. `scripts/face-preview.mjs` now waits for Chrome to exit before removing its profile.
+
+**Open:** the city scene's CPU on the Pi after the single-pass windows is unmeasured; no Pi 4 numbers; day palette not seen on glass; the reference's winding road (a curved road needs the car and traffic schedule reworked) not built.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a dodge game: lane snaps, traffic, drift, camera roll; versions tagged
+
+Nick, in sequence: "make it feel like game, more random, speed slows downs, need palms" (6f7ea15), then "save the current version though", then two references to study for dynamics, style and models: the Electro Ride trailer (YouTube vY_xf9FrXsM) and Neon Drive on Steam (app 433910).
+
+**Saved versions (local annotated tags):** `horizon-game-v1` = 6f7ea15 (variable speed, random sine weave, brake lights, exhaust flames, palms); `horizon-dodge-v2` = c0a08e0 (this entry). `git checkout <tag> -- src/apps/clock/neon/faces/horizon.ts` brings either back.
+
+**Read from the references** (in the Browser pane, nothing downloaded): Electro Ride is cel-shaded flat colour, dark boxy Eastern-bloc cars (Lada-style sedans, a UAZ-style jeep) with crisp cyan rim lines and red lights, overtakes, drifts with sparks, speed streaks, a camera that leans. Neon Drive's store page says it plainly: dodging roadblocks by lane, in sync with the music, at speed, scenes morphing; the page's only video is a banner for its sequel.
+
+**What changed in `horizon.ts`:** speed scaled to SPEED_BASE 2.2 rungs/s (0.4x to 1.6x), still a sum of sines with `travel()` its integral; the sine weave replaced by `heroX()`, lane snaps (centres 0 and +-330, SNAP 0.38 s) at the start of each 2-beat BLOCK, lane per block from a hash; the face shifts T.t so beats land on the clock's seconds; `driftOf()` on two-lane jumps adds yaw, smoke and sparks; `trafficNow()` places a sedan in the lane the car leaves, its tail passing the car's a second into the block (never in the next snap's way); `sedan()` draws the Electro Ride model (dark, cyan rim, pink-red lights, flaring when alongside); camera roll up to 0.045 rad about (500, 760) with the digits moved into their own `time` layer drawn after the roll; `streaks()` above 1.15x speed; gates every 8 rungs; lanes widened (ROAD 500, LANE 165) and both cars narrowed (HX 0.85) after the first shots showed adjacent cars overlapping. `neon.ts` `layer()` now composites in the caller's transform (drawImage at 1000 x 1000 units), identical for faces that do not rotate. The bench freezes fractional seconds (`t=10:09:30.2`) for beat-timed shots.
+
+**Verified:** gates and 126 files / 1404 tests (old ICO-2 only); Mac bench 1.9 ms per 1080 frame; shots of a drift, a snap with the roll, and a pass with a clean gap. Deployed c0a08e0 (health verified), kiosk reloaded, on glass at 02:08: a pass in progress. Kiosk browser on fastclock: 59% of one core (55% for game-v1, 45% for the first night drive), 57.6 C, throttled=0x0.
+
+**Open:** no Pi 4 measurement; day palette of these versions not seen on glass; the scene morphing between landscapes (Neon Drive) and the jeep model (Electro Ride) not built; fastclock still pinned to Horizon alone.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a neon night drive with a 3D car, live on fastclock
+
+Nick: "add some cool car moving leaving traces behind", "like lambo, countach or something", then two sets of Neon Drive style references, then "it needs more volume, maybe a 3D model so when it moves left and right we see more of its body, lights also glow or react".
+
+**What Horizon is now** (`src/apps/clock/neon/faces/horizon.ts`, commits 27f39bd and bb244f6): a cyan-lined highway under a starfield; a city with lit windows (white, cyan and pink, deterministic) between two low-poly cyan wireframe ranges; the striped sun setting behind the city with the day (`sunY = HZ + 10 - 100 * elev`: top at y 370 at noon, fully set at midnight; the first car version left a sliver showing at 23:58); violet gates every 3 s rolling with the floor, height 300 under the 450 eye height so no bar ever crosses the skyline or the digits; a shooting star every 13 s; cyan lane dashes rolling with the floor.
+
+**The car** is a 9-face mesh (rear, deck, flanks, low cabin set forward, hood, wing on struts, louvres) projected by the floor's own camera: the floor model `floorY/spread` is a pinhole camera 450 units up with `spread = F / Z` (F 800), so the car agrees with lanes and gates at every position. It weaves (pure function of ambient time) and yaws into the weave (up to 0.26 rad), faces are back-face culled and drawn back to front in a fixed order that holds from behind and above, shaded by kind (tops lit violet as a gate passes, the flank toward the road edge picks up cyan), headlights pool on the road ahead, orange slatted tail lights flare with a passing gate and leave trails (each trail point is `weave(t - d)` re-projected d seconds closer, so no frame history) plus a faint wet-road reflection. Tuning in the shots: HY 1.7 read as a hatchback, 1.35 with a lower roof and forward cabin reads as the 80s wedge. No plate text, no badge (meta anti-patterns).
+
+**Verified:** gates and 126 files / 1404 tests (only the old ICO-2). Mac bench 1.5 ms per 1080 frame. `docs/drafts/neon-port/bench.js` takes `?a=<seconds>` to pin the ambient clock, and `bench.mjs` passes `NEON_Q`, for repeatable car poses. Deployed bb244f6 (health verified), kiosk reloaded with `pkill -TERM chromium`, seen on glass at 01:41 at night brightness. Kiosk browser CPU on fastclock (Pi 5): 26% for the first Horizon, 46% with the flat car, 45% for the night drive; 59.3 C, throttled=0x0.
+
+**Open:** Pi 4 cost unmeasured (smallclock offline, squareclock untried); the day palette of the night drive not seen on glass; fastclock still pinned to Horizon alone (18-instance playlist in the backup). Earlier messages about a mirroring eye and a pressable face may have meant this face: the wet-road reflection is the only mirroring added.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · five neon faces in the kiosk, Horizon live on fastclock
+
+Nick picked "Build the top 5" from the neon drafts (entry below), then "Allow them" on the colour decision, then asked to launch Horizon on the clock.
+
+**Built** (commit 62bfe76, local, not pushed): `neon-tube`, `neon-sign`, `neon-nixie`, `neon-plasma`, `neon-horizon`, scaffolded with `new:face` (category artistic, names Neon Tube, Neon Sign, Nixie, Plasma, Horizon).
+- `src/apps/clock/neon/neon.ts`: the typed runtime (palette trimmed to the six hues in use, additive glow, glowDot, seg7, `layer`, an offscreen cache restamped by minute or never, and `renderFrame`, the one render path). `neonTime` reads `clockAngles`, now exported from `useClockHands.ts`, which the hook also uses, so hand angles still live in one place (KIO-3).
+- `NeonCanvas.tsx`: an isActive-gated rAF loop at 30 fps, one frame a second under reduced motion, DPR capped at 1, stops on a draw throw instead of flooding the log.
+- `faces/tube.ts` ported here as the reference; sign and horizon, nixie and plasma by two Sonnet agents at medium effort (about 310k tokens), each checked against its draft shot here.
+- Each `Neon*Clock.tsx` is a `bg-(--face-bg)` mat around the canvas; the lit disc is content and stays dark in both palettes (the Vinyl precedent). Each face schema has one option, `glow` full or soft. Metas are specless with reasons; accents name the one quantity.
+- `neon-faces.test.ts`: 300 frames per face at five times of day against a recording fake canvas (no throw, finite arguments, balanced save/restore, no shadowBlur/filter/getImageData), registered ids, angles from clockAngles. It failed on a planted unbalanced save and shadowBlur before being trusted.
+- Unslop Phase 0 gained "Neon glow is content on the neon faces". `app-capabilities.ts`: clock now declares `ticks` (the directory owns a rAF loop).
+- Design ratchet, by Nick's decision: colours ceiling 100 to 103 (cyan, magenta, pink had no near twin; violet, orange and the core white reuse tree colours within an RGB distance of 14), and `src/apps/clock/neon/neon.ts` ledgered for the plasma violet. Both recorded in `scripts/lib/design-ratchet.mjs`.
+- `docs/drafts/neon-port/`: the bench page and `bench.mjs` (time and shot through renderFrame; `NEON_CDP` drives an existing Chromium).
+
+**Verified:** all gates and 126 files / 1404 tests; check:rules has only the old ICO-2 Todo emoji. Mac bench: 0.7 to 1.3 ms per 1080 frame for all five. Previews captured from the real kiosk (`npm run preview:face`); the first Sign capture was black (a timing miss in the capture script) and was retaken. Dev kiosk: day and night, mat flips, canvas fills at 1000. Deployed with DEPLOY_ANYWAY=1, health verified 62bfe76.
+
+**fastclock now shows Horizon:** the Clock instance's faceId is `neon-horizon` and the playlist is pinned to `i-clock` alone (it held all 18 instances). Backup `config/fleet.json.bak-before-neon-horizon-2026-10-30-*` on the Pi. The kiosk browser kept the pre-deploy page and fell back to Minimalismo for an unknown face id until `pkill -TERM chromium` let the autostart loop respawn it: a deploy that adds a face needs that reload. On glass at 01:18, night: digits, ridge, grid, sun set below the ridge with its glow. Kiosk browser CPU 26% of one core on Horizon against 13% on Minimalismo, 56.5 C, throttled=0x0.
+
+**Incident:** a throwaway headless Chromium started on fastclock to time the faces opened a GNOME keyring unlock prompt on the panel. Nick saw it; the `gcr-prompter` process was killed, the test profile removed, nothing typed. Headless on the Pi also has no GL display (software only), so that route was dropped; any future Chromium there needs `--password-store=basic`.
+
+**Open:** the other four faces not seen on glass; no Pi 4 measurement (smallclock offline, squareclock untried); the 18-instance playlist to restore when Nick is done with Horizon; Nick's mid-build messages about an eye that moves like a mirror and a face that dents under a finger, waiting on which face he meant.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · twenty neon face drafts, a live gallery, no kiosk code
+
+Nick: "lets build 20 awesome faces with intense cool neon colors". Per the draft-before-build rule they exist as a live HTML gallery first; picks get ported to real faces after.
+
+**Where:** `docs/drafts/neon-faces/`, served by the dev server at `/docs/drafts/neon-faces/index.html` (`?t=HH:MM:SS` freezes the clock, `?speed=60` fast-forwards, `#<id>` opens one face full size). `BRIEFS.md` holds the rules and all twenty briefs; `neon.js` the runtime (palette of eleven neons, `glow` as additive multi-pass strokes with no shadowBlur, `glowDot`, `seg7`, and `timeState`, which uses useClockHands' angle formulas so a face ports without recomputing them); `gallery.js` the page; `faces/<id>.js` one face each, drawn in the 1000-unit space. `check.mjs` runs every face headless against a recording fake canvas (throws, NaN coordinates, unbalanced save/restore, banned APIs, reading Date or timers); `shoot.mjs` captures 1000 x 1000 PNGs through headless Chrome into the git-ignored `shots/`. `neon-faces-sheet.png` is the contact sheet at 10:09:30.
+
+**Faces:** tube (reference, written here), sign, nixie, radar, reactor, horizon, vector, plasma, wordclock, tach, pulse, constellation, tunnel, outline, arcade, laser, spiro, hive, pendulum, dotmatrix. Nineteen were drafted by four Sonnet agents at medium effort (about 800k tokens together), each self-reviewing its own screenshots; every face was then re-shot and judged here. Sent back and revised: laser (read as an X), hive (minutes as a clump, now an angular arc), tach (hour off-centre), pendulum (rod crossed the digits), constellation (too faint). The screenshot script had a race that captured the previous page when one face was shot twice in a row; fixed by matching the new document's query.
+
+**Verified:** check.mjs ok for all 20; all 20 render in the Browser pane with no errors; each judged from a 1000 px capture.
+
+**Cost, ms per frame at 1080 on the Mac Studio** (Canvas 2D, one face at a time): horizon 19.6, tunnel 17.7, plasma 17.0, outline 13.2, dotmatrix 11.2, arcade 10.3, tach 8.5, radar 8.0, reactor 7.3, hive 6.6, nixie 6.1, vector 5.7, pulse 5.7, pendulum 5.6, spiro 5.2, laser 4.4, constellation 4.1, wordclock 1.2, sign 0.9, tube 0.2. A Pi 4 is several times slower; the multiplier is the nine-pass glow. A port should draw the static layers (grids, dials, unlit LEDs and tubes) once into an offscreen canvas and redraw only what moves. Nothing measured on a Pi.
+
+**Open, decided at port time, not here:** the neon glow breaks unslop's "no glowing shadows" floor rule, so a ported neon face needs a Phase 0 line naming glow as content (like the ambient-motion carve-out); the stage stays dark in the day palette as content (the Vinyl record precedent, `--face-bg` only for whatever sits outside the art); two-neon faces (tube, horizon, arcade) keep the second hue to one quantity for FCE-1. fastclock's config still shows Minimalismo (see the Vinyl entry).
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Vinyl face built and deployed to fastclock; not on glass yet
+
+Nick picked Vinyl Grooves from the Radiant lookbook (entry below).
+
+**Built** (commit e8a80aa, local, not pushed):
+- `public/shaders/vinyl-grooves.html`: the Radiant page vendored (MIT, pbakaus/radiant at 59e9f48), its header lists every change: a transparent premultiplied canvas that paints only the record (the kiosk mat shows around it), no title label, no mouse or touch, a SPECTRUM uniform (prismatic or warm), a `window.vinylGrooves` API (getState, setPaused, setParam), and a loop that stops while paused or hidden.
+- `src/apps/clock/VinylClock.tsx` with its meta and the `face.vinyl` schema (rpm 33 or 45, shimmer prismatic or warm). The page sits in an iframe that pauses when the face is inactive and unmounts a minute later; the ai-face frame guard watches it, sampled on the useClockHands tick through a zero-delay timeout (set-state-in-effect); a safe wrapper turns any throw into the "Record unavailable" tell.
+- Hands from the meta spec (hour 280 by 28, minute 380 by 20, no second hand: the record's spin is the motion). Tonearm in `vinyl-geometry.ts`: Technics SL-1200 ratios, pivot (945, 55) under the bezel, arm 674, the needle lands on the lead-in (r 425) at :00 and reaches the run-out (r 130) at :60, solved with the law of cosines.
+- Hands and arm read `--sheet-ink`, the mode-stable role, because the record is dark in both palettes; it is an HSL triplet, so the TSX resolves it as `hsl(var(--sheet-ink))` by hand rather than through resolveSpecColor.
+- Tests: `vinyl-geometry.test.ts` (8) and `vinyl-shader-contract.test.ts` (7, pins the vendored page's API and changes).
+- `scripts/face-preview.mjs` (`npm run preview:face -- <id> [--time HH:MM:SS]`): headless Chrome over CDP, frozen Date, cycles the Clock app through `window.__nav`, writes `public/<id>-preview.png`. It wrote `public/vinyl-preview.png`.
+
+**Verified:** npm test 125 files and 1391 tests, lint, check:tokens, build. check:rules has one blocker that predates this work (ICO-2, the emoji icon in `src/apps/todo/index.ts`). Dev kiosk at 1000 and 1080: the page's frame counter advances, day palette (white mat, dark record, white hands) and night palette both seen. Deployed with DEPLOY_ANYWAY=1; the script's health poll confirmed e8a80aa on fastclock.
+
+**Not done:** fastclock's config still shows Minimalismo. Two config POSTs failed (a 400 on the patch shape, then a malformed body) and Nick stopped the third; a backup `config/fleet.json.bak-before-vinyl-2026-10-30` was left on the Pi. No fps or temperature measured on the Pi, nothing seen on glass, no Safari check, no closing unslop audit.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Radiant shaders assessed for watchfaces, draft lookbook, no kiosk code
+
+Nick: "check this lib https://radiant-shaders.com/gallery/all, which ones we can use for super awesome watchfaces?"
+
+**Library facts** (repo `pbakaus/radiant`, MIT, attribution optional): 88 shaders on the site, 94 in the repo; 61 WebGL, 27 Canvas 2D. Each is one self-contained HTML file (10 to 35 KB), hosted at `https://radiant-shaders.com/<id>` with no frame-ancestors header, so it embeds cross-origin. Every file listens for `postMessage({type:'param', name, value})` with two to four numeric params (speed, density, complexity), pauses on `visibilitychange`, caps DPR at 2, and draws its own title label at the top of the canvas. Tags: `object` (centred, 20 shaders) fits the disc; `fill` composes for a rectangle. Six colour schemes are CSS `filter` on the iframe (hue-rotate, grayscale), so night can be a filter too.
+
+**Draft:** `docs/drafts/radiant-shaders-lookbook.html`, served by the Vite dev server at `/docs/drafts/radiant-shaders-lookbook.html`. 21 candidates clipped to a disc with Minimalismo's hands (spec numbers from the meta) redrawn once a second over each, pointer-events off on the frames. Frames are mounted by an IntersectionObserver only while on screen: Chrome keeps about 16 live WebGL contexts per page and the first version lost half of them.
+
+**Verified:** all 21 draw in the Browser pane (Chrome engine) at 1480 wide, after about 15 s for a row's first load. Not seen in Safari, not measured on any Pi.
+
+**Shortlist, A = becomes the clock:** Vinyl Grooves (already round, tonearm as hour), Analog Drift (Lissajous ratio hour:minute, canvas 2D), Golden Throne (counter-rotating mandala, layers per hour and minute), Chladni Resonance ((m, n) mode from the time), Magnetic Field (poles at the hand angles), Eclipse Glow (lit arc as daylight), Moire Interference, Tesseract Shadow, Phyllotaxis (one seed a minute), Clockwork Mind (needs re-centring, composed off-centre), Pendulum Wave (composed as a top row, weak in a disc). **B = dial under hands:** Smolder, Stardust Veil, Aurora Curtain, Topographic, Dither Gradient, Vortex, Moonlit Ripple; Chromatic Bloom and Liquid Gold are too bright for white hands; Radiant Geometry too dense. **Skipped:** raymarched or refractive ones (Event Horizon, Rain on Glass, Rain on Umbrella, Metamorphosis, Navier-Stokes) on Pi cost; 18K-particle canvas ones (Luminous Silt, Murmuration, Glitter Storm) on CPU; corner- or horizon-composed fills (Gothic Filigree, Digital Rain, Neon Drive); flashing ones (Strobe Geometry, Thunder Sermon, the lasers) for a bedroom clock; glitch ones (Vintage Static, Hologram Glitch) because a glitch on a wall clock reads as a fault.
+
+**Integration shape, not built:** the `AvatarFrame` pattern in `src/apps/ai-face/` already does everything a shader face needs (iframe, unmount 60 s after going inactive for KIO-1, frame guard full → half → paused at median fps under 24, `safeController` so a lost GL context cannot unmount the kiosk). A shader face would vendor the one HTML file into `public/`, strip its title label, add a `TIME` param next to the existing ones, and overlay the hands as a normal face component so `--face-*` and the hand source of truth stay in React.
+
+**Open:** Pi 5 and Pi 4 frame rates for the WebGL picks (fastclock reachable, unmeasured); whether a shader face is one `face.shader` with a shader option or one face id per shader (one accent, one meta each argues per face); Nick's pick from the lookbook. This worktree's `node_modules` lacks `@fontsource-variable/nunito` (the kiosk root 500s in dev), so `npm ci` before tests or build.
 ## 2026-10-30 · branch claude/generative-world-tracks-b89fa4 · Rally on fastclock: deployed, then overwritten by the Horizon session within minutes
 
 Nick: "Yes, deploy". fastclock was running the radiant-shaders session's Horizon build (`c0a08e0`, Horizon pinned), so by Nick's choice ("Combine both") I applied the uncommitted Rally work onto `c0a08e0` in a throwaway worktree, regenerated the derived files, ran `./scripts/gates.sh` (exit 0, 1412 tests) and deployed a detached commit `c4ddfa1` with `DEPLOY_ANYWAY=1`; `deploy.sh` verified the stamp. That session redeployed its own `859f958` at 02:28 local, six minutes later, so Rally is not on the device.

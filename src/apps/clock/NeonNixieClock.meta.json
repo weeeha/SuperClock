@@ -1,0 +1,39 @@
+{
+  "kind": "face",
+  "id": "neon-nixie",
+  "purpose": "Four nixie tubes in a two by two block, hours over minutes: glass envelopes, a faint mesh, all ten cathodes stacked dimly behind and the lit numeral glowing orange, with two small neon dots blinking the seconds between the rows.",
+  "accent": {
+    "where": "the lit numerals and the seconds dots, one orange; the glass and the unlit cathodes are dim",
+    "color": "#ff7012"
+  },
+  "night": {
+    "recipe": "The lit disc is content and stays dark in both palettes (the Vinyl precedent); the mat around it, visible on the square device, flips with --face-bg, and night dimming comes from the kiosk brightness. For a dark room the glow option pulls the halo in.",
+    "tokens": [
+      "--face-bg"
+    ]
+  },
+  "options": [
+    {
+      "key": "glow",
+      "intent": "full is the neon as designed; soft keeps the tubes and their white cores but pulls the halo in, the setting for a clock by the bed."
+    }
+  ],
+  "antiPatterns": [
+    {
+      "rule": "Never paint the neon or the stage with --face-ink or --face-bg",
+      "why": "the lit disc is content and stays dark in both palettes, like the Vinyl record; the day ink is black and would vanish on it, so only the mat outside the disc reads --face-bg"
+    },
+    {
+      "rule": "Never draw the still parts live every frame",
+      "why": "nine glow passes per stroke made the drafts cost 17 to 20 ms a frame at 1080; anything that changes at most once a minute goes through N.layer in src/apps/clock/neon/faces/nixie.ts or the Pi drops frames"
+    },
+    {
+      "rule": "Never light more than one numeral per tube",
+      "why": "a real nixie lights one cathode; a second lit numeral reads as a fault and the stacked dim cathodes stop reading as depth"
+    }
+  ],
+  "parity": {
+    "lvgl": null
+  },
+  "specless": "Drawn on a canvas by src/apps/clock/neon/faces/nixie.ts in the shared 1000-unit space. Tube envelopes, stacked cathodes and stroked numerals have no place in the spec vocabulary of solid hands and two tick rings, so the numbers live in the draw module."
+}

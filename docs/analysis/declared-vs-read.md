@@ -7,8 +7,8 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 ## Summary
 
 - Apps: 18 registered; 17 with a schema; config read by 18 (safeParse 17, parse 0, cast 0, raw 1); never read by 0.
-- Faces: 14 registered; 13 with a schema; faceConfig read by 13 (safeParse 13, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
-- Schema fields: 92 declared (58 app, 34 face); 6 unread (6 app, 0 face).
+- Faces: 20 registered; 19 with a schema; faceConfig read by 19 (safeParse 19, parse 0, cast 0, raw 0); never read by 1; night-exempt 7.
+- Schema fields: 99 declared (58 app, 41 face); 6 unread (6 app, 0 face).
 
 ## Apps
 
@@ -46,8 +46,14 @@ Heuristics, deliberately simple: a schema field counts as read when its key appe
 | flip | FlipClock | safeParse | 2 | none | none | 0 | yes |
 | floral | FloralClock | safeParse | 2 | none | none | 0 | yes |
 | minimalismo | MinimalismoClock | none | 0 | none | --face-bg --face-ink | 0 | no |
+| neon-horizon | NeonHorizonClock | safeParse | 1 | none | --face-bg | 0 | no |
+| neon-nixie | NeonNixieClock | safeParse | 1 | none | --face-bg | 0 | no |
+| neon-plasma | NeonPlasmaClock | safeParse | 1 | none | --face-bg | 0 | no |
+| neon-sign | NeonSignClock | safeParse | 1 | none | --face-bg | 0 | no |
+| neon-tube | NeonTubeClock | safeParse | 1 | none | --face-bg | 0 | no |
 | productivity | ProductivityClock | safeParse | 3 | none | none | 0 | yes |
 | rally | RallyClock | safeParse | 6 | none | --face-bg --face-ink --face-ink-muted --face-shadow | 0 | no |
 | square | SquareClock | safeParse | 1 | none | none | 0 | yes |
 | strokes | StrokesClock | safeParse | 1 | none | --face-bg --face-ghost --face-plate | 0 | no |
+| vinyl | VinylClock | safeParse | 2 | none | --face-bg --face-ink --face-ink-muted | 0 | no |
 | world | WorldClock | safeParse | 2 | none | none | 0 | yes |

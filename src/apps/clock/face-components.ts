@@ -12,6 +12,12 @@ import DepletionClock from './DepletionClock';
 import ApertureClock from './ApertureClock';
 import DaylightClock from './DaylightClock';
 import StrokesClock from './StrokesClock';
+import VinylClock from './VinylClock';
+import NeonTubeClock from './NeonTubeClock';
+import NeonSignClock from './NeonSignClock';
+import NeonNixieClock from './NeonNixieClock';
+import NeonPlasmaClock from './NeonPlasmaClock';
+import NeonHorizonClock from './NeonHorizonClock';
 import RallyClock from './RallyClock';
 
 export interface FaceProps {
@@ -39,6 +45,12 @@ export const FACE_COMPONENTS: Record<string, FaceComponent> = {
   aperture: ApertureClock,
   daylight: DaylightClock,
   strokes: StrokesClock,
+  vinyl: VinylClock,
+  'neon-tube': NeonTubeClock,
+  'neon-sign': NeonSignClock,
+  'neon-nixie': NeonNixieClock,
+  'neon-plasma': NeonPlasmaClock,
+  'neon-horizon': NeonHorizonClock,
   rally: RallyClock,
 };
 
@@ -56,5 +68,11 @@ export const SWIPE_CYCLE_ORDER: FaceComponent[] = [
   ApertureClock,
   DaylightClock,
   StrokesClock,
+  VinylClock,
+  NeonTubeClock,
+  NeonSignClock,
+  NeonNixieClock,
+  NeonPlasmaClock,
+  NeonHorizonClock,
   RallyClock,
 ];

@@ -54,7 +54,14 @@ export const CEILINGS = {
   // climbing back.
   // 118 → 100 on 2026-10-23: SUR-1 moved six apps from hardcoded black/white
   // and neutral greys onto the --face-* roles.
-  colours: 100,
+  // 100 → 103 on 2026-10-30, Nick's decision ("Allow them"): the neon faces
+  // (src/apps/clock/neon/neon.ts) brought six hues; three reuse colours
+  // already on the tree within an RGB distance of 14, and the other three,
+  // cyan #00f0ff, magenta #ff2bd6 and pink #ff3d7f, had no near twin (the
+  // nearest were 48 to 79 away: bluer, paler, redder). A face palette is
+  // content and Nick's call; this is the first raise and it is recorded so
+  // the next one has to be argued the same way.
+  colours: 103,
 };
 
 // Files whose colours are data rather than design, so they are not counted.
@@ -148,6 +155,11 @@ export const BANNED_HUE_LEDGER = {
   // #a05ad0, a condition colour — the only one outside a face, and the only
   // one a design pass will reach on its own.
   'src/apps/weather/weather-utils.ts': 1,
+  // #a855f7, the Plasma face's violet in the shared neon palette. Plasma is an
+  // artistic face, but the palette lives in the runtime the five neon faces
+  // share, which the registry-driven exemption cannot see. Ledgered on
+  // 2026-10-30 by Nick's decision rather than recoloured to pass.
+  'src/apps/clock/neon/neon.ts': 1,
 };
 
 /**

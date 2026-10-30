@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon port bench</title>
+<style>
+  html, body { margin: 0; background: #000; color: #ddd; font: 14px ui-monospace, monospace; }
+  canvas { display: block; width: 100vmin; height: 100vmin; }
+  pre { position: fixed; left: 8px; bottom: 8px; margin: 0; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<pre id="result"></pre>
+<!-- Dev-server only: Vite transforms the TS modules this imports. -->
+<script type="module" src="./bench.js"></script>
+</body>
+</html>

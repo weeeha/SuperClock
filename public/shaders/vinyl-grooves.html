@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinyl Grooves</title>
+<!--
+  Vendored from Radiant (https://radiant-shaders.com, https://github.com/pbakaus/radiant)
+  static/vinyl-grooves.html at commit 59e9f48, MIT License, Copyright (c) 2025 Paul Bakaus.
+
+  SuperClock changes, so the page can be a clock face's dial:
+  - the record renders on a transparent canvas (premultiplied alpha), so the
+    kiosk's --face-bg mat shows around it in both palettes; the page's own
+    dark background, ambient glow, vignette outside the disc and title label
+    are gone;
+  - the mouse and touch rotation is gone (the kiosk owns gestures);
+  - u_spectrum scales the diffraction saturation (1 prismatic, 0 warm);
+  - a page API, window.vinylGrooves, lets the face pause the loop, set
+    params and read a frame counter for the frame guard; the loop stops
+    while paused or hidden instead of drawing into a hidden document;
+  - the Radiant postMessage param contract is kept and routed to setParam.
+-->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+(function() {
+  var canvas = document.getElementById('canvas');
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var gl = canvas.getContext('webgl', { alpha: true, antialias: false, preserveDrawingBuffer: false, premultipliedAlpha: true });
+  if (!gl) return;
+
+  // Tunable parameters
+  var ROTATION_SPEED = 1.0;   // 1.0 = 33.333 rpm
+  var GROOVE_DENSITY = 1.0;
+  var SPECTRUM = 1.0;         // diffraction saturation: 1 prismatic, 0 warm
+
+  var vertSrc = [
+    'attribute vec2 a_pos;',
+    'void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }'
+  ].join('\n');
+
+  var fragSrc = [
+    'precision highp float;',
+    'uniform float u_time;',
+    'uniform vec2 u_res;',
+    'uniform float u_rotSpeed;',
+    'uniform float u_grooveDensity;',
+    'uniform float u_spectrum;',
+    '',
+    '#define PI 3.14159265359',
+    '#define TAU 6.28318530718',
+    '',
+    'float hash(float n) {',
+    '  return fract(sin(n) * 43758.5453123);',
+    '}',
+    '',
+    'float hash2(vec2 p) {',
+    '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
+    '}',
+    '',
+    'float vnoise2(vec2 p) {',
+    '  vec2 i = floor(p);',
+    '  vec2 f = fract(p);',
+    '  f = f * f * (3.0 - 2.0 * f);',
+    '  float a = hash2(i);',
+    '  float b = hash2(i + vec2(1.0, 0.0));',
+    '  float c = hash2(i + vec2(0.0, 1.0));',
+    '  float d = hash2(i + vec2(1.0, 1.0));',
+    '  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);',
+    '}',
+    '',
+    'vec3 hsv2rgb(float h, float s, float v) {',
+    '  vec3 c = vec3(h, s, v);',
+    '  vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);',
+    '  return c.z * mix(vec3(1.0), rgb, c.y);',
+    '}',
+    '',
+    '// V-shaped groove cross-section: 1.0 at the walls, 0.0 at the floor.',
+    'float grooveProfile(float r, float density) {',
+    '  float grooveFreq = 280.0 * density;',
+    '  float grooveFract = fract(r * grooveFreq);',
+    '  float profile = abs(grooveFract - 0.5) * 2.0;',
+    '  return pow(profile, 0.7);',
+    '}',
+    '',
+    '// The audio waveform cut into the groove walls.',
+    'float grooveWaveform(float angle, float r) {',
+    '  float wave = 0.0;',
+    '  wave += sin(angle * 3.0 + r * 47.0) * 0.4;',
+    '  wave += sin(angle * 7.0 + r * 91.0 + 1.3) * 0.3;',
+    '  wave += sin(angle * 17.0 + r * 157.0 + 2.7) * 0.2;',
+    '  wave += sin(angle * 31.0 + r * 233.0 + 4.1) * 0.1;',
+    '  return wave;',
+    '}',
+    '',
+    '// The grooves act as a diffraction grating; u_spectrum scales the',
+    '// saturation of the split light, from the full rainbow to a warm sheen.',
+    'vec3 diffractionColor(float gratingAngle, float intensity) {',
+    '  float hue1 = fract(gratingAngle * 0.5 + 0.0);',
+    '  float hue2 = fract(gratingAngle * 0.5 + 0.33);',
+    '  float hue3 = fract(gratingAngle * 0.5 + 0.67);',
+    '  vec3 color1 = hsv2rgb(hue1, 0.7 * u_spectrum, 1.0) * 0.6;',
+    '  vec3 color2 = hsv2rgb(hue2, 0.5 * u_spectrum, 0.8) * 0.25;',
+    '  vec3 color3 = hsv2rgb(hue3, 0.4 * u_spectrum, 0.6) * 0.15;',
+    '  vec3 warm = vec3(1.0, 0.86, 0.7);',
+    '  return (color1 + color2 + color3) * mix(warm, vec3(1.0), u_spectrum) * intensity;',
+    '}',
+    '',
+    'void main() {',
+    '  vec2 uv = (gl_FragCoord.xy - u_res * 0.5) / min(u_res.x, u_res.y);',
+    '  float t = u_time * u_rotSpeed;',
+    '',
+    '  float dist = length(uv);',
+    '  float angle = atan(uv.y, uv.x);',
+    '',
+    '  float recordRadius = 0.44;',
+    '  float labelRadius = recordRadius * 0.27;',
+    '  float grooveInner = labelRadius + 0.01;',
+    '  float grooveOuter = recordRadius - 0.015;',
+    '',
+    '  vec3 col = vec3(0.0);',
+    '  float alpha = 0.0;',
+    '',
+    '  if (dist < recordRadius) {',
+    '    float rpm = 33.333;',
+    '    float rotationAngle = t * rpm / 60.0 * TAU;',
+    '    float rotatedAngle = angle + rotationAngle;',
+    '',
+    '    float rNorm = (dist - grooveInner) / (grooveOuter - grooveInner);',
+    '    rNorm = clamp(rNorm, 0.0, 1.0);',
+    '',
+    '    vec3 vinylBase = vec3(0.02, 0.018, 0.016);',
+    '    vinylBase += vec3(0.005) * vnoise2(vec2(dist * 20.0, angle * 3.0));',
+    '    col = vinylBase;',
+    '',
+    '    if (dist > grooveInner && dist < grooveOuter) {',
+    '      float waveform = grooveWaveform(rotatedAngle, dist) * 0.0004;',
+    '      float modulatedProfile = grooveProfile(dist + waveform, u_grooveDensity);',
+    '',
+    '      float grooveShading = mix(0.015, 0.03, modulatedProfile);',
+    '      col = vec3(grooveShading, grooveShading * 0.95, grooveShading * 0.9);',
+    '',
+    '      vec2 light1Pos = vec2(0.6, 0.5);',
+    '      vec2 light2Pos = vec2(-0.5, -0.4);',
+    '      vec2 toLight1 = normalize(light1Pos - uv);',
+    '      vec2 toLight2 = normalize(light2Pos - uv);',
+    '      vec2 radialDir = normalize(uv);',
+    '      vec2 tangentDir = vec2(-radialDir.y, radialDir.x);',
+    '      float lightGrooveAngle1 = dot(toLight1, tangentDir);',
+    '      float lightGrooveAngle2 = dot(toLight2, tangentDir);',
+    '      float lightDist1 = length(light1Pos - uv);',
+    '      float lightDist2 = length(light2Pos - uv);',
+    '      float lightFalloff1 = 1.0 / (1.0 + lightDist1 * lightDist1 * 2.0);',
+    '      float lightFalloff2 = 1.0 / (1.0 + lightDist2 * lightDist2 * 3.0);',
+    '',
+    '      float gratingPhase1 = lightGrooveAngle1 + rotatedAngle * 0.05;',
+    '      vec3 diffraction1 = diffractionColor(gratingPhase1, lightFalloff1);',
+    '      float gratingPhase2 = lightGrooveAngle2 + rotatedAngle * 0.05 + 0.5;',
+    '      vec3 diffraction2 = diffractionColor(gratingPhase2, lightFalloff2);',
+    '      float wallReflectivity = smoothstep(0.3, 0.8, modulatedProfile);',
+    '',
+    '      float specAngle1 = acos(clamp(lightGrooveAngle1, -1.0, 1.0));',
+    '      float specBand1 = exp(-pow(specAngle1 - PI * 0.25, 2.0) * 8.0);',
+    '      specBand1 += exp(-pow(specAngle1 - PI * 0.75, 2.0) * 8.0) * 0.5;',
+    '      float specAngle2 = acos(clamp(lightGrooveAngle2, -1.0, 1.0));',
+    '      float specBand2 = exp(-pow(specAngle2 - PI * 0.3, 2.0) * 6.0) * 0.6;',
+    '',
+    '      vec3 ambientReflection = vec3(0.04, 0.03, 0.025) * lightFalloff1;',
+    '      vec3 grooveReflection = vec3(0.0);',
+    '      grooveReflection += diffraction1 * specBand1 * wallReflectivity * 1.2;',
+    '      grooveReflection += diffraction2 * specBand2 * wallReflectivity * 0.8;',
+    '',
+    '      vec3 warmSpec = vec3(0.95, 0.75, 0.5);',
+    '      float specIntensity1 = specBand1 * lightFalloff1 * wallReflectivity;',
+    '      float specIntensity2 = specBand2 * lightFalloff2 * wallReflectivity;',
+    '      vec3 specularHighlight = warmSpec * (specIntensity1 * 0.15 + specIntensity2 * 0.08);',
+    '',
+    '      float sheen = exp(-lightDist1 * lightDist1 * 3.0) * 0.08;',
+    '      sheen += exp(-lightDist2 * lightDist2 * 4.0) * 0.03;',
+    '      vec3 sheenColor = vec3(0.2, 0.15, 0.1) * sheen;',
+    '',
+    '      float microGroove = fract(dist * 280.0 * u_grooveDensity);',
+    '      float microFlicker = pow(abs(sin(microGroove * PI)), 12.0);',
+    '      float microAngle = sin(rotatedAngle * 3.0 + dist * 200.0);',
+    '      float microSpec = microFlicker * max(microAngle, 0.0) * lightFalloff1 * 0.1;',
+    '',
+    '      float bandPhase = rotatedAngle + dist * 60.0;',
+    '      float rainbowBand = sin(bandPhase * 2.0) * 0.5 + 0.5;',
+    '      rainbowBand = pow(rainbowBand, 3.0);',
+    '      float rainbowHue = fract(dist * 8.0 + angle * 0.3 + t * 0.02);',
+    '      vec3 rainbowColor = hsv2rgb(rainbowHue, 0.6 * u_spectrum, 0.4) * rainbowBand;',
+    '      rainbowColor *= specBand1 * lightFalloff1 * 0.3;',
+    '',
+    '      col += ambientReflection;',
+    '      col += grooveReflection;',
+    '      col += specularHighlight;',
+    '      col += sheenColor;',
+    '      col += vec3(microSpec) * vec3(1.0, 0.9, 0.8);',
+    '      col += rainbowColor;',
+    '',
+    '      float edgeFade = smoothstep(0.0, 0.03, rNorm) * smoothstep(1.0, 0.97, rNorm);',
+    '      col *= edgeFade * 0.9 + 0.1;',
+    '    }',
+    '',
+    '    if (dist < labelRadius) {',
+    '      float labelR = dist / labelRadius;',
+    '      vec3 labelColor = mix(vec3(0.45, 0.30, 0.12), vec3(0.30, 0.18, 0.08), labelR);',
+    '      float paperTex = vnoise2(vec2(cos(rotatedAngle) * dist * 50.0, sin(rotatedAngle) * dist * 50.0));',
+    '      labelColor += vec3(0.03, 0.02, 0.01) * paperTex;',
+    '      float ring1 = smoothstep(0.72, 0.74, labelR) - smoothstep(0.76, 0.78, labelR);',
+    '      labelColor += vec3(0.1, 0.07, 0.03) * ring1;',
+    '      float spindleHole = smoothstep(0.08, 0.06, labelR);',
+    '      labelColor = mix(labelColor, vec3(0.01), spindleHole);',
+    '      vec2 light1Pos = vec2(0.6, 0.5);',
+    '      float labelLight = exp(-length(light1Pos - uv) * length(light1Pos - uv) * 4.0);',
+    '      labelColor += vec3(0.15, 0.1, 0.05) * labelLight;',
+    '      col = labelColor;',
+    '    }',
+    '',
+    '    float edgeDist = recordRadius - dist;',
+    '    float edgeHighlight = smoothstep(0.008, 0.0, edgeDist) * 0.3;',
+    '    col += vec3(0.15, 0.12, 0.08) * edgeHighlight;',
+    '    float edgeShadow = smoothstep(0.02, 0.0, edgeDist);',
+    '    col *= 1.0 - edgeShadow * 0.3;',
+    '',
+    '    float vig = 1.0 - dot(uv * 0.8, uv * 0.8);',
+    '    vig = smoothstep(0.0, 1.0, vig);',
+    '    col *= 0.7 + vig * 0.3;',
+    '    col = col / (1.0 + col * 0.2);',
+    '    col = pow(max(col, 0.0), vec3(0.95, 0.98, 1.05));',
+    '',
+    '    alpha = smoothstep(recordRadius, recordRadius - 0.002, dist);',
+    '  } else {',
+    '    // Drop shadow on the mat: black at the shadow\'s own alpha, so it',
+    '    // darkens whatever the kiosk paints behind the record.',
+    '    float shadowDist = dist - recordRadius;',
+    '    alpha = exp(-shadowDist * shadowDist * 80.0) * 0.25;',
+    '  }',
+    '',
+    '  gl_FragColor = vec4(col * alpha, alpha);',
+    '}'
+  ].join('\n');
+
+  function compile(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(s));
+    }
+    return s;
+  }
+
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vertSrc));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragSrc));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(prog));
+  }
+  gl.useProgram(prog);
+
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  var uTime = gl.getUniformLocation(prog, 'u_time');
+  var uRes = gl.getUniformLocation(prog, 'u_res');
+  var uRotSpeed = gl.getUniformLocation(prog, 'u_rotSpeed');
+  var uGrooveDensity = gl.getUniformLocation(prog, 'u_grooveDensity');
+  var uSpectrum = gl.getUniformLocation(prog, 'u_spectrum');
+
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var needsResize = true;
+
+  function resize() {
+    needsResize = false;
+    var w = Math.round(canvas.clientWidth * dpr);
+    var h = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+    }
+  }
+
+  // ── Loop state, exposed through window.vinylGrooves ──
+  var frame = 0;
+  var paused = false;
+  var running = false;
+
+  function render(now) {
+    running = false;
+    if (paused || document.hidden) return;
+    if (needsResize) resize();
+    gl.uniform1f(uTime, prefersReduced ? 0.0 : now * 0.001);
+    gl.uniform1f(uRotSpeed, ROTATION_SPEED);
+    gl.uniform1f(uGrooveDensity, GROOVE_DENSITY);
+    gl.uniform1f(uSpectrum, SPECTRUM);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    frame++;
+    start();
+  }
+
+  function start() {
+    if (running || paused || document.hidden) return;
+    running = true;
+    requestAnimationFrame(render);
+  }
+
+  function setParam(name, value) {
+    switch (name) {
+      case 'ROTATION_SPEED': ROTATION_SPEED = value; break;
+      case 'GROOVE_DENSITY': GROOVE_DENSITY = value; break;
+      case 'SPECTRUM': SPECTRUM = value; break;
+    }
+  }
+
+  function setPaused(p) {
+    paused = !!p;
+    start();
+  }
+
+  window.addEventListener('resize', function () { needsResize = true; });
+  document.addEventListener('visibilitychange', start);
+
+  // Radiant's param contract, kept so the file still answers the gallery's
+  // postMessage protocol.
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'param') setParam(e.data.name, e.data.value);
+  });
+
+  window.vinylGrooves = {
+    getState: function () { return { frame: frame, paused: paused, reducedMotion: prefersReduced }; },
+    setPaused: setPaused,
+    setParam: setParam
+  };
+
+  resize();
+  start();
+})();
+</script>
+</body>
+</html>
