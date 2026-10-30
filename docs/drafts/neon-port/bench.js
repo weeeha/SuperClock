@@ -28,7 +28,9 @@ async function live(id) {
   canvas.height = px;
   const loop = (now) => {
     try {
-      renderFrame(ctx, face, kit, state, neonTime(at(), (now - t0) / 1000));
+      // ?a=<seconds> pins the ambient clock, for repeatable poses of moving parts.
+      const pinned = q.get('a');
+      renderFrame(ctx, face, kit, state, neonTime(at(), pinned !== null ? Number(pinned) : (now - t0) / 1000));
       window.__ready = true;
     } catch (e) {
       window.__error = String(e && e.stack || e);

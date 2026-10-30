@@ -69,13 +69,13 @@ try {
   } else {
     mkdirSync(join(here, 'shots'), { recursive: true });
     for (const id of ids) for (const t of times) {
-      const search = `face=${id}&t=${t}`;
+      const search = `face=${id}&t=${t}${process.env.NEON_Q ? '&' + process.env.NEON_Q : ''}`;
       await send('Page.navigate', { url: `${origin}/docs/drafts/neon-port/index.html?${search}` });
       const ok = await waitFor(`location.search.includes(${JSON.stringify(search)}) && (window.__ready || window.__error)`, 20000);
       await sleep(1200);
       const err = await evaluate('window.__error || ""');
       const shot = await send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 1000, height: 1000, scale: 1 } });
-      const file = join(here, 'shots', `${id}-${t.replace(/:/g, '')}.png`);
+      const file = join(here, 'shots', `${id}-${t.replace(/:/g, '')}${process.env.NEON_Q ? '-' + process.env.NEON_Q.replace(/[^\w]/g, '') : ''}.png`);
       writeFileSync(file, Buffer.from(shot.data, 'base64'));
       if (!ok || err) bad++;
       console.log(`${file}${err ? '  ERROR: ' + err.split('\n')[0] : ''}`);
