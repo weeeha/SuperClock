@@ -6,6 +6,30 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · five neon faces in the kiosk, Horizon live on fastclock
+
+Nick picked "Build the top 5" from the neon drafts (entry below), then "Allow them" on the colour decision, then asked to launch Horizon on the clock.
+
+**Built** (commit 62bfe76, local, not pushed): `neon-tube`, `neon-sign`, `neon-nixie`, `neon-plasma`, `neon-horizon`, scaffolded with `new:face` (category artistic, names Neon Tube, Neon Sign, Nixie, Plasma, Horizon).
+- `src/apps/clock/neon/neon.ts`: the typed runtime (palette trimmed to the six hues in use, additive glow, glowDot, seg7, `layer`, an offscreen cache restamped by minute or never, and `renderFrame`, the one render path). `neonTime` reads `clockAngles`, now exported from `useClockHands.ts`, which the hook also uses, so hand angles still live in one place (KIO-3).
+- `NeonCanvas.tsx`: an isActive-gated rAF loop at 30 fps, one frame a second under reduced motion, DPR capped at 1, stops on a draw throw instead of flooding the log.
+- `faces/tube.ts` ported here as the reference; sign and horizon, nixie and plasma by two Sonnet agents at medium effort (about 310k tokens), each checked against its draft shot here.
+- Each `Neon*Clock.tsx` is a `bg-(--face-bg)` mat around the canvas; the lit disc is content and stays dark in both palettes (the Vinyl precedent). Each face schema has one option, `glow` full or soft. Metas are specless with reasons; accents name the one quantity.
+- `neon-faces.test.ts`: 300 frames per face at five times of day against a recording fake canvas (no throw, finite arguments, balanced save/restore, no shadowBlur/filter/getImageData), registered ids, angles from clockAngles. It failed on a planted unbalanced save and shadowBlur before being trusted.
+- Unslop Phase 0 gained "Neon glow is content on the neon faces". `app-capabilities.ts`: clock now declares `ticks` (the directory owns a rAF loop).
+- Design ratchet, by Nick's decision: colours ceiling 100 to 103 (cyan, magenta, pink had no near twin; violet, orange and the core white reuse tree colours within an RGB distance of 14), and `src/apps/clock/neon/neon.ts` ledgered for the plasma violet. Both recorded in `scripts/lib/design-ratchet.mjs`.
+- `docs/drafts/neon-port/`: the bench page and `bench.mjs` (time and shot through renderFrame; `NEON_CDP` drives an existing Chromium).
+
+**Verified:** all gates and 126 files / 1404 tests; check:rules has only the old ICO-2 Todo emoji. Mac bench: 0.7 to 1.3 ms per 1080 frame for all five. Previews captured from the real kiosk (`npm run preview:face`); the first Sign capture was black (a timing miss in the capture script) and was retaken. Dev kiosk: day and night, mat flips, canvas fills at 1000. Deployed with DEPLOY_ANYWAY=1, health verified 62bfe76.
+
+**fastclock now shows Horizon:** the Clock instance's faceId is `neon-horizon` and the playlist is pinned to `i-clock` alone (it held all 18 instances). Backup `config/fleet.json.bak-before-neon-horizon-2026-10-30-*` on the Pi. The kiosk browser kept the pre-deploy page and fell back to Minimalismo for an unknown face id until `pkill -TERM chromium` let the autostart loop respawn it: a deploy that adds a face needs that reload. On glass at 01:18, night: digits, ridge, grid, sun set below the ridge with its glow. Kiosk browser CPU 26% of one core on Horizon against 13% on Minimalismo, 56.5 C, throttled=0x0.
+
+**Incident:** a throwaway headless Chromium started on fastclock to time the faces opened a GNOME keyring unlock prompt on the panel. Nick saw it; the `gcr-prompter` process was killed, the test profile removed, nothing typed. Headless on the Pi also has no GL display (software only), so that route was dropped; any future Chromium there needs `--password-store=basic`.
+
+**Open:** the other four faces not seen on glass; no Pi 4 measurement (smallclock offline, squareclock untried); the 18-instance playlist to restore when Nick is done with Horizon; Nick's mid-build messages about an eye that moves like a mirror and a face that dents under a finger, waiting on which face he meant.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · twenty neon face drafts, a live gallery, no kiosk code
 
 Nick: "lets build 20 awesome faces with intense cool neon colors". Per the draft-before-build rule they exist as a live HTML gallery first; picks get ported to real faces after.

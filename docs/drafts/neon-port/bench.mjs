@@ -3,6 +3,9 @@
 //       prints ms per frame at 1080 for each face (lower is better)
 //   node docs/drafts/neon-port/bench.mjs shot neon-sign [--t 10:09:30,23:58:45]
 //       writes docs/drafts/neon-port/shots/<id>-<HHMMSS>.png (git-ignored)
+// NEON_CDP=http://127.0.0.1:9333 drives an already-running Chromium instead
+// of launching one (for timing on a Pi through an ssh tunnel); NEON_URL is
+// then the dev server as that machine reaches it.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,15 +23,23 @@ if (!['time', 'shot'].includes(mode) || !ids.length) {
 }
 const origin = process.env.NEON_URL || 'http://localhost:5180';
 const chrome = process.env.CHROME_PATH || ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/chromium'].find(existsSync);
-const profile = mkdtempSync(join(tmpdir(), 'neon-port-'));
-const proc = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--window-size=1000,1000', '--hide-scrollbars', '--no-first-run', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
-const wsUrl = await new Promise((resolve, reject) => {
-  let buf = '';
-  proc.stderr.on('data', (d) => { buf += d; const m = buf.match(/DevTools listening on (ws:\/\/\S+)/); if (m) resolve(m[1]); });
-  proc.on('exit', (c) => reject(new Error(`chrome exited ${c}`)));
-  setTimeout(() => reject(new Error('chrome did not start')), 15000);
-});
-const port = new URL(wsUrl).port;
+const remote = process.env.NEON_CDP;
+let proc = null;
+let profile = null;
+let port;
+if (remote) {
+  port = new URL(remote).port;
+} else {
+  profile = mkdtempSync(join(tmpdir(), 'neon-port-'));
+  proc = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--window-size=1000,1000', '--hide-scrollbars', '--no-first-run', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  const wsUrl = await new Promise((resolve, reject) => {
+    let buf = '';
+    proc.stderr.on('data', (d) => { buf += d; const m = buf.match(/DevTools listening on (ws:\/\/\S+)/); if (m) resolve(m[1]); });
+    proc.on('exit', (c) => reject(new Error(`chrome exited ${c}`)));
+    setTimeout(() => reject(new Error('chrome did not start')), 15000);
+  });
+  port = new URL(wsUrl).port;
+}
 const page = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === 'page');
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
@@ -51,6 +62,8 @@ try {
     const search = `bench=${ids.join(',')}&t=${times[0]}`;
     await send('Page.navigate', { url: `${origin}/docs/drafts/neon-port/index.html?${search}` });
     const res = await waitFor(`location.search.includes(${JSON.stringify(search)}) && (window.__bench || window.__error)`, 60000);
+    const gpu = await evaluate(`(() => { const g = document.createElement('canvas').getContext('webgl'); const d = g && g.getExtension('WEBGL_debug_renderer_info'); return d ? g.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'no webgl'; })()`).catch(() => '?');
+    console.log(`renderer: ${gpu}`);
     if (!res || typeof res === 'string') { bad = 1; console.log(`bench failed: ${res || 'timeout'}`); }
     else for (const [id, ms] of Object.entries(res)) console.log(`${id.padEnd(14)} ${String(ms).padStart(6)} ms/frame at 1080`);
   } else {
@@ -70,9 +83,11 @@ try {
   }
 } finally {
   ws.close();
-  const exited = new Promise((r) => proc.once('exit', r));
-  proc.kill('SIGKILL');
-  await exited;
-  try { rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* temp dir */ }
+  if (proc) {
+    const exited = new Promise((r) => proc.once('exit', r));
+    proc.kill('SIGKILL');
+    await exited;
+    try { rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* temp dir */ }
+  }
 }
 process.exit(bad ? 1 : 0);
