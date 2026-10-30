@@ -6,6 +6,16 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Rally merged in and deployed with the neon faces
+
+The Rally session (claude/generative-world-tracks-b89fa4) asked for its face to ride this branch's next fastclock deploy; Nick said "Merge and deploy" here. Merge commit c757c73 brings d2de6f5 (Rally, three 0.170.0) and main's eee3e2f (unslop 1.31 sync). Conflicts were all both-sides-added: face-components, face-registry (Horizon's entry closed before Rally's), schema-registry and this log keep both; the index, analysis and health report were regenerated from the merged tree; the neon-glow Phase 0 line survives the sync. `./scripts/gates.sh` green: 128 files, 1413 tests, build; check:rules has only the old ICO-2.
+
+**Verified:** deployed with DEPLOY_ANYWAY=1, health c757c73, kiosk reloaded, the rally chunk in dist, Horizon on glass at 03:41 (city scene), config untouched (i-clock on neon-horizon, playlist ['i-clock'], 18 instances). Rally not pinned: the Rally session owns that and its fps check. That session reports Rally is going to main through PR #72, merged by Nick once CI is green.
+
+**Open:** whether this branch (neon faces, Vinyl, Horizon) goes to main through a PR: Nick's call in this session.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon v3 and v4: smooth glides, parallax city, 80s chrome digits, a hills scene
 
 Nick, in a run of short messages: smoother movement and fewer cars; the car turns too hard and the cars should be smaller; the city is static, animate it the way old computer games did; the digits in 80s chrome type (two rounds of references, "exactly like this mirror and glow", "even better effects"); and "maybe sometimes it's not city" with a wireframe-terrain reference.
