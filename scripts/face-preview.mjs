@@ -71,9 +71,12 @@ const proc = spawn(
   ],
   { stdio: ['ignore', 'ignore', 'pipe'] },
 );
-const cleanup = () => {
+const cleanup = async () => {
+  const exited = new Promise((r) => proc.once('exit', r));
   proc.kill('SIGKILL');
-  rmSync(profile, { recursive: true, force: true });
+  await exited;
+  // Chrome's helpers can still be flushing into the profile for a moment.
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* temp dir; the OS reaps it */ }
 };
 
 const wsUrl = await new Promise((resolve, reject) => {
@@ -162,5 +165,5 @@ try {
   console.log(`face-preview: wrote ${out} (${id} at ${time})`);
 } finally {
   ws.close();
-  cleanup();
+  await cleanup();
 }

@@ -654,7 +654,8 @@ function sedan(ctx: CanvasRenderingContext2D, N: NeonKit, r: Rival, near: number
 /** Two searchlights sweeping slowly from behind the skyline, stopping short
  *  of the digits (clipped at y 330). Drawn before the city, which hides
  *  their bases. */
-function searchlights(ctx: CanvasRenderingContext2D, N: NeonKit, t: number) {
+function searchlights(ctx: CanvasRenderingContext2D, N: NeonKit, t: number, k: number) {
+  if (k <= 0.01) return;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 330, 1000, HZ - 330);
@@ -669,7 +670,7 @@ function searchlights(ctx: CanvasRenderingContext2D, N: NeonKit, t: number) {
     const nx = -Math.sin(ang) * 26;
     const ny = Math.cos(ang) * 26;
     const g = ctx.createLinearGradient(bx, by, ex, ey);
-    g.addColorStop(0, N.rgba(N.mix(N.c.violet, N.c.white, 0.5), 0.2));
+    g.addColorStop(0, N.rgba(N.mix(N.c.violet, N.c.white, 0.5), 0.2 * k));
     g.addColorStop(1, N.rgba(N.c.violet, 0));
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -696,10 +697,13 @@ const MTN_STRIP = 2400;
 const scroll = (t: number) => 9 * t + 150 * Math.sin((TAU * t) / 37) + 55 * Math.sin((TAU * t) / 13 + 1);
 const onStrip = (x: number, off: number, strip: number) => ((((x - off) % strip) + strip) % strip) - strip / 2 + CX;
 
-function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: number) {
+function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: number, k: number) {
+  if (k <= 0.01) return;
   const violet = N.c.violet;
   const lean = -heroX(t) * 0.12;
   const off = scroll(t);
+  ctx.save();
+  ctx.globalAlpha = k;
 
   // Far: the wireframe ranges.
   const mo = off * 0.4 + lean * 0.5;
@@ -730,7 +734,7 @@ function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: num
         c.lineTo((px + pts[i + 1][0]) / 2, HZ);
       }
     }
-  }, { intensity: 0.5, halo: 0.4 });
+  }, { intensity: 0.5 * k, halo: 0.4 });
 
   // Near: the city.
   const zoom = 1 + 0.06 * Math.sin((TAU * t) / 31);
@@ -749,25 +753,30 @@ function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: num
   ctx.fillStyle = N.rgba(violet, 0.1);
   ctx.fill();
 
-  // Windows: each building keeps its own pattern; now and then a window flips.
-  const tints = [N.c.white, N.c.cyan, N.c.pink];
-  for (let ti = 0; ti < tints.length; ti++) {
-    ctx.fillStyle = N.rgba(tints[ti], ti === 0 ? 0.42 : 0.55);
-    ctx.beginPath();
-    for (const q of shown) {
-      const id = q.b.id;
-      let ri = 0;
-      for (let wy = HZ - q.h + 8 * zoom; wy < HZ - 8; wy += 9 * zoom, ri++) {
-        let ci = 0;
-        for (let wx = q.x + 4 * zoom; wx < q.x + q.w - 6; wx += 8 * zoom, ci++) {
-          const epoch = Math.floor(t / (2.5 + 4 * h1(id * 5 + ri * 7 + ci)));
-          const flipped = h1(id * 7 + ri * 5 + ci * 11 + epoch * 0.37) > 0.92;
-          if (h1(id * 131 + ri * 17 + ci * 3) > 0.6 === flipped) continue;
-          const tr = h1(id * 31 + ri * 3 + ci * 7);
-          if ((tr < 0.75 ? 0 : tr < 0.9 ? 1 : 2) === ti) ctx.rect(wx, wy, 4 * zoom, 3 * zoom);
-        }
+  // Windows in one pass: each building keeps its own pattern and now and then
+  // a window flips; the rects go into one list per tint, filled once each.
+  const lists: number[][] = [[], [], []];
+  for (const q of shown) {
+    const id = q.b.id;
+    let ri = 0;
+    for (let wy = HZ - q.h + 8 * zoom; wy < HZ - 8; wy += 9 * zoom, ri++) {
+      let ci = 0;
+      for (let wx = q.x + 4 * zoom; wx < q.x + q.w - 6; wx += 8 * zoom, ci++) {
+        const epoch = Math.floor(t / (2.5 + 4 * h1(id * 5 + ri * 7 + ci)));
+        const flipped = h1(id * 7 + ri * 5 + ci * 11 + epoch * 0.37) > 0.92;
+        if (h1(id * 131 + ri * 17 + ci * 3) > 0.6 === flipped) continue;
+        const tr = h1(id * 31 + ri * 3 + ci * 7);
+        lists[tr < 0.75 ? 0 : tr < 0.9 ? 1 : 2].push(wx, wy);
       }
     }
+  }
+  const tints = [N.c.white, N.c.cyan, N.c.pink];
+  for (let ti = 0; ti < 3; ti++) {
+    const L = lists[ti];
+    if (!L.length) continue;
+    ctx.fillStyle = N.rgba(tints[ti], ti === 0 ? 0.42 : 0.55);
+    ctx.beginPath();
+    for (let i = 0; i < L.length; i += 2) ctx.rect(L[i], L[i + 1], 4 * zoom, 3 * zoom);
     ctx.fill();
   }
   N.glow(ctx, violet, 2, (c) => {
@@ -775,7 +784,7 @@ function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: num
       c.moveTo(q.x, HZ - q.h);
       c.lineTo(q.x + q.w, HZ - q.h);
     }
-  }, { intensity: 0.35, halo: 0.3 });
+  }, { intensity: 0.35 * k, halo: 0.3 });
 
   // Antennas with slow pink beacons, and a light chaser up the tallest tower.
   ctx.strokeStyle = N.rgba(violet, 0.5);
@@ -787,10 +796,11 @@ function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: num
     ctx.lineTo(q.x + q.w / 2, HZ - q.h - 26 * zoom);
   }
   ctx.stroke();
+  ctx.restore();
   for (const q of shown) {
     if (!q.b.antenna) continue;
     const on = 0.5 + 0.5 * Math.sin(t * 1.6 + q.b.id * 1.9);
-    N.glowDot(ctx, N.c.pink, q.x + q.w / 2, HZ - q.h - 27 * zoom, 3.5, 0.35 + 0.5 * on);
+    N.glowDot(ctx, N.c.pink, q.x + q.w / 2, HZ - q.h - 27 * zoom, 3.5, (0.35 + 0.5 * on) * k);
   }
   if (shown.length) {
     const tall = shown.reduce((m, q) => (q.h > m.h ? q : m), shown[0]);
@@ -799,9 +809,124 @@ function scenery(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: num
     for (let j = 0; j < n; j++) {
       const d = head - j;
       if (d < 0 || d > 3) continue;
-      N.glowDot(ctx, N.c.cyan, tall.x + tall.w - 3, HZ - 10 - j * ((tall.h - 20) / (n - 1)), 2.6, 1 - d / 3.5);
+      N.glowDot(ctx, N.c.cyan, tall.x + tall.w - 3, HZ - 10 - j * ((tall.h - 20) / (n - 1)), 2.6, (1 - d / 3.5) * k);
     }
   }
+}
+
+// ---- The second scene: wireframe hills ----
+//
+// Every ten minutes the drive leaves the city for open wireframe country, the
+// way Neon Drive morphs its landscapes: big pink low-poly mountains on the
+// horizon (the same parallax strip, scaled up), and a rolling hill mesh either
+// side of the road whose rows are the floor's rungs, so the hills stick to the
+// ground as it scrolls. sceneWeight() gives 0 for the city, 1 for the hills,
+// with a 6-second crossfade on the real clock.
+const SCENE_S = 300;
+const FADE_S = 6;
+export const sceneWeight = (minute: number, sf: number) => {
+  const ph = ((minute % 10) * 60 + sf) % (2 * SCENE_S);
+  const up = Math.min(1, Math.max(0, (ph - SCENE_S) / FADE_S));
+  const down = Math.min(1, Math.max(0, (2 * SCENE_S - ph) / FADE_S));
+  const w = ph >= SCENE_S ? Math.min(up, down) : 0;
+  return w * w * (3 - 2 * w);
+};
+
+function bigRanges(ctx: CanvasRenderingContext2D, N: NeonKit, state: State, t: number, w: number) {
+  if (w <= 0.01) return;
+  const col = N.mix(N.c.magenta, N.c.pink, 0.45);
+  const mo = scroll(t) * 0.3;
+  const tall = 1.9;
+  const mtns: [number, number][][] = [];
+  for (const r of state.ranges ?? []) {
+    for (const rep of [0, 1]) {
+      const x0 = onStrip(r.base + rep * (MTN_STRIP / 2) + 70, mo, MTN_STRIP);
+      const wide = r.w * 1.6;
+      if (x0 + wide < 0 || x0 > 1000) continue;
+      mtns.push(r.pts.map(([x, y]) => [x0 + x * 1.6, HZ - (HZ - y) * tall]));
+    }
+  }
+  ctx.save();
+  ctx.globalAlpha = w;
+  ctx.beginPath();
+  for (const pts of mtns) {
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+  }
+  ctx.fillStyle = STAGE;
+  ctx.fill();
+  ctx.fillStyle = N.rgba(N.c.magenta, 0.12);
+  ctx.fill();
+  ctx.restore();
+  N.glow(ctx, col, 2.2, (c) => {
+    for (const pts of mtns) {
+      c.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]);
+      // A low-poly mesh: facets from each peak down to the valleys.
+      for (let i = 1; i < pts.length - 1; i++) {
+        const [px, py] = pts[i];
+        c.moveTo((px + pts[i - 1][0]) / 2, HZ);
+        c.lineTo(px, py);
+        c.lineTo((px + pts[i + 1][0]) / 2, HZ);
+      }
+    }
+  }, { intensity: 0.75 * w, halo: 0.5 });
+}
+
+/** The hill mesh either side of the road: rows on the rungs, columns fanning
+ *  out, heights hashed per ground cell (rows keep their id as they roll). */
+function hills(ctx: CanvasRenderingContext2D, N: NeonKit, dist: number, w: number) {
+  if (w <= 0.01) return;
+  const col = N.mix(N.c.magenta, N.c.pink, 0.3);
+  const fr = ((dist % 1) + 1) % 1;
+  const base = Math.floor(dist);
+  const COLS = [ROAD + 60, 720, 920, 1180, 1500, 1900, 2400, 3000];
+  const height = (rowId: number, ci: number, side: number) =>
+    ci === 0 ? 0 : (ci / (COLS.length - 1)) * 520 * (0.35 + 0.65 * h1(rowId * 3.7 + ci * 11.3 + (side > 0 ? 5.1 : 0)));
+  const pt = (j: number, ci: number, side: number): [number, number] => {
+    const u = (j + fr) / 9;
+    const sc = spread(u);
+    const H = height(base - j, ci, side);
+    return [CX + side * COLS[ci] * sc, floorY(u) - H * sc];
+  };
+  for (const [lo, hi, wd, k] of [[0, 5, 1.6, 0.45], [5, 11, 2.6, 0.8]] as const) {
+    N.glow(ctx, col, wd, (c) => {
+      for (const side of [-1, 1]) {
+        for (let j = lo; j < hi; j++) {
+          // The row across the hills.
+          for (let ci = 0; ci < COLS.length; ci++) {
+            const [x, y] = pt(j, ci, side);
+            if (ci === 0) c.moveTo(x, y);
+            else c.lineTo(x, y);
+          }
+          // Columns down to the next row.
+          for (let ci = 0; ci < COLS.length; ci++) {
+            const [x0, y0] = pt(j, ci, side);
+            const [x1, y1] = pt(j + 1, ci, side);
+            c.moveTo(x0, y0);
+            c.lineTo(x1, y1);
+          }
+        }
+      }
+    }, { intensity: k * w, halo: 0.45 });
+  }
+}
+
+/** VHS scanlines over the scene in the hills (the digits sit above them). */
+function scanlines(ctx: CanvasRenderingContext2D, w: number) {
+  if (w <= 0.01) return;
+  ctx.save();
+  ctx.strokeStyle = STAGE;
+  ctx.globalAlpha = 0.22 * w;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (let y = 2; y < 1000; y += 6) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(1000, y);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 /** Tyre smoke and sparks off the rear wheels in a drift: puffs left behind
@@ -871,7 +996,9 @@ const DIGIT_W = 100 * GLYPH_K;
 const DIGIT_GAP = 18;
 const COLON_W = 46;
 const DIGITS_Y = 126;
-const DIGITS_X0 = CX - (4 * DIGIT_W + 2 * DIGIT_GAP + COLON_W) / 2;
+// Centred with the slant: the tops lean right by SLANT * 160 box units, so the
+// block shifts left by half of that.
+const DIGITS_X0 = CX - (4 * DIGIT_W + 2 * DIGIT_GAP + COLON_W) / 2 - 0.16 * 80 * (190 / 160);
 // HH, a gap, the colon, MM: [d0] gap [d1] colon [d2] gap [d3].
 const digitX = (i: number) =>
   DIGITS_X0 + i * DIGIT_W + (i >= 1 ? DIGIT_GAP : 0) + (i >= 2 ? COLON_W : 0) + (i >= 3 ? DIGIT_GAP : 0);
@@ -902,51 +1029,90 @@ const tracePolys = (c: CanvasRenderingContext2D, polys: [number, number][][]) =>
  *  continuous range across all four digits (hashed on the face x). */
 const chromeHorizon = (xFace: number) => 80 + 7 * Math.sin(xFace * 0.09) + 5 * (h1(Math.floor(xFace / 9)) - 0.5);
 
+// The letters lean forward, 80s speed italic: x shifts by SLANT per unit of
+// height above the baseline (box y 160).
+const SLANT = 0.16;
+/** A box point to face units, slant included. */
+const glyphToFace = (i: number, bx: number, by: number): [number, number] => [
+  digitX(i) + (bx + SLANT * (160 - by)) * GLYPH_K,
+  DIGITS_Y + by * GLYPH_K,
+];
+// Depth: stacked strokes offset down and right behind the rim, deep blue.
+const EXTRUDE: ReadonlyArray<readonly [number, number, number]> = [
+  [9, 12, 0.3],
+  [6, 8, 0.42],
+  [3, 4, 0.55],
+];
+
 function forEachDigit(c: CanvasRenderingContext2D, digits: string[], fn: (i: number, polys: [number, number][][], x: number) => void) {
   digits.forEach((ch, i) => {
     const x = digitX(i);
     c.save();
     c.translate(x, DIGITS_Y);
     c.scale(GLYPH_K, GLYPH_K);
+    c.transform(1, 0, -SLANT, 1, SLANT * 160, 0);
     fn(i, GLYPH_POLYS[ch] ?? [], x);
     c.restore();
   });
 }
 
 /** Opaque dark behind the letters, live, so the sky does not show through the
- *  chrome (the cached layer adds light; it cannot darken). */
+ *  chrome (the cached layer adds light; it cannot darken). Same square caps
+ *  and mitred corners as the rim, a touch wider. */
 function chromeMask(ctx: CanvasRenderingContext2D, digits: string[]) {
   forEachDigit(ctx, digits, (_i, polys) => {
     ctx.strokeStyle = STAGE;
-    ctx.lineWidth = GLYPH_W + 9;
-    // Round caps and joins on every layer of a glyph (mask, bloom, rim, body),
-    // so their ends coincide: mixed caps leave bloom poking past the rim.
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round'; // a mitre spikes past the glyph at the 2's and 3's tight angles
-    ctx.beginPath();
-    tracePolys(ctx, polys);
-    ctx.stroke();
+    ctx.lineWidth = GLYPH_W + 12;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 5;
+    for (const [dx, dy] of [[0, 0], ...EXTRUDE.map(([ex, ey]) => [ex, ey])]) {
+      ctx.save();
+      ctx.translate(dx, dy);
+      ctx.beginPath();
+      tracePolys(ctx, polys);
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 }
 
-/** The chrome itself, drawn once a minute into the cached layer: magenta
- *  bloom, a pink-white rim, a sky body above the horizon (white to cyan to
- *  deep blue) and a sunset body below (dark violet to magenta to pink). */
+/** The chrome, the way 80s title lettering does it, drawn once a minute into
+ *  the cached layer. Outside in: a soft pink bloom; a thick chrome rim, white
+ *  at the top to pink at the foot; a thin dark bevel inside it; then the
+ *  mirror: a sky half from dark navy at the top to bright cyan at the
+ *  horizon, and below a jagged range a ground half from near-black maroon to
+ *  hot pink at the foot. Square caps and mitred corners for the blocky
+ *  letterform; the bloom keeps round ends, which sit inside the square ones. */
 function chromeDigits(l: CanvasRenderingContext2D, N: NeonKit, digits: string[]) {
-  const rim = N.mix(N.c.white, N.c.pink, 0.3);
+  const pinkGlow = N.mix(N.c.magenta, N.c.pink, 0.4);
   forEachDigit(l, digits, (_i, polys, x) => {
-    // Round caps on the bloom: its outer passes are hundreds of units wide, and
-    // a flat cap cuts each one off along a straight edge, leaving dark shards.
-    N.glow(l, N.c.magenta, GLYPH_W + 9, (c) => tracePolys(c, polys), { intensity: 0.15, halo: 0.7, core: false, cap: 'round' });
-    l.lineCap = 'round';
-    l.lineJoin = 'round';
-    l.strokeStyle = rim;
-    l.lineWidth = GLYPH_W + 8;
-    l.beginPath();
-    tracePolys(l, polys);
-    l.stroke();
+    N.glow(l, pinkGlow, GLYPH_W + 10, (c) => tracePolys(c, polys), { intensity: 0.2, halo: 0.85, core: false, cap: 'round' });
+    l.lineCap = 'square';
+    l.lineJoin = 'miter';
+    l.miterLimit = 5;
+    const stroke = (style: string | CanvasGradient, w: number) => {
+      l.strokeStyle = style;
+      l.lineWidth = w;
+      l.beginPath();
+      tracePolys(l, polys);
+      l.stroke();
+    };
+    const depth = N.mix(N.c.violet, N.c.cyan, 0.25);
+    for (const [ex, ey, a] of EXTRUDE) {
+      l.save();
+      l.translate(ex, ey);
+      stroke(N.rgba(depth, a), GLYPH_W + 10);
+      l.restore();
+    }
+    const rim = l.createLinearGradient(0, -6, 0, 166);
+    rim.addColorStop(0, N.c.white);
+    rim.addColorStop(0.5, N.mix(N.c.white, N.c.pink, 0.22));
+    rim.addColorStop(1, N.mix(N.c.pink, N.c.white, 0.35));
+    stroke(rim, GLYPH_W + 10);
+    stroke(STAGE, GLYPH_W + 3); // the bevel: a dark hairline inside the rim
     const horizon = (bx: number) => chromeHorizon(x + bx * GLYPH_K);
-    for (const half of ['sky', 'sunset'] as const) {
+    for (const half of ['sky', 'ground'] as const) {
       l.save();
       l.beginPath();
       l.moveTo(-30, half === 'sky' ? -30 : 200);
@@ -954,50 +1120,74 @@ function chromeDigits(l: CanvasRenderingContext2D, N: NeonKit, digits: string[])
       l.lineTo(130, half === 'sky' ? -30 : 200);
       l.closePath();
       l.clip();
-      const g = half === 'sky' ? l.createLinearGradient(0, 16, 0, 84) : l.createLinearGradient(0, 78, 0, 146);
+      let g: CanvasGradient;
       if (half === 'sky') {
-        g.addColorStop(0, N.mix(N.c.white, N.c.cyan, 0.25));
-        g.addColorStop(0.55, N.c.cyan);
-        g.addColorStop(1, N.mix(N.c.cyan, N.c.violet, 0.65));
+        g = l.createLinearGradient(0, 0, 0, 86);
+        g.addColorStop(0, N.rgba(N.mix(N.c.cyan, N.c.violet, 0.6), 0.16));
+        g.addColorStop(0.45, N.rgba(N.mix(N.c.cyan, N.c.violet, 0.35), 0.55));
+        g.addColorStop(0.82, N.c.cyan);
+        g.addColorStop(1, N.mix(N.c.cyan, N.c.white, 0.6));
       } else {
-        g.addColorStop(0, N.rgba(N.c.violet, 0.3));
-        g.addColorStop(0.55, N.mix(N.c.magenta, N.c.violet, 0.3));
-        g.addColorStop(1, N.c.pink);
+        // Hard stops cut three dark slits across the lower half, thicker
+        // toward the foot, the 80s stripe; they live in the body gradient so
+        // they cut the letter and never the glow around it.
+        g = l.createLinearGradient(0, 74, 0, 162);
+        const slit = N.rgba(N.c.violet, 0.1);
+        const band = (at: number, w: number, before: string, after: string) => {
+          g.addColorStop(at, before);
+          g.addColorStop(at, slit);
+          g.addColorStop(at + w, slit);
+          g.addColorStop(at + w, after);
+        };
+        g.addColorStop(0, N.rgba(N.c.magenta, 0.07));
+        g.addColorStop(0.3, N.rgba(N.mix(N.c.magenta, N.c.violet, 0.5), 0.32));
+        band(0.52, 0.03, N.rgba(N.c.magenta, 0.7), N.rgba(N.c.magenta, 0.74));
+        band(0.66, 0.04, N.rgba(N.c.magenta, 0.85), N.mix(N.c.magenta, N.c.pink, 0.4));
+        band(0.8, 0.05, N.mix(N.c.magenta, N.c.pink, 0.6), N.mix(N.c.pink, N.c.magenta, 0.2));
+        g.addColorStop(1, N.mix(N.c.pink, N.c.white, 0.15));
       }
-      l.strokeStyle = g;
-      l.lineWidth = GLYPH_W;
-      l.beginPath();
-      tracePolys(l, polys);
-      l.stroke();
+      stroke(g, GLYPH_W);
       l.restore();
     }
   });
 }
 
-/** Star sparkles that glint on the letters' upper edges, a few at a time. */
+/** A lens flare: a hot point, a soft bloom, long horizontal and vertical rays
+ *  and short diagonals, all scaled by a (0 to 1). */
+function flare(ctx: CanvasRenderingContext2D, N: NeonKit, x: number, y: number, a: number) {
+  N.glowDot(ctx, N.mix(N.c.white, N.c.pink, 0.3), x, y, 16, 0.35 * a);
+  N.glow(ctx, N.c.white, 1.7, (c) => {
+    c.moveTo(x - 72 * a, y);
+    c.lineTo(x + 72 * a, y);
+    c.moveTo(x, y - 52 * a);
+    c.lineTo(x, y + 52 * a);
+  }, { intensity: a, halo: 0.6 });
+  N.glow(ctx, N.c.white, 1.1, (c) => {
+    const d = 20 * a;
+    c.moveTo(x - d, y - d);
+    c.lineTo(x + d, y + d);
+    c.moveTo(x - d, y + d);
+    c.lineTo(x + d, y - d);
+  }, { intensity: 0.6 * a, halo: 0.4 });
+  N.glowDot(ctx, N.c.white, x, y, 6, a);
+}
+
+/** Lens flares that glint on the letters' rims, several at a time, each on
+ *  its own slow rhythm. They sit on the outer edge of the upper strokes. */
 function sparkles(ctx: CanvasRenderingContext2D, N: NeonKit, digits: string[], t: number) {
-  for (let i = 0; i < 3; i++) {
-    const per = 2.4 + i * 0.7;
-    const phase = t / per + i * 0.37;
+  for (let i = 0; i < 5; i++) {
+    const per = 2.2 + i * 0.6;
+    const phase = t / per + i * 0.29;
     const epoch = Math.floor(phase);
     const k = phase - epoch;
+    const a = Math.sin(Math.PI * k) ** 2;
+    if (a < 0.03) continue;
     const di = Math.floor(h1(epoch * 3.1 + i) * 4);
-    const polys = GLYPH_POLYS[digits[di]] ?? [];
-    const pts = polys.flat().filter((q) => q[1] < 60);
+    const pts = (GLYPH_POLYS[digits[di]] ?? []).flat().filter((q) => q[1] < 70);
     if (!pts.length) continue;
     const [px, py] = pts[Math.floor(h1(epoch * 7.7 + i * 2) * pts.length)];
-    const sx = digitX(di) + px * GLYPH_K;
-    const sy = DIGITS_Y + (py - GLYPH_W / 2) * GLYPH_K;
-    const a = Math.sin(Math.PI * k) ** 2;
-    if (a < 0.02) continue;
-    const r = 26 * a;
-    N.glow(ctx, N.c.white, 1.4, (c) => {
-      c.moveTo(sx - r, sy);
-      c.lineTo(sx + r, sy);
-      c.moveTo(sx, sy - r);
-      c.lineTo(sx, sy + r);
-    }, { intensity: a, halo: 0.6 });
-    N.glowDot(ctx, N.c.white, sx, sy, 4, a);
+    const [fx, fy] = glyphToFace(di, px, py - GLYPH_W / 2 - 4);
+    flare(ctx, N, fx, fy, a);
   }
 }
 
@@ -1012,6 +1202,8 @@ const face: NeonFace<State> = {
     // Drive time: the ambient clock shifted so whole beats land on the clock's
     // seconds, so the car snaps lanes on the ticks.
     const t = T.t + ((((T.sf - T.t) % 1) + 1) % 1);
+    // Which scene: 0 the city, 1 the wireframe hills.
+    const sw = sceneWeight(T.m, T.sf);
 
     // Camera roll: the scene leans into each snap; the time stays level.
     const vxCam = (heroX(t + 0.05) - heroX(t - 0.05)) / 0.1;
@@ -1068,11 +1260,15 @@ const face: NeonFace<State> = {
     ctx.beginPath();
     ctx.rect(0, 0, 1000, HZ);
     ctx.clip();
-    N.glowDot(ctx, ink, CX, sunY, 60, 0.45 + 0.25 * Math.max(0, elev));
+    // The sun warms from magenta in the city to yellow-orange in the hills.
+    const sunTop = N.mix(N.mix(ink, N.c.white, 0.55), N.mix(N.c.orange, N.c.white, 0.55), sw);
+    const sunMid = N.mix(ink, N.c.orange, sw);
+    const sunFoot = N.mix(ink, N.c.pink, sw);
+    N.glowDot(ctx, sunMid, CX, sunY, 60, 0.45 + 0.25 * Math.max(0, elev));
     const g = ctx.createLinearGradient(0, sunY - SR, 0, sunY + SR);
-    g.addColorStop(0, N.rgba(N.mix(ink, N.c.white, 0.55), 0.95));
-    g.addColorStop(0.55, N.rgba(ink, 0.9));
-    g.addColorStop(1, N.rgba(ink, 0.8));
+    g.addColorStop(0, N.rgba(sunTop, 0.95));
+    g.addColorStop(0.55, N.rgba(sunMid, 0.9));
+    g.addColorStop(1, N.rgba(sunFoot, 0.8));
     ctx.fillStyle = g;
     ctx.beginPath();
     const rows = 40;
@@ -1094,10 +1290,11 @@ const face: NeonFace<State> = {
     ctx.fill();
     ctx.restore();
 
-    searchlights(ctx, N, T.t);
+    searchlights(ctx, N, T.t, 1 - sw);
 
     // The scrolling scenery: mountains, then the city in front of the sun.
-    scenery(ctx, N, state, t);
+    scenery(ctx, N, state, t, 1 - sw);
+    bigRanges(ctx, N, state, t, sw);
 
     // The floor: violet rungs rolling toward you, one spacing a second.
     // The drive: distance, speed, the car's depth, braking and boosting.
@@ -1162,6 +1359,8 @@ const face: NeonFace<State> = {
 
     });
 
+    hills(ctx, N, dist, sw);
+
     // Lane dashes: cyan, rolling with the floor, wider as they come closer.
     ctx.save();
     ctx.beginPath();
@@ -1201,15 +1400,16 @@ const face: NeonFace<State> = {
 
     // The time, level and on top of everything: 80s chrome numerals.
     const digits = [T.hh[0], T.hh[1], T.mm[0], T.mm[1]];
+    scanlines(ctx, sw);
     chromeMask(ctx, digits);
     N.layer(ctx, state, 'time', T.hh + T.mm, (l) => chromeDigits(l, N, digits));
     sparkles(ctx, N, digits, T.t);
 
     // The colon: two chrome-pink dots that breathe once a second.
-    const colonX = DIGITS_X0 + 2 * DIGIT_W + DIGIT_GAP + COLON_W / 2;
+    const colonAt = (by: number) => DIGITS_X0 + 2 * DIGIT_W + DIGIT_GAP + COLON_W / 2 + SLANT * (160 - by) * GLYPH_K;
     const on = 0.55 + 0.45 * (0.5 + 0.5 * Math.cos(TAU * (T.sf % 1)));
-    N.glowDot(ctx, N.c.cyan, colonX, DIGITS_Y + 58 * GLYPH_K, 9, on);
-    N.glowDot(ctx, N.c.pink, colonX, DIGITS_Y + 112 * GLYPH_K, 9, on);
+    N.glowDot(ctx, N.c.cyan, colonAt(58), DIGITS_Y + 58 * GLYPH_K, 9, on);
+    N.glowDot(ctx, N.c.pink, colonAt(112), DIGITS_Y + 112 * GLYPH_K, 9, on);
   },
 };
 
