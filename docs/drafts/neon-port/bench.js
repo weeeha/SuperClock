@@ -11,7 +11,8 @@ const at = () => {
   if (!frozen) return new Date();
   const [H, M, S] = frozen.split(':').map(Number);
   const d = new Date();
-  d.setHours(H || 0, M || 0, S || 0, 0);
+  // Fractional seconds are kept (t=10:09:30.25), for faces timed to the beat.
+  d.setHours(H || 0, M || 0, Math.floor(S || 0), Math.round(((S || 0) % 1) * 1000));
   return d;
 };
 const load = async (id) => (await import(`/src/apps/clock/neon/faces/${id.replace(/^neon-/, '')}.ts`)).default;

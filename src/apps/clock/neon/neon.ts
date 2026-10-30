@@ -283,10 +283,12 @@ export function createKit(haloScale = 1): NeonKit {
       L = { canvas, stamp, w: W };
       store.set(key, L);
     }
+    // Composited in the caller's transform: renderFrame's 1000-unit scale maps
+    // the layer 1:1 onto the canvas, and a face that rotates its scene (a
+    // camera roll) rotates its cached layers with it.
     ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = 'lighter';
-    ctx.drawImage(L.canvas, 0, 0);
+    ctx.drawImage(L.canvas, 0, 0, 1000, 1000);
     ctx.restore();
   };
 
