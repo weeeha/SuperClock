@@ -6,6 +6,22 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a dodge game: lane snaps, traffic, drift, camera roll; versions tagged
+
+Nick, in sequence: "make it feel like game, more random, speed slows downs, need palms" (6f7ea15), then "save the current version though", then two references to study for dynamics, style and models: the Electro Ride trailer (YouTube vY_xf9FrXsM) and Neon Drive on Steam (app 433910).
+
+**Saved versions (local annotated tags):** `horizon-game-v1` = 6f7ea15 (variable speed, random sine weave, brake lights, exhaust flames, palms); `horizon-dodge-v2` = c0a08e0 (this entry). `git checkout <tag> -- src/apps/clock/neon/faces/horizon.ts` brings either back.
+
+**Read from the references** (in the Browser pane, nothing downloaded): Electro Ride is cel-shaded flat colour, dark boxy Eastern-bloc cars (Lada-style sedans, a UAZ-style jeep) with crisp cyan rim lines and red lights, overtakes, drifts with sparks, speed streaks, a camera that leans. Neon Drive's store page says it plainly: dodging roadblocks by lane, in sync with the music, at speed, scenes morphing; the page's only video is a banner for its sequel.
+
+**What changed in `horizon.ts`:** speed scaled to SPEED_BASE 2.2 rungs/s (0.4x to 1.6x), still a sum of sines with `travel()` its integral; the sine weave replaced by `heroX()`, lane snaps (centres 0 and +-330, SNAP 0.38 s) at the start of each 2-beat BLOCK, lane per block from a hash; the face shifts T.t so beats land on the clock's seconds; `driftOf()` on two-lane jumps adds yaw, smoke and sparks; `trafficNow()` places a sedan in the lane the car leaves, its tail passing the car's a second into the block (never in the next snap's way); `sedan()` draws the Electro Ride model (dark, cyan rim, pink-red lights, flaring when alongside); camera roll up to 0.045 rad about (500, 760) with the digits moved into their own `time` layer drawn after the roll; `streaks()` above 1.15x speed; gates every 8 rungs; lanes widened (ROAD 500, LANE 165) and both cars narrowed (HX 0.85) after the first shots showed adjacent cars overlapping. `neon.ts` `layer()` now composites in the caller's transform (drawImage at 1000 x 1000 units), identical for faces that do not rotate. The bench freezes fractional seconds (`t=10:09:30.2`) for beat-timed shots.
+
+**Verified:** gates and 126 files / 1404 tests (old ICO-2 only); Mac bench 1.9 ms per 1080 frame; shots of a drift, a snap with the roll, and a pass with a clean gap. Deployed c0a08e0 (health verified), kiosk reloaded, on glass at 02:08: a pass in progress. Kiosk browser on fastclock: 59% of one core (55% for game-v1, 45% for the first night drive), 57.6 C, throttled=0x0.
+
+**Open:** no Pi 4 measurement; day palette of these versions not seen on glass; the scene morphing between landscapes (Neon Drive) and the jeep model (Electro Ride) not built; fastclock still pinned to Horizon alone.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a neon night drive with a 3D car, live on fastclock
 
 Nick: "add some cool car moving leaving traces behind", "like lambo, countach or something", then two sets of Neon Drive style references, then "it needs more volume, maybe a 3D model so when it moves left and right we see more of its body, lights also glow or react".
