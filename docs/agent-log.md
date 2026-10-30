@@ -6,6 +6,58 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · twenty neon face drafts, a live gallery, no kiosk code
+
+Nick: "lets build 20 awesome faces with intense cool neon colors". Per the draft-before-build rule they exist as a live HTML gallery first; picks get ported to real faces after.
+
+**Where:** `docs/drafts/neon-faces/`, served by the dev server at `/docs/drafts/neon-faces/index.html` (`?t=HH:MM:SS` freezes the clock, `?speed=60` fast-forwards, `#<id>` opens one face full size). `BRIEFS.md` holds the rules and all twenty briefs; `neon.js` the runtime (palette of eleven neons, `glow` as additive multi-pass strokes with no shadowBlur, `glowDot`, `seg7`, and `timeState`, which uses useClockHands' angle formulas so a face ports without recomputing them); `gallery.js` the page; `faces/<id>.js` one face each, drawn in the 1000-unit space. `check.mjs` runs every face headless against a recording fake canvas (throws, NaN coordinates, unbalanced save/restore, banned APIs, reading Date or timers); `shoot.mjs` captures 1000 x 1000 PNGs through headless Chrome into the git-ignored `shots/`. `neon-faces-sheet.png` is the contact sheet at 10:09:30.
+
+**Faces:** tube (reference, written here), sign, nixie, radar, reactor, horizon, vector, plasma, wordclock, tach, pulse, constellation, tunnel, outline, arcade, laser, spiro, hive, pendulum, dotmatrix. Nineteen were drafted by four Sonnet agents at medium effort (about 800k tokens together), each self-reviewing its own screenshots; every face was then re-shot and judged here. Sent back and revised: laser (read as an X), hive (minutes as a clump, now an angular arc), tach (hour off-centre), pendulum (rod crossed the digits), constellation (too faint). The screenshot script had a race that captured the previous page when one face was shot twice in a row; fixed by matching the new document's query.
+
+**Verified:** check.mjs ok for all 20; all 20 render in the Browser pane with no errors; each judged from a 1000 px capture.
+
+**Cost, ms per frame at 1080 on the Mac Studio** (Canvas 2D, one face at a time): horizon 19.6, tunnel 17.7, plasma 17.0, outline 13.2, dotmatrix 11.2, arcade 10.3, tach 8.5, radar 8.0, reactor 7.3, hive 6.6, nixie 6.1, vector 5.7, pulse 5.7, pendulum 5.6, spiro 5.2, laser 4.4, constellation 4.1, wordclock 1.2, sign 0.9, tube 0.2. A Pi 4 is several times slower; the multiplier is the nine-pass glow. A port should draw the static layers (grids, dials, unlit LEDs and tubes) once into an offscreen canvas and redraw only what moves. Nothing measured on a Pi.
+
+**Open, decided at port time, not here:** the neon glow breaks unslop's "no glowing shadows" floor rule, so a ported neon face needs a Phase 0 line naming glow as content (like the ambient-motion carve-out); the stage stays dark in the day palette as content (the Vinyl record precedent, `--face-bg` only for whatever sits outside the art); two-neon faces (tube, horizon, arcade) keep the second hue to one quantity for FCE-1. fastclock's config still shows Minimalismo (see the Vinyl entry).
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Vinyl face built and deployed to fastclock; not on glass yet
+
+Nick picked Vinyl Grooves from the Radiant lookbook (entry below).
+
+**Built** (commit e8a80aa, local, not pushed):
+- `public/shaders/vinyl-grooves.html`: the Radiant page vendored (MIT, pbakaus/radiant at 59e9f48), its header lists every change: a transparent premultiplied canvas that paints only the record (the kiosk mat shows around it), no title label, no mouse or touch, a SPECTRUM uniform (prismatic or warm), a `window.vinylGrooves` API (getState, setPaused, setParam), and a loop that stops while paused or hidden.
+- `src/apps/clock/VinylClock.tsx` with its meta and the `face.vinyl` schema (rpm 33 or 45, shimmer prismatic or warm). The page sits in an iframe that pauses when the face is inactive and unmounts a minute later; the ai-face frame guard watches it, sampled on the useClockHands tick through a zero-delay timeout (set-state-in-effect); a safe wrapper turns any throw into the "Record unavailable" tell.
+- Hands from the meta spec (hour 280 by 28, minute 380 by 20, no second hand: the record's spin is the motion). Tonearm in `vinyl-geometry.ts`: Technics SL-1200 ratios, pivot (945, 55) under the bezel, arm 674, the needle lands on the lead-in (r 425) at :00 and reaches the run-out (r 130) at :60, solved with the law of cosines.
+- Hands and arm read `--sheet-ink`, the mode-stable role, because the record is dark in both palettes; it is an HSL triplet, so the TSX resolves it as `hsl(var(--sheet-ink))` by hand rather than through resolveSpecColor.
+- Tests: `vinyl-geometry.test.ts` (8) and `vinyl-shader-contract.test.ts` (7, pins the vendored page's API and changes).
+- `scripts/face-preview.mjs` (`npm run preview:face -- <id> [--time HH:MM:SS]`): headless Chrome over CDP, frozen Date, cycles the Clock app through `window.__nav`, writes `public/<id>-preview.png`. It wrote `public/vinyl-preview.png`.
+
+**Verified:** npm test 125 files and 1391 tests, lint, check:tokens, build. check:rules has one blocker that predates this work (ICO-2, the emoji icon in `src/apps/todo/index.ts`). Dev kiosk at 1000 and 1080: the page's frame counter advances, day palette (white mat, dark record, white hands) and night palette both seen. Deployed with DEPLOY_ANYWAY=1; the script's health poll confirmed e8a80aa on fastclock.
+
+**Not done:** fastclock's config still shows Minimalismo. Two config POSTs failed (a 400 on the patch shape, then a malformed body) and Nick stopped the third; a backup `config/fleet.json.bak-before-vinyl-2026-10-30` was left on the Pi. No fps or temperature measured on the Pi, nothing seen on glass, no Safari check, no closing unslop audit.
+
+---
+
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Radiant shaders assessed for watchfaces, draft lookbook, no kiosk code
+
+Nick: "check this lib https://radiant-shaders.com/gallery/all, which ones we can use for super awesome watchfaces?"
+
+**Library facts** (repo `pbakaus/radiant`, MIT, attribution optional): 88 shaders on the site, 94 in the repo; 61 WebGL, 27 Canvas 2D. Each is one self-contained HTML file (10 to 35 KB), hosted at `https://radiant-shaders.com/<id>` with no frame-ancestors header, so it embeds cross-origin. Every file listens for `postMessage({type:'param', name, value})` with two to four numeric params (speed, density, complexity), pauses on `visibilitychange`, caps DPR at 2, and draws its own title label at the top of the canvas. Tags: `object` (centred, 20 shaders) fits the disc; `fill` composes for a rectangle. Six colour schemes are CSS `filter` on the iframe (hue-rotate, grayscale), so night can be a filter too.
+
+**Draft:** `docs/drafts/radiant-shaders-lookbook.html`, served by the Vite dev server at `/docs/drafts/radiant-shaders-lookbook.html`. 21 candidates clipped to a disc with Minimalismo's hands (spec numbers from the meta) redrawn once a second over each, pointer-events off on the frames. Frames are mounted by an IntersectionObserver only while on screen: Chrome keeps about 16 live WebGL contexts per page and the first version lost half of them.
+
+**Verified:** all 21 draw in the Browser pane (Chrome engine) at 1480 wide, after about 15 s for a row's first load. Not seen in Safari, not measured on any Pi.
+
+**Shortlist, A = becomes the clock:** Vinyl Grooves (already round, tonearm as hour), Analog Drift (Lissajous ratio hour:minute, canvas 2D), Golden Throne (counter-rotating mandala, layers per hour and minute), Chladni Resonance ((m, n) mode from the time), Magnetic Field (poles at the hand angles), Eclipse Glow (lit arc as daylight), Moire Interference, Tesseract Shadow, Phyllotaxis (one seed a minute), Clockwork Mind (needs re-centring, composed off-centre), Pendulum Wave (composed as a top row, weak in a disc). **B = dial under hands:** Smolder, Stardust Veil, Aurora Curtain, Topographic, Dither Gradient, Vortex, Moonlit Ripple; Chromatic Bloom and Liquid Gold are too bright for white hands; Radiant Geometry too dense. **Skipped:** raymarched or refractive ones (Event Horizon, Rain on Glass, Rain on Umbrella, Metamorphosis, Navier-Stokes) on Pi cost; 18K-particle canvas ones (Luminous Silt, Murmuration, Glitter Storm) on CPU; corner- or horizon-composed fills (Gothic Filigree, Digital Rain, Neon Drive); flashing ones (Strobe Geometry, Thunder Sermon, the lasers) for a bedroom clock; glitch ones (Vintage Static, Hologram Glitch) because a glitch on a wall clock reads as a fault.
+
+**Integration shape, not built:** the `AvatarFrame` pattern in `src/apps/ai-face/` already does everything a shader face needs (iframe, unmount 60 s after going inactive for KIO-1, frame guard full → half → paused at median fps under 24, `safeController` so a lost GL context cannot unmount the kiosk). A shader face would vendor the one HTML file into `public/`, strip its title label, add a `TIME` param next to the existing ones, and overlay the hands as a normal face component so `--face-*` and the hand source of truth stay in React.
+
+**Open:** Pi 5 and Pi 4 frame rates for the WebGL picks (fastclock reachable, unmeasured); whether a shader face is one `face.shader` with a shader option or one face id per shader (one accent, one meta each argues per face); Nick's pick from the lookbook. This worktree's `node_modules` lacks `@fontsource-variable/nunito` (the kiosk root 500s in dev), so `npm ci` before tests or build.
+
+---
+
 ## 2026-10-23 · branch claude/super-clock-app-finalization-8aa4b8 · deployed 8343946 to fastclock; all 18 apps on the panel for the first time
 
 Nick: "deploy the merged main to fastclock (npm ci on the Pi), add an instance for every app through the admin, and verify each on the panel."
@@ -1142,21 +1194,3 @@ These twelve entries were written to a second log file, `AGENT-LOG.md`, by sessi
   4 AGENTS.md drift gate; 5 regenerable health report; 6 path-scoped rules split;
   7 deliberately skip index/instance-count/sidecar metadata. Recommended 1 then 2.
 - **Open:** Nick's pick. Each pick gets its own brainstorm classification before any code.
-
----
-
-## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Radiant shaders assessed for watchfaces, draft lookbook, no kiosk code
-
-Nick: "check this lib https://radiant-shaders.com/gallery/all, which ones we can use for super awesome watchfaces?"
-
-**Library facts** (repo `pbakaus/radiant`, MIT, attribution optional): 88 shaders on the site, 94 in the repo; 61 WebGL, 27 Canvas 2D. Each is one self-contained HTML file (10 to 35 KB), hosted at `https://radiant-shaders.com/<id>` with no frame-ancestors header, so it embeds cross-origin. Every file listens for `postMessage({type:'param', name, value})` with two to four numeric params (speed, density, complexity), pauses on `visibilitychange`, caps DPR at 2, and draws its own title label at the top of the canvas. Tags: `object` (centred, 20 shaders) fits the disc; `fill` composes for a rectangle. Six colour schemes are CSS `filter` on the iframe (hue-rotate, grayscale), so night can be a filter too.
-
-**Draft:** `docs/drafts/radiant-shaders-lookbook.html`, served by the Vite dev server at `/docs/drafts/radiant-shaders-lookbook.html`. 21 candidates clipped to a disc with Minimalismo's hands (spec numbers from the meta) redrawn once a second over each, pointer-events off on the frames. Frames are mounted by an IntersectionObserver only while on screen: Chrome keeps about 16 live WebGL contexts per page and the first version lost half of them.
-
-**Verified:** all 21 draw in the Browser pane (Chrome engine) at 1480 wide, after about 15 s for a row's first load. Not seen in Safari, not measured on any Pi.
-
-**Shortlist, A = becomes the clock:** Vinyl Grooves (already round, tonearm as hour), Analog Drift (Lissajous ratio hour:minute, canvas 2D), Golden Throne (counter-rotating mandala, layers per hour and minute), Chladni Resonance ((m, n) mode from the time), Magnetic Field (poles at the hand angles), Eclipse Glow (lit arc as daylight), Moire Interference, Tesseract Shadow, Phyllotaxis (one seed a minute), Clockwork Mind (needs re-centring, composed off-centre), Pendulum Wave (composed as a top row, weak in a disc). **B = dial under hands:** Smolder, Stardust Veil, Aurora Curtain, Topographic, Dither Gradient, Vortex, Moonlit Ripple; Chromatic Bloom and Liquid Gold are too bright for white hands; Radiant Geometry too dense. **Skipped:** raymarched or refractive ones (Event Horizon, Rain on Glass, Rain on Umbrella, Metamorphosis, Navier-Stokes) on Pi cost; 18K-particle canvas ones (Luminous Silt, Murmuration, Glitter Storm) on CPU; corner- or horizon-composed fills (Gothic Filigree, Digital Rain, Neon Drive); flashing ones (Strobe Geometry, Thunder Sermon, the lasers) for a bedroom clock; glitch ones (Vintage Static, Hologram Glitch) because a glitch on a wall clock reads as a fault.
-
-**Integration shape, not built:** the `AvatarFrame` pattern in `src/apps/ai-face/` already does everything a shader face needs (iframe, unmount 60 s after going inactive for KIO-1, frame guard full → half → paused at median fps under 24, `safeController` so a lost GL context cannot unmount the kiosk). A shader face would vendor the one HTML file into `public/`, strip its title label, add a `TIME` param next to the existing ones, and overlay the hands as a normal face component so `--face-*` and the hand source of truth stay in React.
-
-**Open:** Pi 5 and Pi 4 frame rates for the WebGL picks (fastclock reachable, unmeasured); whether a shader face is one `face.shader` with a shader option or one face id per shader (one accent, one meta each argues per face); Nick's pick from the lookbook. This worktree's `node_modules` lacks `@fontsource-variable/nunito` (the kiosk root 500s in dev), so `npm ci` before tests or build.
