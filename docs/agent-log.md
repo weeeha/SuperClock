@@ -6,6 +6,24 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon v3 and v4: smooth glides, parallax city, 80s chrome digits, a hills scene
+
+Nick, in a run of short messages: smoother movement and fewer cars; the car turns too hard and the cars should be smaller; the city is static, animate it the way old computer games did; the digits in 80s chrome type (two rounds of references, "exactly like this mirror and glow", "even better effects"); and "maybe sometimes it's not city" with a wireframe-terrain reference.
+
+**Tags (local):** `horizon-game-v1` 6f7ea15, `horizon-dodge-v2` c0a08e0, `horizon-chrome-v3` 859f958, `horizon-scenes-v4` a448f92 (live on fastclock).
+
+**Motion:** snaps take 0.9 s on a smootherstep every four beats; yaw and camera roll about halved; cars at CAR_SCALE 0.8. Traffic is sparse (about half the snaps) and placed by distance from the closing speed; a sedan is skipped when the next snap would end in or drift across its lane before the overtake is done, solved on the camera model. `src/apps/clock/neon/horizon-schedule.test.ts` drives fifteen minutes at 50 samples a second and fails on any car-sedan overlap: it caught three real overlap cases while this was tuned (time-based placement at slow speed, a next snap back into the lane, a drift through it) before passing.
+
+**Scenery:** the city and the small wireframe ranges are looping parallax strips (`scroll()`: drift plus swings as if the road bends), mountains at 0.4 of the city's speed, the city breathing in scale; windows flicker (one pass, three tint lists), two searchlights sweep, a chaser runs up the tallest tower. A second scene (`sceneWeight()`, minutes 5 to 9 of every ten, 6 s crossfade): big pink low-poly ranges, a hill mesh on the rungs either side of the road, the sun warming to yellow-orange, VHS scanlines under the digits.
+
+**Digits:** vector skeletons for 0 to 9 (no canvas font), slanted 0.16, a three-step blue extrusion, a white-to-pink rim over a dark bevel, a sky mirror dark navy to bright cyan over a jagged horizon, a maroon-to-pink ground with three slits from hard gradient stops, lens-flare sparkles on the upper rims; cached per minute over a live dark mask. Two defects found on glass and fixed with isolation shots (mask off, then layer off): wide bloom passes with flat caps cut the glow into dark shards, and mixed caps let the bloom poke past the rim; resolved with round bloom caps inside square rim caps.
+
+**Verified:** gates and 127 files / 1405 tests (old ICO-2 only). Mac bench 2.2 ms (city) and 1.2 ms (hills) per 1080 frame. All ten numerals shot. fastclock: deployed a448f92, kiosk reloaded, on glass at 02:38 in the hills scene; kiosk browser 56% of one core in the hills, 78% measured for the city scene at 859f958 before the window pass was merged, 58 C, no throttling. `scripts/face-preview.mjs` now waits for Chrome to exit before removing its profile.
+
+**Open:** the city scene's CPU on the Pi after the single-pass windows is unmeasured; no Pi 4 numbers; day palette not seen on glass; the reference's winding road (a curved road needs the car and traffic schedule reworked) not built.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a dodge game: lane snaps, traffic, drift, camera roll; versions tagged
 
 Nick, in sequence: "make it feel like game, more random, speed slows downs, need palms" (6f7ea15), then "save the current version though", then two references to study for dynamics, style and models: the Electro Ride trailer (YouTube vY_xf9FrXsM) and Neon Drive on Steam (app 433910).
