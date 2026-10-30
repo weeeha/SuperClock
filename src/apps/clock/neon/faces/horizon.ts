@@ -919,8 +919,10 @@ function chromeMask(ctx: CanvasRenderingContext2D, digits: string[]) {
   forEachDigit(ctx, digits, (_i, polys) => {
     ctx.strokeStyle = STAGE;
     ctx.lineWidth = GLYPH_W + 9;
-    ctx.lineCap = 'butt';
-    ctx.lineJoin = 'miter';
+    // Round caps and joins on every layer of a glyph (mask, bloom, rim, body),
+    // so their ends coincide: mixed caps leave bloom poking past the rim.
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round'; // a mitre spikes past the glyph at the 2's and 3's tight angles
     ctx.beginPath();
     tracePolys(ctx, polys);
     ctx.stroke();
@@ -933,9 +935,11 @@ function chromeMask(ctx: CanvasRenderingContext2D, digits: string[]) {
 function chromeDigits(l: CanvasRenderingContext2D, N: NeonKit, digits: string[]) {
   const rim = N.mix(N.c.white, N.c.pink, 0.3);
   forEachDigit(l, digits, (_i, polys, x) => {
-    N.glow(l, N.c.magenta, GLYPH_W + 9, (c) => tracePolys(c, polys), { intensity: 0.32, core: false, cap: 'butt' });
-    l.lineCap = 'butt';
-    l.lineJoin = 'miter';
+    // Round caps on the bloom: its outer passes are hundreds of units wide, and
+    // a flat cap cuts each one off along a straight edge, leaving dark shards.
+    N.glow(l, N.c.magenta, GLYPH_W + 9, (c) => tracePolys(c, polys), { intensity: 0.15, halo: 0.7, core: false, cap: 'round' });
+    l.lineCap = 'round';
+    l.lineJoin = 'round';
     l.strokeStyle = rim;
     l.lineWidth = GLYPH_W + 8;
     l.beginPath();
