@@ -6,6 +6,20 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · Horizon becomes a neon night drive with a 3D car, live on fastclock
+
+Nick: "add some cool car moving leaving traces behind", "like lambo, countach or something", then two sets of Neon Drive style references, then "it needs more volume, maybe a 3D model so when it moves left and right we see more of its body, lights also glow or react".
+
+**What Horizon is now** (`src/apps/clock/neon/faces/horizon.ts`, commits 27f39bd and bb244f6): a cyan-lined highway under a starfield; a city with lit windows (white, cyan and pink, deterministic) between two low-poly cyan wireframe ranges; the striped sun setting behind the city with the day (`sunY = HZ + 10 - 100 * elev`: top at y 370 at noon, fully set at midnight; the first car version left a sliver showing at 23:58); violet gates every 3 s rolling with the floor, height 300 under the 450 eye height so no bar ever crosses the skyline or the digits; a shooting star every 13 s; cyan lane dashes rolling with the floor.
+
+**The car** is a 9-face mesh (rear, deck, flanks, low cabin set forward, hood, wing on struts, louvres) projected by the floor's own camera: the floor model `floorY/spread` is a pinhole camera 450 units up with `spread = F / Z` (F 800), so the car agrees with lanes and gates at every position. It weaves (pure function of ambient time) and yaws into the weave (up to 0.26 rad), faces are back-face culled and drawn back to front in a fixed order that holds from behind and above, shaded by kind (tops lit violet as a gate passes, the flank toward the road edge picks up cyan), headlights pool on the road ahead, orange slatted tail lights flare with a passing gate and leave trails (each trail point is `weave(t - d)` re-projected d seconds closer, so no frame history) plus a faint wet-road reflection. Tuning in the shots: HY 1.7 read as a hatchback, 1.35 with a lower roof and forward cabin reads as the 80s wedge. No plate text, no badge (meta anti-patterns).
+
+**Verified:** gates and 126 files / 1404 tests (only the old ICO-2). Mac bench 1.5 ms per 1080 frame. `docs/drafts/neon-port/bench.js` takes `?a=<seconds>` to pin the ambient clock, and `bench.mjs` passes `NEON_Q`, for repeatable car poses. Deployed bb244f6 (health verified), kiosk reloaded with `pkill -TERM chromium`, seen on glass at 01:41 at night brightness. Kiosk browser CPU on fastclock (Pi 5): 26% for the first Horizon, 46% with the flat car, 45% for the night drive; 59.3 C, throttled=0x0.
+
+**Open:** Pi 4 cost unmeasured (smallclock offline, squareclock untried); the day palette of the night drive not seen on glass; fastclock still pinned to Horizon alone (18-instance playlist in the backup). Earlier messages about a mirroring eye and a pressable face may have meant this face: the wet-road reflection is the only mirroring added.
+
+---
+
 ## 2026-10-30 · branch claude/radiant-shaders-watchfaces-97d328 · five neon faces in the kiosk, Horizon live on fastclock
 
 Nick picked "Build the top 5" from the neon drafts (entry below), then "Allow them" on the colour decision, then asked to launch Horizon on the clock.
