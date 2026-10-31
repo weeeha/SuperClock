@@ -1,5 +1,13 @@
 # SuperClock
 
+**Problem.** Dashboards assume a rectangle. On a round 1080 by 1080 display the corners are gone and list layouts lose about 22% of their margin, and the four Pis in the house differ in hardware.
+
+**Idea.** A full-screen touch kiosk where apps register themselves and the shell discovers them, each device declares what it supports, and a fleet admin panel pushes per-device config.
+
+**Built.** A React 19, TypeScript and Vite kiosk with 18 mini-apps (a clock with 13 faces, weather, calendar, fitness, habits and more) and an Express server that hosts the admin panel at `/admin`. It runs on four Raspberry Pis at home, one of them on a separate native LVGL build. 435 commits on 46 days, Apr 25 to Oct 30, 2026.
+
+**Decision.** Each Pi stays standalone and local-first instead of depending on the admin host. It caches its last good config in localStorage, so a Pi that boots while the admin host is down still shows its configured screens.
+
 A round-display smart clock dashboard for a custom Raspberry Pi fleet. SuperClock bundles a set of mini-apps (clock, weather, calendar, fitness, GitHub stats, habits, fireplace, photo frame, quotes, time tracking, Claude usage) into a single full-screen interface designed for a 1080×1080 circular LCD, plus a fleet admin panel served at `/admin` on the admin host.
 
 ![SuperClock complications watch face, captured from a local dev run](docs/screenshots/clock-face-complications.webp)
