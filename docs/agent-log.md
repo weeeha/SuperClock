@@ -6,6 +6,26 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-01 · branch claude/review-status-3b48fc · three review defects fixed, tests first, deployed to fastclock as d203acd
+
+Nick picked "1" from the review (entry below): fix the idle return, the month tell and the Weather blank, then redeploy fastclock.
+
+**Idle return** (`src/core/hooks/useGestures.ts`, `navigation.ts`, `hooks/useIdleReturn.ts`, new `hooks/useHomeHold.ts`): every pointerdown now calls `noteUserGesture()`, so taps are activity. New nav slot `homeHold: string | null` with `setHomeHold`; `useHomeHold(id, active)` sets it while a session runs and releases only if it still owns it (the verticalSwipeCallback guard). Wired: Timer while `status === 'running'`, Fitness while the circuit runs, Focus while its timer runs, Alarm while editing. `checkIdle` skips the home return while held; overlay dismissal still runs. Paused timers and workouts do not hold.
+
+**Calendar Classic** (`src/apps/calendar/calendar-layout.ts`, `MonthView.tsx`, `CalendarApp.tsx`): the month weeks band and the tell share constants; the band ends at 20 percent from the bottom (was 13, the tell's own band), so a six-row month clears the sentence. The tell keeps its place.
+
+**Weather** (`src/apps/weather/useWeather.ts`): `weatherCacheKey(query)`; the last good model, label and updatedAt kept per query in memory and in `localStorage` under `superclock:weather:<place|coords>|<unit>|<tz>`; the hook starts from it and every successful fetch rewrites it. A query change keeps the old screen until the new forecast lands, as before.
+
+**Tests first, each watched failing:** `useIdleReturn.test.ts` (+3: held session never returns home, overlays still dismiss, release resumes), `useHomeHold.test.tsx` (4), `useAppGestures.test.tsx` (a tap writes lastGestureMs), `calendar-layout.test.tsx` (band clears the tell; MonthView draws from the constant; November 2026 has six rows), `useWeather.test.tsx` (seeded cache shows at once while fetch hangs; a fetch writes the cache). `./scripts/gates.sh` green: 132 files, 1428 tests, build; `docs/health.md` regenerated (file count only). `.claude/rules/gestures-and-navigation.md` notes the new slot.
+
+**Verified in the dev kiosk at 1080:** a real tap sets lastGestureMs from 0; month view band bottom 864 px against tell top 894 px with six rows; Weather remount shows Montreal at once with the cache key present; Timer hold `timer` while running and `null` when paused; Alarm hold `alarm` in edit and `null` after back.
+
+**Deployed:** `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@100.78.29.28`, health verified `d203acd`; `pkill -TERM chromium`, autostart respawned (9 processes), a grim frame at 15:12 shows the kiosk rendering; 58.7 C, throttled 0x0. No package change, so no `npm ci` on the Pi. fastclock keeps its config (Rally pinned, 19 instances).
+
+**Open:** on-glass check of the three fixes themselves needs the Calendar, Weather or Timer on the panel (fastclock is pinned to Rally); squareclock and smallclock untouched; the rest of the review's findings (copy pass, unread schema options, secrets) wait on Nick.
+
+---
+
 ## 2026-11-01 · branch claude/review-status-3b48fc · functional and design review of all 18 apps in the dev kiosk, nothing edited
 
 Nick: "run design review and testing for each app, that items are working and clickable and all functions are present." Review written to `docs/design/2026-11-01-app-functional-review.md`; no code change.
