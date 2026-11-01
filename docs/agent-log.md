@@ -6,6 +6,24 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-01 · branch claude/review-status-3b48fc · PR #78, on-glass pins, copy pass with a new CPY-5 rule, deployed 21b2733 to fastclock
+
+Nick: "1 2 3 4" on the previous entry's options.
+
+**1. PR:** branch pushed with the weeeha credential helper, PR #78 opened against main (https://github.com/weeeha/SuperClock/pull/78), later updated with the copy pass.
+
+**2. On-glass:** fastclock's playlist pinned through its token-gated `POST /api/device/config` to `i-calendar`, then the Montreal weather instance, then back to `i-rally` at 3600 s. The first attempt used `rotationSeconds: null` and changed nothing on glass: `playlist.ts` is a no-op without a rotation. With 3600 both pins showed (grim frames: the Fields calendar cover, then the Weather disc). The first Weather visit after a kiosk restart showed the lazy-chunk spinner and then the empty "Weather" disc for a few frames: a cold cache, since nothing had been visited since the restart; the cached-model path only applies from the second visit, which is covered by `useWeather.test.tsx`, not seen on glass. The month-view tell could not be reached on the panel (no touch). After the restore the panel showed a running 10-minute Timer, started on the glass at about 16:47, so someone was at the clock; no further pins were run and the kiosk was not reloaded for the later deploy. Backup `config/fleet.json.bak-before-pins-2026-11-01` on the Pi.
+
+**3. Copy pass** (commit 21b2733): new rule `CPY-5` in `rules/superclock.json` (blocker, a grep for the em dash character, a spaced middle dot or `&middot;` over src/apps and src/core, `.test.` exempt, fixture pair `cpy-5-{bad,good}.tsx`); it found 34 hits, all rewritten: commas and periods for the joins and dashes, sentence case for Focus ("Tap to start", "Paused, away from desk", "Task", "At desk today"), the Fitness caption (untracked; the workout title keeps its display caps), the Calendar day and week headers (tracking dropped), the Breathing chip ("Mock data"), the Weather Now header. Tells: Weather Classic unconfigured now says "Set a location in the admin" (`WeatherApp.test.tsx`), GitHub maps HTTP 401/403 to "the GitHub token on this clock was rejected" (`github-hint.ts` + test). `ICO-2`: Todo's icon is now the escaped memo emoji like every other registry entry, the blocker is gone and its baseline row in `scripts/lib/rule-baseline.mjs` deleted (the ratchet test demanded it). `docs/health.md` regenerated twice (rule list, then the baseline). Gates green: 134 files, 1433 tests, build, `check:rules` 0 violations.
+
+**Verified in the dev kiosk:** Focus timer, picker and summary labels; Fitness "Tap to start" under "FULL BODY"; Calendar week header "This week, Oct 26 to Nov 1". Deployed `21b2733` to fastclock, health verified; Chromium deliberately not restarted (the timer on the panel), so the kiosk shows the new copy after its next restart.
+
+**4. squareclock:** waits for the PR merge; it runs the Oct 3 build with no instances and needs `npm ci --omit=dev` on the Pi (nunito and three were added since).
+
+**Open:** the whole registry declares emoji icons by convention and the ICO-2 detector only sees literals; a lucide pass over all 18 is its own decision. Pi 4 fps for Rally and the neon faces still unmeasured.
+
+---
+
 ## 2026-11-01 · branch claude/review-status-3b48fc · three review defects fixed, tests first, deployed to fastclock as d203acd
 
 Nick picked "1" from the review (entry below): fix the idle return, the month tell and the Weather blank, then redeploy fastclock.
