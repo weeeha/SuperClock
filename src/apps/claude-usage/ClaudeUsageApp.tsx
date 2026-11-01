@@ -210,7 +210,7 @@ export default function ClaudeUsageApp({ isActive, config }: AppProps) {
             fill={TEXT_PRIMARY}
             fontSize="92"
           >
-            {showData ? `${Math.round(sessionUtil * 100)}%` : '—'}
+            {showData ? `${Math.round(sessionUtil * 100)}%` : '–'}
           </text>
           <text
             x={CENTER + 130}
@@ -219,7 +219,7 @@ export default function ClaudeUsageApp({ isActive, config }: AppProps) {
             fill={TEXT_PRIMARY}
             fontSize="92"
           >
-            {showData ? `${Math.round(weekUtil * 100)}%` : '—'}
+            {showData ? `${Math.round(weekUtil * 100)}%` : '–'}
           </text>
         </g>
         <g

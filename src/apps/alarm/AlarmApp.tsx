@@ -176,7 +176,7 @@ export default function AlarmApp({ isActive, config }: AppProps) {
             {view.time}
           </button>
           <p className="theme-fade mt-[1.5vmin] text-[2.2vmin] text-(--face-ink-muted)">
-            {view.mode === 'minutes' ? 'Dial sets minutes · tap the time for hours' : 'Dial sets hours · tap the time for minutes'}
+            {view.mode === 'minutes' ? 'Dial sets minutes, tap the time for hours' : 'Dial sets hours, tap the time for minutes'}
           </p>
           <div className="mt-[3vmin] flex gap-[1vmin]">
             {DAY_LETTERS.map((letter, d) => {
@@ -199,7 +199,7 @@ export default function AlarmApp({ isActive, config }: AppProps) {
           </div>
           <p className="theme-fade mt-[1.5vmin] text-[2.2vmin] text-(--face-ink-muted)">
             {cfg.gentleWakeMinutes > 0
-              ? `Gentle wake ${cfg.gentleWakeMinutes} min · snooze ${cfg.snoozeMinutes} min`
+              ? `Gentle wake ${cfg.gentleWakeMinutes} min, snooze ${cfg.snoozeMinutes} min`
               : `Snooze ${cfg.snoozeMinutes} min`}
           </p>
           <div className="mt-[3vmin] flex gap-[2vmin]">

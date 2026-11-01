@@ -112,8 +112,8 @@ export default function BreathingApp({ isActive, config }: AppProps) {
       <div className="absolute bottom-[7.5%] left-1/2 flex -translate-x-1/2 items-center gap-[2vmin] text-[2.2vmin] text-[hsl(var(--sheet-ink))]/50">
         {showDistance && distance && <span>{distance}</span>}
         {radar?.source === 'mock' && (
-          <span className="rounded border border-[rgb(var(--fill))] px-[1vmin] py-[0.6vmin] uppercase tracking-wide">
-            mock data
+          <span className="rounded border border-[rgb(var(--fill))] px-[1vmin] py-[0.6vmin]">
+            Mock data
           </span>
         )}
       </div>

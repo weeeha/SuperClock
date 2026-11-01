@@ -89,13 +89,13 @@ function FocusView({
   let status: string;
   let statusColor: string;
   if (running) {
-    status = 'TAP TO PAUSE';
+    status = 'Tap to pause';
     statusColor = '#22C55E';
   } else if (autoPaused) {
-    status = 'PAUSED — AWAY FROM DESK';
+    status = 'Paused, away from desk';
     statusColor = '#EAB308';
   } else {
-    status = elapsed > 0 ? 'TAP TO RESUME' : 'TAP TO START';
+    status = elapsed > 0 ? 'Tap to resume' : 'Tap to start';
     statusColor = 'var(--face-tick)';
   }
 
@@ -171,7 +171,7 @@ function TaskPickerView({
   return (
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
       <text x="500" y={startY - 60} textAnchor="middle" fill="var(--face-tick)" fontSize="34" fontFamily="Inter, sans-serif">
-        TASK
+        Task
       </text>
       {projects.map((name, i) => {
         const y = startY + i * (PILL_H + GAP);
@@ -242,7 +242,7 @@ function SummaryView({
     <svg viewBox="0 0 1000 1000" className="h-full w-full">
       <text x="500" y="255" textAnchor="middle" fill="var(--face-tick)" fontSize="34" fontFamily="Inter, sans-serif">
         {radarLive && <tspan fill={present ? '#22C55E' : 'var(--face-tick)'}>● </tspan>}
-        AT DESK TODAY
+        At desk today
       </text>
       <text x="500" y="380" textAnchor="middle" fill="var(--face-ink)" fontSize="120" fontWeight="600" fontFamily="Inter, sans-serif">
         {formatHours(occupancy.totalMs)}

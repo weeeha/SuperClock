@@ -229,10 +229,10 @@ export default function CalendarApp({ isActive, config }: AppProps) {
     <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       {content}
       {/* Honest tells: config state beats network state — "not configured"
-          is actionable (set CALENDAR_ICS_URL), "offline · cached" is not. */}
+          is actionable (set CALENDAR_ICS_URL), "offline, cached" is not. */}
       {(notConfigured || offline) && (
         <p className="absolute left-0 right-0 text-center text-(--face-ink-muted) text-[2.8vmin] pointer-events-none" style={{ bottom: `${CALENDAR_TELL.bottomPct}%` }}>
-          {notConfigured ? 'calendar not configured' : 'offline · cached'}
+          {notConfigured ? 'calendar not configured' : 'offline, cached'}
         </p>
       )}
       {!drill && (

@@ -16,7 +16,7 @@ const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 function rangeLabel(days: Date[]): string {
   const first = days[0];
   const last = days[6];
-  const mon = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const mon = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' });
   if (first.getMonth() === last.getMonth()) {
     return `${mon(first)} ${first.getDate()}–${last.getDate()}`;
   }
@@ -30,10 +30,10 @@ export default function WeekView({ now, events, weekStart, onSelectDay }: WeekVi
   return (
     <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <p
-        className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium tracking-[0.18em]"
+        className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium"
         style={{ color: GRAY }}
       >
-        THIS WEEK &middot; {rangeLabel(days)}
+        This week, {rangeLabel(days)}
       </p>
 
       <div className="absolute top-[17%] bottom-[13%] left-[17%] w-[66%] flex flex-col justify-between">

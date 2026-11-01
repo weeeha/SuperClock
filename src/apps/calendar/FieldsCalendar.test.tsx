@@ -31,7 +31,7 @@ describe('FieldsCalendar', () => {
     expect(screen.getByText('Up next')).toBeTruthy();
     expect(screen.getByText('15:30')).toBeTruthy();
     expect(screen.getByText('Design review')).toBeTruthy();
-    expect(screen.getByText('in 1h 30m · until 16:30')).toBeTruthy();
+    expect(screen.getByText('in 1h 30m, until 16:30')).toBeTruthy();
     expect(screen.getByText('Gym')).toBeTruthy();
     expect(screen.getByText('18:00')).toBeTruthy();
     expect(screen.getByText('Dinner')).toBeTruthy();
@@ -57,7 +57,7 @@ describe('FieldsCalendar', () => {
     const events = [...DAY, ev('Standup', [9, 0], [10, 0], 2)];
     render(<FieldsCalendar {...base} events={events} now={new Date(2026, 9, 1, 22, 0)} />);
     expect(screen.getByText('Nothing else today')).toBeTruthy();
-    expect(screen.getByText('Tomorrow · Standup 09:00')).toBeTruthy();
+    expect(screen.getByText('Tomorrow, Standup 09:00')).toBeTruthy();
   });
 
   it('asks for a feed on the server when none is configured', () => {
@@ -73,8 +73,8 @@ describe('FieldsCalendar', () => {
 
   it('says when it is showing saved events', () => {
     render(<FieldsCalendar {...base} offline />);
-    expect(screen.getByText('Offline · saved events')).toBeTruthy();
-    expect(screen.queryByText('in 1h 30m · until 16:30')).toBeNull(); // the chip takes the slot
+    expect(screen.getByText('Offline, saved events')).toBeTruthy();
+    expect(screen.queryByText('in 1h 30m, until 16:30')).toBeNull(); // the chip takes the slot
   });
 
   it('uses the 12-hour clock when configured', () => {

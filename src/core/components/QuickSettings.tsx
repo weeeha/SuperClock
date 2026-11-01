@@ -143,7 +143,7 @@ export default function QuickSettings() {
                   : net === 'unavailable'
                     ? 'status unavailable'
                     : net.connected
-                      ? `${net.ssid} · connected`
+                      ? `${net.ssid}, connected`
                       : 'not connected'}
               </span>
             </div>

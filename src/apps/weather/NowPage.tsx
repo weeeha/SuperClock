@@ -39,7 +39,7 @@ export default function NowPage({ model, label, now }: NowPageProps) {
 
       <text x={C} y={196} textAnchor="middle" dominantBaseline="central"
             fontSize={34} fill="var(--face-ink-muted)">
-        {label ? `⌖ ${label.toUpperCase()} · ${hhmm}` : hhmm}
+        {label ? `⌖ ${label}, ${hhmm}` : hhmm}
       </text>
 
       <text x={C} y={412} textAnchor="middle" dominantBaseline="central"
