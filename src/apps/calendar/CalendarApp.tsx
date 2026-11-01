@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CALENDAR_TELL } from './calendar-layout';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { calendarAppSchema } from '../../shared/schemas/app.calendar';
@@ -230,7 +231,7 @@ export default function CalendarApp({ isActive, config }: AppProps) {
       {/* Honest tells: config state beats network state — "not configured"
           is actionable (set CALENDAR_ICS_URL), "offline · cached" is not. */}
       {(notConfigured || offline) && (
-        <p className="absolute bottom-[13%] left-0 right-0 text-center text-(--face-ink-muted) text-[2.8vmin] pointer-events-none">
+        <p className="absolute left-0 right-0 text-center text-(--face-ink-muted) text-[2.8vmin] pointer-events-none" style={{ bottom: `${CALENDAR_TELL.bottomPct}%` }}>
           {notConfigured ? 'calendar not configured' : 'offline · cached'}
         </p>
       )}

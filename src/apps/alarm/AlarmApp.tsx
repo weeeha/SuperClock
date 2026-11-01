@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useHomeHold } from '../../core/hooks/useHomeHold';
 import { AlarmClock } from 'lucide-react';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
@@ -79,6 +80,7 @@ export default function AlarmApp({ isActive, config }: AppProps) {
   const setBackCallback = useNavigation((s) => s.setBackCallback);
   const showGrid = useNavigation((s) => s.showGrid);
   const [view, setView] = useState<View>({ kind: 'resting' });
+  useHomeHold('alarm', isActive && view.kind === 'edit');
 
   const [now, setNow] = useState(() => Date.now());
   // The "in 8h 32m" line: once a minute, only while active (KIO-1). Becoming

@@ -32,6 +32,10 @@ export function useAppGestures(containerRef: React.RefObject<HTMLDivElement | nu
     };
     const onPointerDown = (e: PointerEvent) => {
       active.add(e.pointerId);
+      // A tap is activity for the idle return too; swipes write lastGestureMs
+      // through the nav actions, but a person tapping through a timer never
+      // swipes, and the home return pulled them off it (2026-11-01).
+      useNavigation.getState().noteUserGesture();
       updateDebug('pd');
       if (active.size >= 3) trigger();
     };

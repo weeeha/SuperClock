@@ -130,7 +130,7 @@ By method: delegated 4, grep 8, heuristic 5, judgment 3, rendered 3, requires 3.
 | SUR-1 | blocker | grep | Apps paint the palette, not a hardcoded surface |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 297 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
+Tree scan over 303 files: 1 violation(s) (1 blocker, 0 review, 0 warning): `ICO-2` src/apps/todo/index.ts:8.
 
 Baseline rows (`BASELINE`, frozen debt): `ICO-2 src/apps/todo/index.ts` ×1.
 

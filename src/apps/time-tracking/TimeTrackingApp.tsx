@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useHomeHold } from '../../core/hooks/useHomeHold';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { useRadar } from '../../core/radar';
@@ -297,6 +298,7 @@ export default function TimeTrackingApp({ isActive, config }: AppProps) {
   const [view, setView] = useState<View>(0);
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
+  useHomeHold('time-tracking', isActive && running);
   const [autoPaused, setAutoPaused] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [occupancy, setOccupancy] = useState<OccupancySummary | null>(null);

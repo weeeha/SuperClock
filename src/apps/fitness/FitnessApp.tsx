@@ -13,6 +13,7 @@
 // stale one captured at render time.
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useHomeHold } from '../../core/hooks/useHomeHold';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { acquireBrightnessLease, releaseBrightnessLease } from '../../core/brightness-lease';
@@ -120,6 +121,7 @@ export default function FitnessApp({ isActive, config }: AppProps) {
   }, [cfg.beeps, cfg.voiceCues]);
 
   const running = state.phase === 'countdown' || state.phase === 'work' || state.phase === 'rest';
+  useHomeHold('fitness', isActive && running);
 
   // Mirrors `workout` for the unmount cleanup below, which runs with an
   // empty dep array (see that effect) and so cannot read a fresh `workout`

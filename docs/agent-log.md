@@ -6,6 +6,20 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-01 · branch claude/review-status-3b48fc · functional and design review of all 18 apps in the dev kiosk, nothing edited
+
+Nick: "run design review and testing for each app, that items are working and clickable and all functions are present." Review written to `docs/design/2026-11-01-app-functional-review.md`; no code change.
+
+**How:** dev kiosk at 1080 x 1080 in the Browser pane, a config with one instance per app pushed through the local `POST /api/device/config` (Montreal weather, GitHub user, Countdown, short Fitness rounds, two Focus projects), then `settings.skin: fields` and a blue fireplace for the second pass. Every app visited by day and at night (night through a real tap on the sheet toggle); the control that matters in each app got a real pointer (taps, the Timer and Alarm dial drags, the brightness slider), the rest went through `window.__nav`.
+
+**Verified:** gates green after `npm ci` (lint, tokens, 1413 tests, build; the worktree's modules predated three and nunito). All 18 apps render and every documented function responds: 20 faces cycle, Weather's six pages, the Calendar ladder with a day drill and back, Quote, Fitness start/pause/abort, Habits toggle and month ring, Focus start/pick/summary, GitHub and Claude usage tells and views, Agents list/chat/avatar/back, Todo add through the keyboard, toggle, Done and clear-all, Timer presets, dial, pause, resume and long-press reset, Alarm add, dial, pills, switch, edit and delete, the sheet's slider and toggle, the grid's tap. No app threw.
+
+**Found:** (1) taps never update `lastGestureMs`, so the 5-min idle return pulls a tap-only session (Timer, Fitness, Focus) back to the clock; Focus loses its running session, Fitness suspends, Timer survives. (2) Calendar Classic month: the not-configured tell overlaps the sixth week row. (3) Weather Fields shows an empty disc for about a second on every mount (no persisted model). Plus the still-open Oct 23 items (Weather Classic "offline" when unconfigured, GitHub 401 tell, caps and middle-dot copy, ICO-2) and six schema options no app reads but the admin offers.
+
+**Open:** nothing seen on a Pi; audio and alert firing untested; Calendar with events, GitHub with a token, the photo slideshow untested; the dev fleet file in this worktree now holds the 18-instance config (gitignored).
+
+---
+
 ## 2026-10-30 · branch claude/rally-clock-fasclocks-672015 · Rally pinned on fastclock
 
 Nick: "Launch Rally clock on fastclock". No code change and no deploy: fastclock already ran c757c73, which carries Rally. On the Pi, backed up `config/fleet.json.bak-before-rally-launch-2026-10-30`, then POSTed the device config with `playlist: {items: ['i-rally'], rotationSeconds: 3600}` (it was `['i-clock']`, null), updatedAt bumped.
