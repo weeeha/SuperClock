@@ -6,6 +6,22 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-01 · branch claude/review-status-3b48fc · "the clock is stuck": a black panel, then a boot wedge with the pinned playlist; both fixed, deployed d56e048
+
+Nick: "the clock are stuck", then "it's always car, can't swipe to switch a watchface".
+
+**Black panel (16:50 to 17:00):** the copy-pass deploy restarted only the server and left Chromium on the old bundle to protect a running Timer. The rsync deletes files the new build no longer has, so the running page lost its hashed chunks; the next lazy load failed and, with no error boundary, the kiosk went black (grim frame all black, Chromium alive). Restarting Chromium brought Rally back on 21b2733. `scripts/deploy.sh` now restarts the kiosk after the health check (`KEEP_KIOSK=1` skips it); the pi-deployment rule says why.
+
+**Boot wedge (live since Rally was pinned on 2026-10-30):** with a pinned playlist the kiosk calls `switchToInstance` in the first effect pass, before any app child has mounted, so AnimatePresence never fires `onExitComplete` and `mode` stays `transitioning`: every swipe ignored until a three-finger tap (`panicHome` on the same app sets mode `app`). Reproduced three for three on cold reloads of the dev kiosk with fastclock's config. `SwipeContainer` now finishes a transition entered with nothing on screen or with an unchanged key, and runs a 1.5 s watchdog on a real exit (`TRANSITION_WATCHDOG_MS`); `src/core/components/SwipeContainer.test.tsx` was red before the fix. After it, three cold reloads boot in mode `app`.
+
+**Face swipe on a pinned instance:** `ClockApp` dropped the vertical-swipe callback whenever `faceId` was configured ("the user shouldn't be able to swipe-cycle"), so the Rally instance could never show another face. A configured face is now the start of the cycle (`src/apps/clock/face-cycle.ts`: `startIndexFor`, `faceIdAt`); swipes move through every face, a new configured face resets the cycle (the cycle is keyed on it), a remount lands back on it, and the wrapper carries `data-face`. `ClockApp.test.tsx` (6). Verified in the dev kiosk with real drags: Rally, swipe down → Minimalismo, swipe up → Rally; a leftward drag reaches Weather. One rightward drag resolved to nothing: a slow synthetic drag under `SWIPE_VELOCITY`, the same drag worked from another start.
+
+**Gates:** 136 files, 1445 tests, build, 0 rule hits; `docs/health.md` regenerated; the docs-drift test rejected a literal double-dash flag name in the deploy rule, reworded. Deployed `d56e048` to fastclock; the script restarted Chromium (respawned 17:15:00), health verified, a frame at 17:15 shows Rally on glass at 57.6 C. Whether a swipe now works on the panel needs a finger; the dev reproduction and the tests are the evidence.
+
+**Open:** the kiosk still has no error boundary (the Oct 9 branch `claude/youthful-galileo-f4d23d` holds one); squareclock waits for the merge of PR #78; the three-finger tap and the arc grammar remain untested by anything but a hand.
+
+---
+
 ## 2026-11-01 · branch claude/review-status-3b48fc · PR #78, on-glass pins, copy pass with a new CPY-5 rule, deployed 21b2733 to fastclock
 
 Nick: "1 2 3 4" on the previous entry's options.
