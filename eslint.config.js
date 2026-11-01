@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // .claude holds the stamped unslop copy and its vendored runner, rules and fixtures
+  // (hashed in MANIFEST.json); they are not this repo's code, so they are not linted here.
+  globalIgnores(['dist', '.claude/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
