@@ -131,7 +131,7 @@ By method: delegated 4, grep 9, heuristic 5, judgment 3, rendered 3, requires 3.
 | SUR-1 | blocker | grep | Apps paint the palette, not a hardcoded surface |
 | SYS-1 | blocker | delegated | Tokens only in the semantic zones; faces consume --face-* |
 
-Tree scan over 306 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
+Tree scan over 309 files: 0 violation(s) (0 blocker, 0 review, 0 warning): none.
 
 Baseline rows (`BASELINE`, frozen debt): empty.
 
