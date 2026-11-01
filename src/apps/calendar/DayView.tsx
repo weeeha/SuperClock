@@ -26,13 +26,13 @@ export default function DayView({ day, events, timeFormat, onSelectEvent }: DayV
   });
   const allDay = dayEvents.filter((e) => e.allDay);
   const timed = dayEvents.filter((e) => !e.allDay);
-  const header = `${day.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()} · ` +
-    `${day.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${day.getDate()}`;
+  const header = `${day.toLocaleDateString('en-US', { weekday: 'long' })}, ` +
+    `${day.toLocaleDateString('en-US', { month: 'short' })} ${day.getDate()}`;
 
   return (
     <div className="relative h-full w-full bg-(--face-bg) overflow-hidden">
       <p
-        className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium tracking-[0.18em]"
+        className="absolute top-[8.5%] left-0 right-0 text-center text-[2.6vmin] font-medium"
         style={{ color: GRAY }}
       >
         {header}

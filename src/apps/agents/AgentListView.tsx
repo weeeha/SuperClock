@@ -20,7 +20,7 @@ export default function AgentListView({
         }
         empty={
           <p className="text-(--face-ink-muted) text-center text-[3vmin] mt-[12vmin]">
-            No agents enabled — check enabledAgents in the admin.
+            No agents enabled. Check enabledAgents in the admin.
           </p>
         }
         renderItem={(a) => (

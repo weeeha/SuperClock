@@ -117,3 +117,43 @@ describe('checkIdle', () => {
     expect(useNavigation.getState().mode).toBe('grid');
   });
 });
+
+describe('home hold: a running session is not idle', () => {
+  it('never returns home while an app holds a running session', () => {
+    useNavigation.setState({ homeHold: null });
+    const home = useNavigation.getState().appOrder[0];
+    useNavigation.getState().swipeToNext();
+    useNavigation.getState().finishTransition();
+    const away = useNavigation.getState().activeAppId;
+    expect(away).not.toBe(home);
+
+    useNavigation.getState().setHomeHold('timer');
+    vi.advanceTimersByTime(HOME_IDLE_MS + 1000);
+    checkIdle();
+    expect(useNavigation.getState().activeAppId).toBe(away);
+  });
+
+  it('still dismisses an idle overlay while a session holds', () => {
+    useNavigation.setState({ homeHold: null });
+    useNavigation.getState().setHomeHold('timer');
+    useNavigation.getState().showGrid();
+    vi.advanceTimersByTime(OVERLAY_IDLE_MS + 1000);
+    checkIdle();
+    expect(useNavigation.getState().mode).toBe('app');
+  });
+
+  it('returns home again once the hold is released', () => {
+    useNavigation.setState({ homeHold: null });
+    const home = useNavigation.getState().appOrder[0];
+    useNavigation.getState().swipeToNext();
+    useNavigation.getState().finishTransition();
+    useNavigation.getState().setHomeHold('fitness');
+    vi.advanceTimersByTime(HOME_IDLE_MS + 1000);
+    checkIdle();
+    expect(useNavigation.getState().activeAppId).not.toBe(home);
+
+    useNavigation.getState().setHomeHold(null);
+    checkIdle();
+    expect(useNavigation.getState().activeAppId).toBe(home);
+  });
+});

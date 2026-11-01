@@ -21,6 +21,10 @@ interface NavigationState {
   /** System back (left-arc swipe). Registered by drilled-in apps, same
    *  ownership pattern as verticalSwipeCallback — including guarded cleanup. */
   backCallback: (() => void) | null;
+  /** The app holding the idle home-return while a session runs (a running
+   *  timer or workout, an alarm being edited). One slot, same ownership and
+   *  guarded release as backCallback; see hooks/useHomeHold.ts. */
+  homeHold: string | null;
 
   // Actions
   /** (Re)build appOrder from the registry, filtered to `enabledApps` when
@@ -41,6 +45,7 @@ interface NavigationState {
   hideSettings: () => void;
   setPeek: (peek: { target: 'settings' | 'grid'; progress: number } | null) => void;
   setBackCallback: (fn: (() => void) | null) => void;
+  setHomeHold: (holder: string | null) => void;
   goBack: () => void;
 }
 
@@ -55,6 +60,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   settingsOpen: false,
   peek: null,
   backCallback: null,
+  homeHold: null,
 
   initApps: (enabledApps) => {
     const all = getAppIds();
@@ -142,6 +148,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
   finishTransition: () => set({ mode: 'app', transitionDirection: null }),
   setVerticalSwipeCallback: (fn) => set({ verticalSwipeCallback: fn }),
   noteUserGesture: () => set({ lastGestureMs: Date.now() }),
+  setHomeHold: (holder) => set({ homeHold: holder }),
 
   showSettings: () => {
     const { mode, settingsOpen } = get();

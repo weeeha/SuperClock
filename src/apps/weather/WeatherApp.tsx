@@ -115,7 +115,7 @@ export default function WeatherApp({ isActive, config }: AppProps) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-(--face-bg)">
         <span className="font-mono text-[3vmin] text-(--face-tick)">
-          {offline ? 'weather offline' : 'loading…'}
+          {unconfigured ? 'Set a location in the admin' : offline ? 'weather offline' : 'loading…'}
         </span>
       </div>
     );
