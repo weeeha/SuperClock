@@ -124,9 +124,8 @@ export default function WatchFace(props: WatchFaceProps) {
             fontFamily="Inter, sans-serif"
             fontWeight="650"
             fontSize={34}
-            letterSpacing="0.08em"
           >
-            {caption.toUpperCase()}
+            {caption.charAt(0).toUpperCase() + caption.slice(1)}
           </text>
         )}
 

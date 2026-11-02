@@ -60,7 +60,7 @@ describe('TodoApp', () => {
 
   it('shows the required empty state when nothing is open', async () => {
     await renderApp();
-    expect(screen.getByText('All clear — tap + Add to capture something.')).toBeTruthy();
+    expect(screen.getByText('All clear. Tap + Add to capture something.')).toBeTruthy();
   });
 
   it('swipe up opens Done newest first, swipe down returns to Active', async () => {

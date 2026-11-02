@@ -27,6 +27,53 @@ async function geocode(place: string): Promise<{ coords: Coords; label: string }
   return resolved;
 }
 
+const WEATHER_CACHE_PREFIX = 'superclock:weather:';
+
+interface CachedWeather {
+  model: WeatherModel;
+  label: string;
+  /** ISO time of the fetch, so a stale screen can still say how old it is. */
+  updatedAt: string;
+}
+
+/** One entry per resolved query, so a changed location never shows the old town. */
+export function weatherCacheKey(q: WeatherQuery): string {
+  const where = q.coords ? `${q.coords.latitude},${q.coords.longitude}` : q.place;
+  return `${WEATHER_CACHE_PREFIX}${where}|${q.unit}|${q.timezone}`;
+}
+
+/** The last good model, in memory for this session and in localStorage across
+ *  reloads. Every swipe to Weather remounts the app; without this the Fields
+ *  skin drew an empty disc for the second the refetch took. */
+const modelCache = new Map<string, CachedWeather>();
+
+function readWeatherCache(key: string): CachedWeather | null {
+  const mem = modelCache.get(key);
+  if (mem) return mem;
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CachedWeather>;
+    if (!parsed.model || typeof parsed.updatedAt !== 'string') return null;
+    const entry = { model: parsed.model, label: parsed.label ?? '', updatedAt: parsed.updatedAt };
+    modelCache.set(key, entry);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function writeWeatherCache(key: string, entry: CachedWeather): void {
+  modelCache.set(key, entry);
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch {
+    // Quota or a private window: the in-memory copy still serves this session.
+  }
+}
+
 export interface WeatherState {
   model: WeatherModel | null;
   label: string;
@@ -46,11 +93,6 @@ export function useWeather(
   config: Record<string, unknown> | undefined,
   isActive: boolean,
 ): WeatherState {
-  const [model, setModel] = useState<WeatherModel | null>(null);
-  const [label, setLabel] = useState('');
-  const [offline, setOffline] = useState(false);
-  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-
   // The pushed device config wins; the VITE_ vars are only a fallback.
   // `config`'s identity is stable between polls (see local-config.ts), so this
   // re-runs — and refetches below — only when the fleet config actually moves.
@@ -64,6 +106,18 @@ export function useWeather(
       }),
     [config],
   );
+
+  // Start from the last good model for this query (see modelCache above); the
+  // fetch below refreshes it. A query change keeps the screen it has until the
+  // new forecast lands, exactly as before.
+  const cacheKey = weatherCacheKey(query);
+  const [model, setModel] = useState<WeatherModel | null>(() => readWeatherCache(cacheKey)?.model ?? null);
+  const [label, setLabel] = useState(() => readWeatherCache(cacheKey)?.label ?? '');
+  const [offline, setOffline] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(() => {
+    const cached = readWeatherCache(cacheKey);
+    return cached ? new Date(cached.updatedAt) : null;
+  });
 
   const load = useCallback(
     async (isCancelled: () => boolean) => {
@@ -82,17 +136,20 @@ export function useWeather(
         if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
         const json = await res.json();
         if (isCancelled()) return;
-        setModel(parseForecast(json, new Date()));
+        const fetchedAt = new Date();
+        const parsed = parseForecast(json, fetchedAt);
+        setModel(parsed);
         setLabel(resolvedLabel);
         setOffline(false);
-        setUpdatedAt(new Date());
+        setUpdatedAt(fetchedAt);
+        writeWeatherCache(cacheKey, { model: parsed, label: resolvedLabel, updatedAt: fetchedAt.toISOString() });
       } catch (err) {
         if (isCancelled()) return;
         console.warn('Weather fetch failed:', (err as Error).message);
         setOffline(true);
       }
     },
-    [query],
+    [query, cacheKey],
   );
 
   // Initial load, and again whenever the resolved query changes. Deliberately

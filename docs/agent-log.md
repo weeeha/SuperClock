@@ -6,6 +6,74 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-01 · branch claude/review-status-3b48fc · "the clock is stuck": a black panel, then a boot wedge with the pinned playlist; both fixed, deployed d56e048
+
+Nick: "the clock are stuck", then "it's always car, can't swipe to switch a watchface".
+
+**Black panel (16:50 to 17:00):** the copy-pass deploy restarted only the server and left Chromium on the old bundle to protect a running Timer. The rsync deletes files the new build no longer has, so the running page lost its hashed chunks; the next lazy load failed and, with no error boundary, the kiosk went black (grim frame all black, Chromium alive). Restarting Chromium brought Rally back on 21b2733. `scripts/deploy.sh` now restarts the kiosk after the health check (`KEEP_KIOSK=1` skips it); the pi-deployment rule says why.
+
+**Boot wedge (live since Rally was pinned on 2026-10-30):** with a pinned playlist the kiosk calls `switchToInstance` in the first effect pass, before any app child has mounted, so AnimatePresence never fires `onExitComplete` and `mode` stays `transitioning`: every swipe ignored until a three-finger tap (`panicHome` on the same app sets mode `app`). Reproduced three for three on cold reloads of the dev kiosk with fastclock's config. `SwipeContainer` now finishes a transition entered with nothing on screen or with an unchanged key, and runs a 1.5 s watchdog on a real exit (`TRANSITION_WATCHDOG_MS`); `src/core/components/SwipeContainer.test.tsx` was red before the fix. After it, three cold reloads boot in mode `app`.
+
+**Face swipe on a pinned instance:** `ClockApp` dropped the vertical-swipe callback whenever `faceId` was configured ("the user shouldn't be able to swipe-cycle"), so the Rally instance could never show another face. A configured face is now the start of the cycle (`src/apps/clock/face-cycle.ts`: `startIndexFor`, `faceIdAt`); swipes move through every face, a new configured face resets the cycle (the cycle is keyed on it), a remount lands back on it, and the wrapper carries `data-face`. `ClockApp.test.tsx` (6). Verified in the dev kiosk with real drags: Rally, swipe down → Minimalismo, swipe up → Rally; a leftward drag reaches Weather. One rightward drag resolved to nothing: a slow synthetic drag under `SWIPE_VELOCITY`, the same drag worked from another start.
+
+**Gates:** 136 files, 1445 tests, build, 0 rule hits; `docs/health.md` regenerated; the docs-drift test rejected a literal double-dash flag name in the deploy rule, reworded. Deployed `d56e048` to fastclock; the script restarted Chromium (respawned 17:15:00), health verified, a frame at 17:15 shows Rally on glass at 57.6 C. Whether a swipe now works on the panel needs a finger; the dev reproduction and the tests are the evidence.
+
+**Open:** the kiosk still has no error boundary (the Oct 9 branch `claude/youthful-galileo-f4d23d` holds one); squareclock waits for the merge of PR #78; the three-finger tap and the arc grammar remain untested by anything but a hand.
+
+---
+
+## 2026-11-01 · branch claude/review-status-3b48fc · PR #78, on-glass pins, copy pass with a new CPY-5 rule, deployed 21b2733 to fastclock
+
+Nick: "1 2 3 4" on the previous entry's options.
+
+**1. PR:** branch pushed with the weeeha credential helper, PR #78 opened against main (https://github.com/weeeha/SuperClock/pull/78), later updated with the copy pass.
+
+**2. On-glass:** fastclock's playlist pinned through its token-gated `POST /api/device/config` to `i-calendar`, then the Montreal weather instance, then back to `i-rally` at 3600 s. The first attempt used `rotationSeconds: null` and changed nothing on glass: `playlist.ts` is a no-op without a rotation. With 3600 both pins showed (grim frames: the Fields calendar cover, then the Weather disc). The first Weather visit after a kiosk restart showed the lazy-chunk spinner and then the empty "Weather" disc for a few frames: a cold cache, since nothing had been visited since the restart; the cached-model path only applies from the second visit, which is covered by `useWeather.test.tsx`, not seen on glass. The month-view tell could not be reached on the panel (no touch). After the restore the panel showed a running 10-minute Timer, started on the glass at about 16:47, so someone was at the clock; no further pins were run and the kiosk was not reloaded for the later deploy. Backup `config/fleet.json.bak-before-pins-2026-11-01` on the Pi.
+
+**3. Copy pass** (commit 21b2733): new rule `CPY-5` in `rules/superclock.json` (blocker, a grep for the em dash character, a spaced middle dot or `&middot;` over src/apps and src/core, `.test.` exempt, fixture pair `cpy-5-{bad,good}.tsx`); it found 34 hits, all rewritten: commas and periods for the joins and dashes, sentence case for Focus ("Tap to start", "Paused, away from desk", "Task", "At desk today"), the Fitness caption (untracked; the workout title keeps its display caps), the Calendar day and week headers (tracking dropped), the Breathing chip ("Mock data"), the Weather Now header. Tells: Weather Classic unconfigured now says "Set a location in the admin" (`WeatherApp.test.tsx`), GitHub maps HTTP 401/403 to "the GitHub token on this clock was rejected" (`github-hint.ts` + test). `ICO-2`: Todo's icon is now the escaped memo emoji like every other registry entry, the blocker is gone and its baseline row in `scripts/lib/rule-baseline.mjs` deleted (the ratchet test demanded it). `docs/health.md` regenerated twice (rule list, then the baseline). Gates green: 134 files, 1433 tests, build, `check:rules` 0 violations.
+
+**Verified in the dev kiosk:** Focus timer, picker and summary labels; Fitness "Tap to start" under "FULL BODY"; Calendar week header "This week, Oct 26 to Nov 1". Deployed `21b2733` to fastclock, health verified; Chromium deliberately not restarted (the timer on the panel), so the kiosk shows the new copy after its next restart.
+
+**4. squareclock:** waits for the PR merge; it runs the Oct 3 build with no instances and needs `npm ci --omit=dev` on the Pi (nunito and three were added since).
+
+**Open:** the whole registry declares emoji icons by convention and the ICO-2 detector only sees literals; a lucide pass over all 18 is its own decision. Pi 4 fps for Rally and the neon faces still unmeasured.
+
+---
+
+## 2026-11-01 · branch claude/review-status-3b48fc · three review defects fixed, tests first, deployed to fastclock as d203acd
+
+Nick picked "1" from the review (entry below): fix the idle return, the month tell and the Weather blank, then redeploy fastclock.
+
+**Idle return** (`src/core/hooks/useGestures.ts`, `navigation.ts`, `hooks/useIdleReturn.ts`, new `hooks/useHomeHold.ts`): every pointerdown now calls `noteUserGesture()`, so taps are activity. New nav slot `homeHold: string | null` with `setHomeHold`; `useHomeHold(id, active)` sets it while a session runs and releases only if it still owns it (the verticalSwipeCallback guard). Wired: Timer while `status === 'running'`, Fitness while the circuit runs, Focus while its timer runs, Alarm while editing. `checkIdle` skips the home return while held; overlay dismissal still runs. Paused timers and workouts do not hold.
+
+**Calendar Classic** (`src/apps/calendar/calendar-layout.ts`, `MonthView.tsx`, `CalendarApp.tsx`): the month weeks band and the tell share constants; the band ends at 20 percent from the bottom (was 13, the tell's own band), so a six-row month clears the sentence. The tell keeps its place.
+
+**Weather** (`src/apps/weather/useWeather.ts`): `weatherCacheKey(query)`; the last good model, label and updatedAt kept per query in memory and in `localStorage` under `superclock:weather:<place|coords>|<unit>|<tz>`; the hook starts from it and every successful fetch rewrites it. A query change keeps the old screen until the new forecast lands, as before.
+
+**Tests first, each watched failing:** `useIdleReturn.test.ts` (+3: held session never returns home, overlays still dismiss, release resumes), `useHomeHold.test.tsx` (4), `useAppGestures.test.tsx` (a tap writes lastGestureMs), `calendar-layout.test.tsx` (band clears the tell; MonthView draws from the constant; November 2026 has six rows), `useWeather.test.tsx` (seeded cache shows at once while fetch hangs; a fetch writes the cache). `./scripts/gates.sh` green: 132 files, 1428 tests, build; `docs/health.md` regenerated (file count only). `.claude/rules/gestures-and-navigation.md` notes the new slot.
+
+**Verified in the dev kiosk at 1080:** a real tap sets lastGestureMs from 0; month view band bottom 864 px against tell top 894 px with six rows; Weather remount shows Montreal at once with the cache key present; Timer hold `timer` while running and `null` when paused; Alarm hold `alarm` in edit and `null` after back.
+
+**Deployed:** `DEPLOY_ANYWAY=1 bash scripts/deploy.sh nickv2026@100.78.29.28`, health verified `d203acd`; `pkill -TERM chromium`, autostart respawned (9 processes), a grim frame at 15:12 shows the kiosk rendering; 58.7 C, throttled 0x0. No package change, so no `npm ci` on the Pi. fastclock keeps its config (Rally pinned, 19 instances).
+
+**Open:** on-glass check of the three fixes themselves needs the Calendar, Weather or Timer on the panel (fastclock is pinned to Rally); squareclock and smallclock untouched; the rest of the review's findings (copy pass, unread schema options, secrets) wait on Nick.
+
+---
+
+## 2026-11-01 · branch claude/review-status-3b48fc · functional and design review of all 18 apps in the dev kiosk, nothing edited
+
+Nick: "run design review and testing for each app, that items are working and clickable and all functions are present." Review written to `docs/design/2026-11-01-app-functional-review.md`; no code change.
+
+**How:** dev kiosk at 1080 x 1080 in the Browser pane, a config with one instance per app pushed through the local `POST /api/device/config` (Montreal weather, GitHub user, Countdown, short Fitness rounds, two Focus projects), then `settings.skin: fields` and a blue fireplace for the second pass. Every app visited by day and at night (night through a real tap on the sheet toggle); the control that matters in each app got a real pointer (taps, the Timer and Alarm dial drags, the brightness slider), the rest went through `window.__nav`.
+
+**Verified:** gates green after `npm ci` (lint, tokens, 1413 tests, build; the worktree's modules predated three and nunito). All 18 apps render and every documented function responds: 20 faces cycle, Weather's six pages, the Calendar ladder with a day drill and back, Quote, Fitness start/pause/abort, Habits toggle and month ring, Focus start/pick/summary, GitHub and Claude usage tells and views, Agents list/chat/avatar/back, Todo add through the keyboard, toggle, Done and clear-all, Timer presets, dial, pause, resume and long-press reset, Alarm add, dial, pills, switch, edit and delete, the sheet's slider and toggle, the grid's tap. No app threw.
+
+**Found:** (1) taps never update `lastGestureMs`, so the 5-min idle return pulls a tap-only session (Timer, Fitness, Focus) back to the clock; Focus loses its running session, Fitness suspends, Timer survives. (2) Calendar Classic month: the not-configured tell overlaps the sixth week row. (3) Weather Fields shows an empty disc for about a second on every mount (no persisted model). Plus the still-open Oct 23 items (Weather Classic "offline" when unconfigured, GitHub 401 tell, caps and middle-dot copy, ICO-2) and six schema options no app reads but the admin offers.
+
+**Open:** nothing seen on a Pi; audio and alert firing untested; Calendar with events, GitHub with a token, the photo slideshow untested; the dev fleet file in this worktree now holds the 18-instance config (gitignored).
+
+---
+
 ## 2026-10-30 · branch claude/rally-clock-fasclocks-672015 · Rally pinned on fastclock
 
 Nick: "Launch Rally clock on fastclock". No code change and no deploy: fastclock already ran c757c73, which carries Rally. On the Pi, backed up `config/fleet.json.bak-before-rally-launch-2026-10-30`, then POSTed the device config with `playlist: {items: ['i-rally'], rotationSeconds: 3600}` (it was `['i-clock']`, null), updatedAt bumped.

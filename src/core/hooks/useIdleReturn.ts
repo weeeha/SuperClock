@@ -35,7 +35,10 @@ export function checkIdle(): void {
     if (nav.settingsOpen) nav.hideSettings();
   }
 
-  if (idle > HOME_IDLE_MS && nav.mode === 'app' && !isPlaylistDriving()) {
+  // A held session (nav.homeHold: a running timer or workout, an alarm being
+  // edited) is not idle either: a work interval or a focus block is five
+  // minutes without touching the glass.
+  if (idle > HOME_IDLE_MS && nav.mode === 'app' && nav.homeHold === null && !isPlaylistDriving()) {
     const home = nav.appOrder[0];
     if (home && nav.activeAppId !== home) nav.switchToApp(home);
   }

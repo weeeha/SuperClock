@@ -129,7 +129,7 @@ export default function PhotoFrameApp({ isActive, config }: AppProps) {
           <>
             <p className="theme-fade text-[3vmin] text-(--face-ink)">Photo list unavailable</p>
             <p className="theme-fade text-[2.2vmin] text-(--face-ink-muted)">
-              this clock's own server did not answer · retrying
+              this clock's own server did not answer, retrying
             </p>
           </>
         ) : status === 'ok' ? (
@@ -168,7 +168,7 @@ export default function PhotoFrameApp({ isActive, config }: AppProps) {
           alone cannot be trusted to read against an arbitrary image. */}
       {status === 'error' && (
         <p className="theme-fade pointer-events-none absolute bottom-[7.5%] left-1/2 -translate-x-1/2 rounded-full bg-(--face-plate) px-[2.5%] py-[0.8%] text-[2.2vmin] text-(--face-ink-muted)">
-          photo list unavailable · retrying
+          photo list unavailable, retrying
         </p>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { githubHint } from './github-hint';
 import type { AppProps } from '../../core/types';
 import { useNavigation } from '../../core/navigation';
 import { githubAppSchema } from '../../shared/schemas/app.github';
@@ -222,11 +223,9 @@ function EmptyState({ error, colors }: { error: string; colors: Palette }) {
     }
   }
 
-  // Surface the server's own hint when it applies — the 503 message names
-  // GITHUB_TOKEN explicitly; anything else is generic unreachability.
-  const hint = error.includes('GITHUB_TOKEN')
-    ? 'add a GitHub token on this clock'
-    : 'server unreachable';
+  // The proxy's own error string says which it is: no token, a rejected
+  // token, or the server away (github-hint.ts, tested).
+  const hint = githubHint(error);
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black">
@@ -639,7 +638,7 @@ function GithubGraph({
 
       {offline && (
         <div className="absolute top-[8%] left-1/2 -translate-x-1/2 rounded-full border border-[#30363d] bg-[#161b22] px-5 py-1.5 font-mono text-lg text-[#8b949e] pointer-events-none">
-          offline &middot; cached {relativeTime(data.fetchedAt)}
+          offline, cached {relativeTime(data.fetchedAt)}
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import type { CalendarEvent } from '../../api/types';
+import { MONTH_GRID_BOTTOM_PCT } from './calendar-layout';
 import { monthWeeks, eventsForDay, sameDay, type WeekStart } from './calendar-utils';
 
 interface MonthViewProps {
@@ -41,7 +42,7 @@ export default function MonthView({
         ))}
       </div>
 
-      <div className="absolute top-[24%] bottom-[13%] left-[17%] w-[66%] flex flex-col justify-between">
+      <div data-band="weeks" className="absolute top-[24%] left-[17%] w-[66%] flex flex-col justify-between" style={{ bottom: `${MONTH_GRID_BOTTOM_PCT}%` }}>
         {weeks.map((week, wi) => (
           <div key={wi} className="grid grid-cols-7 gap-x-[0.6vmin]">
             {week.map((day) => {

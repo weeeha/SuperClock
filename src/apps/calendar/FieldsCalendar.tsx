@@ -119,12 +119,12 @@ export default function FieldsCalendar({
   }
 
   const g = calendarGlance(events, now);
-  const staleChip = offline ? <OutlineChip roles={ROLES} text="Offline · saved events" cy={614} /> : null;
+  const staleChip = offline ? <OutlineChip roles={ROLES} text="Offline, saved events" cy={614} /> : null;
 
   if (g.kind === 'done') {
     const line = g.tomorrow
-      ? `Tomorrow · ${clip(g.tomorrow.title, 16)}${g.tomorrow.allDay ? '' : ` ${time(g.tomorrow.start)}`}`
-      : g.allDay[0] ? `All day · ${clip(g.allDay[0].title, 18)}` : '';
+      ? `Tomorrow, ${clip(g.tomorrow.title, 16)}${g.tomorrow.allDay ? '' : ` ${time(g.tomorrow.start)}`}`
+      : g.allDay[0] ? `All day, ${clip(g.allDay[0].title, 18)}` : '';
     return (
       <FieldsDisc roles={ROLES} summary={`${title}. Nothing else today.${line ? ` ${line}.` : ''}`} page={page} pageCount={pageCount}>
         {header}
@@ -138,7 +138,7 @@ export default function FieldsCalendar({
 
   const ev = g.event;
   const until = `until ${time(ev.end)}`;
-  const detail = g.kind === 'now' ? until : [countdownLabel(new Date(ev.start), now), until].filter(Boolean).join(' · ');
+  const detail = g.kind === 'now' ? until : [countdownLabel(new Date(ev.start), now), until].filter(Boolean).join(', ');
   const rows: Row[] = [
     ...g.rest.map((e) => ({ key: e.uid, title: e.title, time: time(e.start) })),
     ...g.allDay.map((e) => ({ key: e.uid, title: e.title, time: 'All day' })),

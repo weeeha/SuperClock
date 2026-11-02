@@ -45,7 +45,7 @@ describe('deriveViewModel', () => {
     const started = reduce(initialState(W.id), { type: 'START', workoutId: W.id, now: T0 }, W).state;
     const vm = deriveViewModel(started, W, T0 + 500);
     expect(vm.headline).toBe('3'); // 2500ms left, ceil'd
-    expect(vm.caption).toBe(`get ready · ${getExercise(W.exerciseIds[0]).name}`);
+    expect(vm.caption).toBe(`get ready, ${getExercise(W.exerciseIds[0]).name}`);
     expect(vm.artId).toBeNull();
     expectValidProgress(vm.progress);
   });
@@ -76,7 +76,7 @@ describe('deriveViewModel', () => {
     expect(s.phase).toBe('rest');
 
     const vm = deriveViewModel(s, SHORT, s.phaseEndsAt! - SHORT.restSeconds * 500);
-    expect(vm.caption).toBe(`next · ${getExercise('squats').name}`);
+    expect(vm.caption).toBe(`next, ${getExercise('squats').name}`);
     expect(vm.artPhase).toBe('rest');
     expectValidProgress(vm.progress);
   });
@@ -91,7 +91,7 @@ describe('deriveViewModel', () => {
     // The pause mark is drawn by the face, not spelled by the view model.
     expect(vm.paused).toBe(true);
     expect(vm.headline).toBe('');
-    expect(vm.caption).toBe(`1 of ${SHORT.exerciseIds.length} · ${getExercise('push-ups').name}`);
+    expect(vm.caption).toBe(`1 of ${SHORT.exerciseIds.length}, ${getExercise('push-ups').name}`);
     expect(vm.artPhase).toBe('work');
     expectValidProgress(vm.progress);
   });

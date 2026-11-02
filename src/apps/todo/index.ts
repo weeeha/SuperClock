@@ -5,8 +5,8 @@ registerApp({
   metadata: {
     id: 'todo',
     name: 'Todo',
-    icon: '✅',
-    description: 'One flat list — tap to complete, swipe up for done',
+    icon: '\u{1F4DD}',
+    description: 'One flat list: tap to complete, swipe up for done',
     category: 'productivity',
   },
   component: lazy(() => import('./TodoApp')),

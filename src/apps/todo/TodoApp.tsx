@@ -234,7 +234,7 @@ export default function TodoApp({ isActive, config }: AppProps) {
             }
             empty={
               <p className="text-(--face-ink-muted) text-center text-[3vmin] mt-[12vmin]">
-                {loading ? 'Loading…' : 'All clear — tap + Add to capture something.'}
+                {loading ? 'Loading…' : 'All clear. Tap + Add to capture something.'}
               </p>
             }
             renderItem={(i) => <ActiveRow item={i} />}

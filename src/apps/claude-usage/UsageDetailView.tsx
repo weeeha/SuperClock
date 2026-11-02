@@ -42,12 +42,12 @@ interface Props {
 }
 
 function fmtSync(fetchedAt: number): string {
-  if (!fetchedAt) return '—';
+  if (!fetchedAt) return '–';
   const d = new Date(fetchedAt);
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   const ageMin = Math.floor(Math.max(0, Date.now() - fetchedAt) / 60_000);
-  return ageMin < 1 ? `${hh}:${mm} · just now` : `${hh}:${mm} · ${ageMin}m ago`;
+  return ageMin < 1 ? `${hh}:${mm}, just now` : `${hh}:${mm}, ${ageMin}m ago`;
 }
 
 function SegmentBar({ y, frac, color, lit }: { y: number; frac: number; color: string; lit: boolean }) {
@@ -85,7 +85,7 @@ export default function UsageDetailView({
   fetchedAt,
 }: Props) {
   const burn =
-    showData && ratePerMin != null ? `${ratePerMin.toFixed(2)}%/min · ${MOOD_LABELS[mood]}` : '—';
+    showData && ratePerMin != null ? `${ratePerMin.toFixed(2)}%/min, ${MOOD_LABELS[mood]}` : '–';
 
   return (
     <svg
@@ -107,7 +107,7 @@ export default function UsageDetailView({
         x={BAR_X + BAR_W} y={306} textAnchor="end"
         fill={TEXT_PRIMARY} fontSize="56" fontWeight="800" fontFamily={SANS}
       >
-        {showData ? `${Math.round(sessionFrac * 100)}%` : '—'}
+        {showData ? `${Math.round(sessionFrac * 100)}%` : '–'}
       </text>
       <SegmentBar y={326} frac={sessionFrac} color={sessionColor} lit={showData} />
       <text x={BAR_X} y={404} fill={TEXT_MUTED} fontSize="22" fontFamily={MONO}>
@@ -122,7 +122,7 @@ export default function UsageDetailView({
         x={BAR_X + BAR_W} y={496} textAnchor="end"
         fill={TEXT_PRIMARY} fontSize="56" fontWeight="800" fontFamily={SANS}
       >
-        {showData ? `${Math.round(weekFrac * 100)}%` : '—'}
+        {showData ? `${Math.round(weekFrac * 100)}%` : '–'}
       </text>
       <SegmentBar y={516} frac={weekFrac} color={weekColor} lit={showData} />
       <text x={BAR_X} y={594} fill={TEXT_MUTED} fontSize="22" fontFamily={MONO}>

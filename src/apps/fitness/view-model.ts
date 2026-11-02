@@ -46,7 +46,7 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
 
   if (state.phase === 'countdown') {
     headline = formatSeconds(left);
-    caption = `get ready · ${getExercise(currentId).name}`;
+    caption = `get ready, ${getExercise(currentId).name}`;
     artId = null;
   } else if (state.phase === 'work') {
     headline = formatSeconds(left);
@@ -54,7 +54,7 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
     progress = 1 - left / (workout.workSeconds * 1000);
   } else if (state.phase === 'rest') {
     headline = formatSeconds(left);
-    caption = nextId ? `next · ${getExercise(nextId).name}` : 'rest';
+    caption = nextId ? `next, ${getExercise(nextId).name}` : 'rest';
     // workout.restSeconds is guaranteed > 0 here: afterWork() in circuit.ts
     // short-circuits straight past `rest` into the next work phase whenever
     // restSeconds === 0, so this phase is only ever entered with a positive
@@ -64,7 +64,7 @@ export function deriveViewModel(state: CircuitState, workout: Workout, now: numb
   } else if (state.phase === 'paused') {
     headline = '';
     paused = true;
-    caption = `${state.index + 1} of ${workout.exerciseIds.length} · ${getExercise(currentId).name}`;
+    caption = `${state.index + 1} of ${workout.exerciseIds.length}, ${getExercise(currentId).name}`;
     artPhase = state.resumePhase === 'rest' ? 'rest' : 'work';
   } else if (state.phase === 'complete') {
     headline = formatElapsed((state.finishedAt ?? 0) - (state.startedAt ?? 0));

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useHomeHold } from '../../core/hooks/useHomeHold';
 import type { AppProps } from '../../core/types';
 import { timerAppSchema } from '../../shared/schemas/app.timer';
 import { useTimer } from './timer-store';
@@ -80,6 +81,7 @@ export default function TimerApp({ isActive, config }: AppProps) {
 
   const state = useTimer((s) => s.state);
   const actions = useTimer.getState();
+  useHomeHold('timer', isActive && state.status === 'running');
 
   // First run: the first preset. A store write from an effect, not a setState.
   useEffect(() => {

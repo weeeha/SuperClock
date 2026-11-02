@@ -39,7 +39,6 @@ export const BASELINE = {
   // `\u{...}` escape, which is why only Todo's literal trips the rule. Deleting
   // the field is a fourteen-file change and a types change, not a design pass,
   // so it waits for one that is scoped to it.
-  'ICO-2 src/apps/todo/index.ts': 1,
 
   // The weather row that stood here (8 hits, the whole condition glyph set) is
   // gone: the Weather design pass replaced the emoji with drawn marks in

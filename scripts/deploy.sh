@@ -160,6 +160,20 @@ elif [ "$DEPLOYED_COMMIT" != "$EXPECTED_COMMIT" ]; then
 fi
 echo "Verified: $PI_ADDR runs $(git rev-parse --short HEAD) ($(git rev-parse --abbrev-ref HEAD))."
 
+# Restart the kiosk too. The rsync above ran with --delete, so the page
+# Chromium is already showing has lost its hashed chunks: the next app it
+# lazy-loads 404s, and with no error boundary the kiosk goes black (fastclock,
+# 2026-11-01, a deploy that deliberately left a running Timer alone). The
+# labwc autostart loop (scripts/kiosk.sh) respawns Chromium on the new build
+# within about ten seconds. KEEP_KIOSK=1 skips it, for a deploy that touched
+# nothing the client loads.
+if [ "${KEEP_KIOSK:-0}" != "1" ]; then
+  ssh "$PI_HOST" "pkill -TERM chromium || true"
+  echo "Kiosk restart signal sent (the autostart loop brings Chromium back on the new build)."
+else
+  echo "KEEP_KIOSK=1: kiosk left running on the previous bundle; it reloads on its 6h cycle."
+fi
+
 echo ""
 echo "=== Deploy complete ==="
 echo "First time on this Pi (installs deps + systemd unit + kiosk autostart):"

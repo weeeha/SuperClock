@@ -224,6 +224,32 @@
       "why": "Honest offline is a house rule (AGENTS.md Conventions); fabrication pressure is one of the four root causes of slop (unslop)."
     },
     {
+      "id": "CPY-5",
+      "title": "Kiosk copy: no em dashes, no middle-dot joins",
+      "severity": "blocker",
+      "detect": {
+        "method": "grep",
+        "pattern": "—|\\s·\\s|&middot;",
+        "flags": "",
+        "scope": [
+          "src/apps",
+          "src/core"
+        ],
+        "include": [
+          ".tsx",
+          ".ts"
+        ],
+        "exempt": [
+          {
+            "path": ".test.",
+            "reason": "test names and assertions are not copy on the glass; the strings they pin are checked in the files that render them"
+          }
+        ]
+      },
+      "fix": "A comma, a period or a line break; an en dash only inside a numeric range. One dot marks a live state, never a join.",
+      "why": "Nick's prose rule applied to microcopy (2026-11-01 review): the em dash is the first tell a reader discounts, and \"A · B · C\" is template punctuation (unslop Phase 1 #7). Comments are stripped before matching, so only what can reach the glass counts."
+    },
+    {
       "id": "CHT-1",
       "title": "Chart colours from the project palette, never library defaults",
       "severity": "blocker",

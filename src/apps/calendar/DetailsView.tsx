@@ -21,7 +21,7 @@ export default function DetailsView({ event, now, timeFormat }: DetailsViewProps
   const start = new Date(event.start);
   const isToday = sameDay(start, now);
   const dateLine = isToday
-    ? `Today · ${start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+    ? `Today, ${start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
     : start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   const countdown = event.allDay ? null : countdownLabel(start, now);
   const timeLine = event.allDay
