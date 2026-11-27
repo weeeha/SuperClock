@@ -26,7 +26,11 @@ export default function TimerDial({ durationMs, onChange }: { durationMs: number
         data-gesture="claim"
         className="touch-none fill-none stroke-transparent"
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture?.(e.pointerId);
+          try {
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+          } catch {
+            // NotFoundError on a pointer the browser no longer tracks; drag without capture.
+          }
           drag.current = { lastDeg: angleOf(e), totalDeg: msToDegrees(durationMs) };
         }}
         onPointerMove={(e) => {
