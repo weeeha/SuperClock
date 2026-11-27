@@ -24,7 +24,11 @@ export default function AlarmDial({ onRotate }: { onRotate: (deltaDeg: number) =
         data-gesture="claim"
         className="touch-none fill-none stroke-transparent"
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture?.(e.pointerId);
+          try {
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+          } catch {
+            // NotFoundError on a pointer the browser no longer tracks; turn without capture.
+          }
           last.current = angleOf(e);
         }}
         onPointerMove={(e) => {

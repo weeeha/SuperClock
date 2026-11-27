@@ -6,6 +6,18 @@ Work on this repo lands as local code changes. Do not open or wait on pull reque
 
 ---
 
+## 2026-11-27 · branch chore/review-defects · open review defects rechecked against main f9fd5e5; dial capture guarded; nothing pushed
+
+Rechecked five defects from `docs/design/2026-11-01-app-functional-review.md` against main at `f9fd5e5` (PR #78). Local branch only, worktree `.claude/worktrees/review-defects`, not pushed.
+
+**Already fixed on main by #78 (copy pass commit 21b2733):** GitHub 401/403 maps to "the GitHub token on this clock was rejected" (`src/apps/github/github-hint.ts`, `github-hint.test.ts`, wired at `GithubApp.tsx:228`); Weather Classic unconfigured says "Set a location in the admin" (`WeatherApp.tsx:118`, `WeatherApp.test.tsx`); `ICO-2` on `src/apps/todo/index.ts:8` is cleared (`check:rules` 0 violations). The Todo icon is still the memo emoji, now as a `\u{1F4DD}` escape like every other registry entry, which the ICO-2 detector does not see by design (its own `why` names the blind spot). Not touched.
+
+**Fixed:** `TimerDial.tsx` and `AlarmDial.tsx` wrap `setPointerCapture` in a try, so a NotFoundError no longer aborts pointerdown before the drag state is set. Tests first: `TimerDial.test.tsx`, `AlarmDial.test.tsx` failed (no onChange / onRotate call), pass after. Checked in the dev kiosk (Vite on 5181, Chromium): `setPointerCapture(4245)` throws NotFoundError, and synthetic pointer drags with that id moved the Timer 01:00 to 16:00 and the Alarm 07:00 to 07:05 with no page error. `docs/health.md` regenerated (tree file count).
+
+**Open, Nick's call (review item 6):** admin options the apps ignore: Quote `source: url` and `sourceUrl`, Photo Frame `source` and `sourcePath`, Habits `weekStart` and `theme`, Focus `weekStart`, Claude usage `scope` (already `unimplemented` in its meta, so the admin shows it disabled with a note). Remove from the schema (breaking: `FLEET_SCHEMA_VERSION` bump plus a `migrateFleet` step) or build them. Code left alone.
+
+---
+
 ## 2026-11-01 · branch claude/review-status-3b48fc · "the clock is stuck": a black panel, then a boot wedge with the pinned playlist; both fixed, deployed d56e048
 
 Nick: "the clock are stuck", then "it's always car, can't swipe to switch a watchface".
